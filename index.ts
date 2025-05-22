@@ -77,6 +77,53 @@ interface Backup {
   snapshot_id?: string;
 }
 
+interface Location {
+  type: string;
+  device_id: string;
+}
+
+interface Deletion {
+  type: string;
+  deleted: string;
+  deleted_by: string;
+  first_and_last_name?: string;
+}
+
+interface Snapshot {
+  snapshot_id: string;
+  agent_id: string;
+  locations: Location[];
+  backup_started_at: string;
+  backup_ended_at: string;
+  deleted?: string;
+  deletions?: Deletion[];
+  verify_boot_status?: string;
+  verify_fs_status?: string;
+  verify_boot_screenshot_url?: string;
+}
+
+interface FileRestore {
+  file_restore_id: string;
+  device_id: string;
+  agent_id: string;
+  snapshot_id: string;
+  created_at: string;
+  expires_at?: string;
+}
+
+interface FileRestoreEntry {
+  name: string;
+  path: string;
+  size: number;
+  type: string;
+  modified_at: string;
+  download_uris: {
+    type: string;
+    uri: string;
+  }[];
+  symlink_target_path?: string;
+}
+
 interface PaginatedResponse<T> {
   pagination: {
     total: number;
@@ -307,6 +354,164 @@ const START_BACKUP_TOOL = {
   }
 };
 
+// Define the slide_list_snapshots tool
+const LIST_SNAPSHOTS_TOOL = {
+  name: "slide_list_snapshots",
+  description: "List all snapshots with pagination and filtering options",
+  inputSchema: {
+    type: "object",
+    properties: {
+      limit: {
+        type: "number",
+        description: "Number of results per page (max 50)"
+      },
+      offset: {
+        type: "number",
+        description: "Pagination offset"
+      },
+      agent_id: {
+        type: "string",
+        description: "Filter by agent ID"
+      },
+      snapshot_location: {
+        type: "string",
+        description: "Filter by snapshot location (exists_local, exists_cloud, exists_deleted, exists_deleted_retention, exists_deleted_manual, exists_deleted_other)"
+      },
+      sort_asc: {
+        type: "boolean",
+        description: "Sort in ascending order"
+      },
+      sort_by: {
+        type: "string",
+        description: "Sort by field (backup_start_time, backup_end_time, created)"
+      }
+    }
+  }
+};
+
+// Define the slide_get_snapshot tool
+const GET_SNAPSHOT_TOOL = {
+  name: "slide_get_snapshot",
+  description: "Get detailed information about a specific snapshot",
+  inputSchema: {
+    type: "object",
+    properties: {
+      snapshot_id: {
+        type: "string",
+        description: "ID of the snapshot to retrieve"
+      }
+    },
+    required: ["snapshot_id"]
+  }
+};
+
+// Define the slide_list_file_restores tool
+const LIST_FILE_RESTORES_TOOL = {
+  name: "slide_list_file_restores",
+  description: "List all file restores with pagination and filtering options",
+  inputSchema: {
+    type: "object",
+    properties: {
+      limit: {
+        type: "number",
+        description: "Number of results per page (max 50)"
+      },
+      offset: {
+        type: "number",
+        description: "Pagination offset"
+      },
+      sort_asc: {
+        type: "boolean",
+        description: "Sort in ascending order"
+      },
+      sort_by: {
+        type: "string",
+        description: "Sort by field (id)"
+      }
+    }
+  }
+};
+
+// Define the slide_get_file_restore tool
+const GET_FILE_RESTORE_TOOL = {
+  name: "slide_get_file_restore",
+  description: "Get detailed information about a specific file restore",
+  inputSchema: {
+    type: "object",
+    properties: {
+      file_restore_id: {
+        type: "string",
+        description: "ID of the file restore to retrieve"
+      }
+    },
+    required: ["file_restore_id"]
+  }
+};
+
+// Define the slide_create_file_restore tool
+const CREATE_FILE_RESTORE_TOOL = {
+  name: "slide_create_file_restore",
+  description: "Create a file restore from a snapshot",
+  inputSchema: {
+    type: "object",
+    properties: {
+      snapshot_id: {
+        type: "string",
+        description: "ID of the snapshot to restore from"
+      },
+      device_id: {
+        type: "string",
+        description: "ID of the device to restore to"
+      }
+    },
+    required: ["snapshot_id", "device_id"]
+  }
+};
+
+// Define the slide_delete_file_restore tool
+const DELETE_FILE_RESTORE_TOOL = {
+  name: "slide_delete_file_restore",
+  description: "Delete a file restore",
+  inputSchema: {
+    type: "object",
+    properties: {
+      file_restore_id: {
+        type: "string",
+        description: "ID of the file restore to delete"
+      }
+    },
+    required: ["file_restore_id"]
+  }
+};
+
+// Define the slide_browse_file_restore tool
+const BROWSE_FILE_RESTORE_TOOL = {
+  name: "slide_browse_file_restore",
+  description: "Browse the contents of a file restore. IMPORTANT: You must first create a file restore using slide_create_file_restore before you can browse it.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      file_restore_id: {
+        type: "string",
+        description: "ID of the file restore to browse"
+      },
+      path: {
+        type: "string",
+        description: "Path to browse (e.g., 'C' for root of C drive)"
+      },
+      limit: {
+        type: "number",
+        description: "Number of results per page (max 50)"
+      },
+      offset: {
+        type: "number",
+        description: "Pagination offset"
+      }
+    },
+    required: ["file_restore_id", "path"]
+  }
+};
+
 // Function to check if args are valid for the list_devices tool
 function isListDevicesArgs(args: unknown): args is { 
   limit?: number; 
@@ -420,6 +625,95 @@ function isStartBackupArgs(args: unknown): args is {
     typeof args === "object" &&
     args !== null &&
     typeof (args as any).agent_id === "string"
+  );
+}
+
+// Function to check if args are valid for the list_snapshots tool
+function isListSnapshotsArgs(args: unknown): args is {
+  limit?: number;
+  offset?: number;
+  agent_id?: string;
+  snapshot_location?: string;
+  sort_asc?: boolean;
+  sort_by?: string;
+} {
+  return (
+    typeof args === "object" &&
+    args !== null
+  );
+}
+
+// Function to check if args are valid for the get_snapshot tool
+function isGetSnapshotArgs(args: unknown): args is {
+  snapshot_id: string;
+} {
+  return (
+    typeof args === "object" &&
+    args !== null &&
+    typeof (args as any).snapshot_id === "string"
+  );
+}
+
+// Function to check if args are valid for the list_file_restores tool
+function isListFileRestoresArgs(args: unknown): args is {
+  limit?: number;
+  offset?: number;
+  sort_asc?: boolean;
+  sort_by?: string;
+} {
+  return (
+    typeof args === "object" &&
+    args !== null
+  );
+}
+
+// Function to check if args are valid for the get_file_restore tool
+function isGetFileRestoreArgs(args: unknown): args is {
+  file_restore_id: string;
+} {
+  return (
+    typeof args === "object" &&
+    args !== null &&
+    typeof (args as any).file_restore_id === "string"
+  );
+}
+
+// Function to check if args are valid for the create_file_restore tool
+function isCreateFileRestoreArgs(args: unknown): args is {
+  snapshot_id: string;
+  device_id: string;
+} {
+  return (
+    typeof args === "object" &&
+    args !== null &&
+    typeof (args as any).snapshot_id === "string" &&
+    typeof (args as any).device_id === "string"
+  );
+}
+
+// Function to check if args are valid for the delete_file_restore tool
+function isDeleteFileRestoreArgs(args: unknown): args is {
+  file_restore_id: string;
+} {
+  return (
+    typeof args === "object" &&
+    args !== null &&
+    typeof (args as any).file_restore_id === "string"
+  );
+}
+
+// Function to check if args are valid for the browse_file_restore tool
+function isBrowseFileRestoreArgs(args: unknown): args is {
+  file_restore_id: string;
+  path: string;
+  limit?: number;
+  offset?: number;
+} {
+  return (
+    typeof args === "object" &&
+    args !== null &&
+    typeof (args as any).file_restore_id === "string" &&
+    typeof (args as any).path === "string"
   );
 }
 
@@ -819,9 +1113,326 @@ async function startBackup(args: { agent_id: string }) {
   }
 }
 
+// Function to list snapshots
+async function listSnapshots(args: {
+  limit?: number;
+  offset?: number;
+  agent_id?: string;
+  snapshot_location?: string;
+  sort_asc?: boolean;
+  sort_by?: string;
+}) {
+  try {
+    const queryParams = new URLSearchParams();
+    
+    if (args.limit) {
+      queryParams.append('limit', args.limit.toString());
+    }
+    
+    if (args.offset) {
+      queryParams.append('offset', args.offset.toString());
+    }
+    
+    if (args.agent_id) {
+      queryParams.append('agent_id', args.agent_id);
+    }
+    
+    if (args.snapshot_location) {
+      queryParams.append('snapshot_location', args.snapshot_location);
+    }
+    
+    if (args.sort_asc !== undefined) {
+      queryParams.append('sort_asc', args.sort_asc.toString());
+    }
+    
+    if (args.sort_by) {
+      queryParams.append('sort_by', args.sort_by);
+    } else {
+      // Default sort by created
+      queryParams.append('sort_by', 'created');
+    }
+    
+    const response = await axios.get<PaginatedResponse<Snapshot>>(
+      `${API_BASE_URL}/v1/snapshot?${queryParams.toString()}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${SLIDE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response) {
+        const statusCode = axiosError.response.status;
+        const errorData = axiosError.response.data as any;
+        
+        throw new Error(`API Error (${statusCode}): ${errorData.message || 'Unknown error'}`);
+      }
+      
+      throw new Error(`Network Error: ${error.message}`);
+    }
+    
+    throw new Error(`Error: ${(error as Error).message}`);
+  }
+}
+
+// Function to get snapshot by ID
+async function getSnapshot(args: { snapshot_id: string }) {
+  try {
+    const response = await axios.get<Snapshot>(
+      `${API_BASE_URL}/v1/snapshot/${args.snapshot_id}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${SLIDE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response) {
+        const statusCode = axiosError.response.status;
+        const errorData = axiosError.response.data as any;
+        
+        throw new Error(`API Error (${statusCode}): ${errorData.message || 'Unknown error'}`);
+      }
+      
+      throw new Error(`Network Error: ${error.message}`);
+    }
+    
+    throw new Error(`Error: ${(error as Error).message}`);
+  }
+}
+
+// Function to list file restores
+async function listFileRestores(args: {
+  limit?: number;
+  offset?: number;
+  sort_asc?: boolean;
+  sort_by?: string;
+}) {
+  try {
+    const queryParams = new URLSearchParams();
+    
+    if (args.limit) {
+      queryParams.append('limit', args.limit.toString());
+    }
+    
+    if (args.offset) {
+      queryParams.append('offset', args.offset.toString());
+    }
+    
+    if (args.sort_asc !== undefined) {
+      queryParams.append('sort_asc', args.sort_asc.toString());
+    }
+    
+    if (args.sort_by) {
+      queryParams.append('sort_by', args.sort_by);
+    } else {
+      // Default sort by id
+      queryParams.append('sort_by', 'id');
+    }
+    
+    const response = await axios.get<PaginatedResponse<FileRestore>>(
+      `${API_BASE_URL}/v1/restore/file?${queryParams.toString()}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${SLIDE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response) {
+        const statusCode = axiosError.response.status;
+        const errorData = axiosError.response.data as any;
+        
+        throw new Error(`API Error (${statusCode}): ${errorData.message || 'Unknown error'}`);
+      }
+      
+      throw new Error(`Network Error: ${error.message}`);
+    }
+    
+    throw new Error(`Error: ${(error as Error).message}`);
+  }
+}
+
+// Function to get file restore by ID
+async function getFileRestore(args: { file_restore_id: string }) {
+  try {
+    const response = await axios.get<FileRestore>(
+      `${API_BASE_URL}/v1/restore/file/${args.file_restore_id}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${SLIDE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response) {
+        const statusCode = axiosError.response.status;
+        const errorData = axiosError.response.data as any;
+        
+        throw new Error(`API Error (${statusCode}): ${errorData.message || 'Unknown error'}`);
+      }
+      
+      throw new Error(`Network Error: ${error.message}`);
+    }
+    
+    throw new Error(`Error: ${(error as Error).message}`);
+  }
+}
+
+// Function to create a file restore
+async function createFileRestore(args: { snapshot_id: string; device_id: string }) {
+  try {
+    const response = await axios.post<FileRestore>(
+      `${API_BASE_URL}/v1/restore/file`,
+      {
+        snapshot_id: args.snapshot_id,
+        device_id: args.device_id
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${SLIDE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response) {
+        const statusCode = axiosError.response.status;
+        const errorData = axiosError.response.data as any;
+        
+        throw new Error(`API Error (${statusCode}): ${errorData.message || 'Unknown error'}`);
+      }
+      
+      throw new Error(`Network Error: ${error.message}`);
+    }
+    
+    throw new Error(`Error: ${(error as Error).message}`);
+  }
+}
+
+// Function to delete a file restore
+async function deleteFileRestore(args: { file_restore_id: string }) {
+  try {
+    await axios.delete(
+      `${API_BASE_URL}/v1/restore/file/${args.file_restore_id}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${SLIDE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    
+    return { success: true, message: `File restore ${args.file_restore_id} deleted successfully` };
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response) {
+        const statusCode = axiosError.response.status;
+        const errorData = axiosError.response.data as any;
+        
+        throw new Error(`API Error (${statusCode}): ${errorData.message || 'Unknown error'}`);
+      }
+      
+      throw new Error(`Network Error: ${error.message}`);
+    }
+    
+    throw new Error(`Error: ${(error as Error).message}`);
+  }
+}
+
+// Function to browse a file restore
+async function browseFileRestore(args: { 
+  file_restore_id: string; 
+  path: string;
+  limit?: number;
+  offset?: number;
+}) {
+  try {
+    const queryParams = new URLSearchParams();
+    
+    queryParams.append('path', args.path);
+    
+    if (args.limit) {
+      queryParams.append('limit', args.limit.toString());
+    }
+    
+    if (args.offset) {
+      queryParams.append('offset', args.offset.toString());
+    }
+    
+    const response = await axios.get<PaginatedResponse<FileRestoreEntry>>(
+      `${API_BASE_URL}/v1/restore/file/${args.file_restore_id}/browse?${queryParams.toString()}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${SLIDE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response) {
+        const statusCode = axiosError.response.status;
+        const errorData = axiosError.response.data as any;
+        
+        throw new Error(`API Error (${statusCode}): ${errorData.message || 'Unknown error'}`);
+      }
+      
+      throw new Error(`Network Error: ${error.message}`);
+    }
+    
+    throw new Error(`Error: ${(error as Error).message}`);
+  }
+}
+
 // Server implements the listTools request
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
-  tools: [LIST_DEVICES_TOOL, LIST_AGENTS_TOOL, GET_AGENT_TOOL, CREATE_AGENT_TOOL, PAIR_AGENT_TOOL, UPDATE_AGENT_TOOL, LIST_BACKUPS_TOOL, GET_BACKUP_TOOL, START_BACKUP_TOOL],
+  tools: [
+    LIST_DEVICES_TOOL, 
+    LIST_AGENTS_TOOL, 
+    GET_AGENT_TOOL, 
+    CREATE_AGENT_TOOL, 
+    PAIR_AGENT_TOOL, 
+    UPDATE_AGENT_TOOL, 
+    LIST_BACKUPS_TOOL, 
+    GET_BACKUP_TOOL, 
+    START_BACKUP_TOOL, 
+    LIST_SNAPSHOTS_TOOL, 
+    GET_SNAPSHOT_TOOL,
+    LIST_FILE_RESTORES_TOOL,
+    GET_FILE_RESTORE_TOOL,
+    CREATE_FILE_RESTORE_TOOL,
+    DELETE_FILE_RESTORE_TOOL,
+    BROWSE_FILE_RESTORE_TOOL
+  ],
 }));
 
 // Handle tool calls
@@ -1023,6 +1634,153 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           _metadata: {
             primary_identifier: "backup_id",
             presentation_guidance: "When referring to the backup, use the backup_id as the primary identifier. Backup IDs are internal identifiers not commonly used by humans."
+          }
+        };
+        
+        return {
+          content: [{ type: "text", text: JSON.stringify(enhancedResult, null, 2) }],
+          isError: false,
+        };
+      }
+
+      case "slide_list_snapshots": {
+        if (!isListSnapshotsArgs(args)) {
+          throw new Error("Invalid arguments for slide_list_snapshots");
+        }
+        
+        const result = await listSnapshots(args);
+        
+        // Add metadata to guide the LLM on how to present and refer to snapshots
+        const enhancedResult = {
+          ...result,
+          _metadata: {
+            primary_identifier: "snapshot_id",
+            presentation_guidance: "When referring to snapshots, use the snapshot_id as the primary identifier. Snapshot IDs are internal identifiers not commonly used by humans."
+          }
+        };
+        
+        return {
+          content: [{ type: "text", text: JSON.stringify(enhancedResult, null, 2) }],
+          isError: false,
+        };
+      }
+
+      case "slide_get_snapshot": {
+        if (!isGetSnapshotArgs(args)) {
+          throw new Error("Invalid arguments for slide_get_snapshot");
+        }
+        
+        const result = await getSnapshot(args);
+        
+        // Add metadata to guide the LLM on how to present and refer to the snapshot
+        const enhancedResult = {
+          ...result,
+          _metadata: {
+            primary_identifier: "snapshot_id",
+            presentation_guidance: "When referring to the snapshot, use the snapshot_id as the primary identifier. Snapshot IDs are internal identifiers not commonly used by humans."
+          }
+        };
+        
+        return {
+          content: [{ type: "text", text: JSON.stringify(enhancedResult, null, 2) }],
+          isError: false,
+        };
+      }
+
+      case "slide_list_file_restores": {
+        if (!isListFileRestoresArgs(args)) {
+          throw new Error("Invalid arguments for slide_list_file_restores");
+        }
+        
+        const result = await listFileRestores(args);
+        
+        // Add metadata to guide the LLM on how to present and refer to file restores
+        const enhancedResult = {
+          ...result,
+          _metadata: {
+            primary_identifier: "file_restore_id",
+            presentation_guidance: "When referring to file restores, use the file_restore_id as the primary identifier. File restore IDs are internal identifiers not commonly used by humans.",
+            workflow_guidance: "File restores must be created before they can be browsed. To create a file restore, use slide_create_file_restore with a snapshot_id and device_id."
+          }
+        };
+        
+        return {
+          content: [{ type: "text", text: JSON.stringify(enhancedResult, null, 2) }],
+          isError: false,
+        };
+      }
+
+      case "slide_get_file_restore": {
+        if (!isGetFileRestoreArgs(args)) {
+          throw new Error("Invalid arguments for slide_get_file_restore");
+        }
+        
+        const result = await getFileRestore(args);
+        
+        // Add metadata to guide the LLM on how to present and refer to the file restore
+        const enhancedResult = {
+          ...result,
+          _metadata: {
+            primary_identifier: "file_restore_id",
+            presentation_guidance: "When referring to the file restore, use the file_restore_id as the primary identifier. File restore IDs are internal identifiers not commonly used by humans."
+          }
+        };
+        
+        return {
+          content: [{ type: "text", text: JSON.stringify(enhancedResult, null, 2) }],
+          isError: false,
+        };
+      }
+
+      case "slide_create_file_restore": {
+        if (!isCreateFileRestoreArgs(args)) {
+          throw new Error("Invalid arguments for slide_create_file_restore");
+        }
+        
+        const result = await createFileRestore(args);
+        
+        // Add metadata to guide the LLM on how to present and refer to the file restore
+        const enhancedResult = {
+          ...result,
+          _metadata: {
+            primary_identifier: "file_restore_id",
+            presentation_guidance: "When referring to the file restore, use the file_restore_id as the primary identifier. File restore IDs are internal identifiers not commonly used by humans.",
+            next_steps: "Now that you've created a file restore, you can browse its contents using slide_browse_file_restore with this file_restore_id and a path parameter (e.g., 'C' for the root of C drive)."
+          }
+        };
+        
+        return {
+          content: [{ type: "text", text: JSON.stringify(enhancedResult, null, 2) }],
+          isError: false,
+        };
+      }
+
+      case "slide_delete_file_restore": {
+        if (!isDeleteFileRestoreArgs(args)) {
+          throw new Error("Invalid arguments for slide_delete_file_restore");
+        }
+        
+        const result = await deleteFileRestore(args);
+        
+        return {
+          content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+          isError: false,
+        };
+      }
+
+      case "slide_browse_file_restore": {
+        if (!isBrowseFileRestoreArgs(args)) {
+          throw new Error("Invalid arguments for slide_browse_file_restore");
+        }
+        
+        const result = await browseFileRestore(args);
+        
+        // Add metadata to guide the LLM on how to present file browse results
+        const enhancedResult = {
+          ...result,
+          _metadata: {
+            presentation_guidance: "When presenting file browse results, organize by type (directories first, then files) and highlight download options for files.",
+            workflow_guidance: "File restores are temporary. If a file_restore_id is not found, it may have expired or not been created yet. Create a file restore using slide_create_file_restore before browsing."
           }
         };
         

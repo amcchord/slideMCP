@@ -7,6 +7,7 @@ An MCP server implementation that integrates with the Slide API, providing devic
 - **Device Management**: List all devices with pagination and filtering options
 - **Agent Management**: List, create, pair, and update agents
 - **Backup Management**: List, retrieve, and initiate backups
+- **Snapshot Management**: List and retrieve snapshots with detailed information
 - **Detailed Information**: Get comprehensive details about each device and agent including status, storage, and network information
 - **Flexible Filtering**: Filter devices and agents by client ID, device ID, and other parameters
 - **Pagination Support**: Control results per page with offset and limit parameters
@@ -80,6 +81,64 @@ An MCP server implementation that integrates with the Slide API, providing devic
   - Start a backup for a specific agent
   - Inputs:
     - `agent_id` (string, required): ID of the agent to backup
+
+### Snapshot Tools
+
+- **slide_list_snapshots**
+  - List all snapshots with pagination and filtering
+  - Inputs:
+    - `limit` (number, optional): Results per page (max 50)
+    - `offset` (number, optional): Pagination offset
+    - `agent_id` (string, optional): Filter by agent ID
+    - `snapshot_location` (string, optional): Filter by snapshot location (exists_local, exists_cloud, exists_deleted, etc.)
+    - `sort_asc` (boolean, optional): Sort in ascending order
+    - `sort_by` (string, optional): Sort by field (backup_start_time, backup_end_time, created)
+
+- **slide_get_snapshot**
+  - Get detailed information about a specific snapshot
+  - Inputs:
+    - `snapshot_id` (string, required): ID of the snapshot to retrieve
+
+### File Restore Tools
+
+File restores provide access to files within a snapshot. The typical workflow is:
+1. Create a file restore from a snapshot using `slide_create_file_restore`
+2. Browse the restored files using `slide_browse_file_restore`
+3. When finished, delete the file restore using `slide_delete_file_restore`
+
+- **slide_list_file_restores**
+  - List all file restores with pagination and filtering
+  - Inputs:
+    - `limit` (number, optional): Results per page (max 50)
+    - `offset` (number, optional): Pagination offset
+    - `sort_asc` (boolean, optional): Sort in ascending order
+    - `sort_by` (string, optional): Sort by field (id)
+
+- **slide_get_file_restore**
+  - Get detailed information about a specific file restore
+  - Inputs:
+    - `file_restore_id` (string, required): ID of the file restore to retrieve
+
+- **slide_create_file_restore**
+  - Create a file restore from a snapshot
+  - Inputs:
+    - `snapshot_id` (string, required): ID of the snapshot to restore from
+    - `device_id` (string, required): ID of the device to restore to
+  - Note: You must create a file restore before you can browse its contents
+
+- **slide_delete_file_restore**
+  - Delete a file restore
+  - Inputs:
+    - `file_restore_id` (string, required): ID of the file restore to delete
+
+- **slide_browse_file_restore**
+  - Browse the contents of a file restore
+  - Inputs:
+    - `file_restore_id` (string, required): ID of the file restore to browse
+    - `path` (string, required): Path to browse (e.g., 'C' for root of C drive)
+    - `limit` (number, optional): Results per page (max 50)
+    - `offset` (number, optional): Pagination offset
+  - Note: Requires a file restore to be created first using `slide_create_file_restore`
 
 ## Configuration
 
