@@ -1,106 +1,160 @@
-# slideMCP
+# Slide MCP Server
 
-A Model Configuration Profile (MCP) for Large Language Models to interact with the Slide API.
+An MCP server implementation that integrates with the Slide API, providing device management capabilities.
 
-## Entity Relationships
+## Features
 
-The Slide API is built around the following key entities and their relationships:
+- **Device Management**: List all devices with pagination and filtering options
+- **Detailed Information**: Get comprehensive details about each device including status, storage, and network information
+- **Flexible Filtering**: Filter devices by client ID and sort by hostname
+- **Pagination Support**: Control results per page with offset and limit parameters
 
-```
-Device → Agent → Backup → Snapshot
-```
+## Tools
 
-- **Device**: A physical Slide Box hardware appliance
-- **Agent**: Software installed on systems to be protected
-- **Backup**: A point-in-time operation copying data from an Agent
-- **Snapshot**: A recoverable point-in-time created by a successful Backup
+- **slide_list_devices**
 
-Understanding these relationships is crucial for effective API usage:
-- A Device can have multiple Agents
-- An Agent can have multiple Backups
-- A successful Backup creates a Snapshot
+  - List all devices with pagination and filtering
+  - Inputs:
+    - `limit` (number, optional): Results per page (max 50)
+    - `offset` (number, optional): Pagination offset
+    - `client_id` (string, optional): Filter by client ID
+    - `sort_asc` (boolean, optional): Sort in ascending order
 
-## Snapshot Recovery Options
+## Configuration
 
-Snapshots are the core recovery point in the Slide platform and can be used in multiple ways:
+### Getting an API Key
 
-1. **Virtualization**: Create a virtual machine from a snapshot
-   - Run a complete system in a virtualized environment
-   - Used for disaster recovery, testing, or development environments
-   - Example: `slideClient.createVirtualMachine({ snapshot_id: 's_0123456789ab', device_id: 'd_0123456789ab' })`
+1. Log in to your [Slide account](https://console.slide.tech/)
+2. Navigate to your account settings
+3. Generate your API key from the API section
 
-2. **Image Export**: Export a snapshot as a disk image
-   - Export in various formats (VHDX, VHD, Raw)
-   - Used for migration to other platforms or offline recovery
-   - Example: `slideClient.createImageExport({ snapshot_id: 's_0123456789ab', device_id: 'd_0123456789ab', image_type: 'vhdx' })`
+### Usage with Claude Desktop
 
-3. **File Restore**: Mount a snapshot to browse and restore files
-   - Access individual files and folders without full system restore
-   - Used for targeted recovery of specific data
-   - Example: `slideClient.createFileRestore({ snapshot_id: 's_0123456789ab', device_id: 'd_0123456789ab' })`
+Add this to your `claude_desktop_config.json`:
 
-## Setup
+### Docker
 
-1. Clone this repository
-2. Create a `.env` file in the root directory with your API key:
-   ```
-   SLIDE_API_KEY=your_api_key_here
-   ```
-3. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-## Usage
-
-```javascript
-const slideMCP = require('./index');
-const slideClient = slideMCP.createClient(process.env.SLIDE_API_KEY);
-
-// Example: List devices
-slideClient.getDevices()
-  .then(response => console.log(response))
-  .catch(error => console.error(error));
-
-// Example: Get all agents for a specific device
-slideClient.getAgents({ device_id: 'd_0123456789ab' })
-  .then(response => console.log(response))
-  .catch(error => console.error(error));
-
-// Example: Start a backup for an agent
-slideClient.startBackup({ agent_id: 'a_0123456789ab' })
-  .then(response => console.log(response))
-  .catch(error => console.error(error));
-
-// Example: Create a virtual machine from a snapshot
-slideClient.createVirtualMachine({
-  snapshot_id: 's_0123456789ab',
-  device_id: 'd_0123456789ab',
-  cpu_count: 2,
-  memory_in_mb: 4096
-})
-  .then(response => console.log(response))
-  .catch(error => console.error(error));
+```json
+{
+  "mcpServers": {
+    "slide": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-e",
+        "SLIDE_API_KEY",
+        "mcp/slide"
+      ],
+      "env": {
+        "SLIDE_API_KEY": "YOUR_API_KEY_HERE"
+      }
+    }
+  }
+}
 ```
 
-## Security
+### NPX
 
-- Never commit your `.env` file to the repository
-- The `.gitignore` file is configured to exclude `.env` files
-- Use environment variables in production environments
+```json
+{
+  "mcpServers": {
+    "slide": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-slide"
+      ],
+      "env": {
+        "SLIDE_API_KEY": "YOUR_API_KEY_HERE"
+      }
+    }
+  }
+}
+```
 
-## API Coverage
+### Usage with VS Code
 
-This MCP provides access to the following Slide API endpoints:
+For quick installation, use the one-click installation buttons below...
 
-- Devices
-- Agents
-- Backups
-- Snapshots
-- File Restores
-- Virtual Machines
-- Image Exports
-- Networks
-- Users
-- Alerts
-- Account
+[![Install with NPX in VS Code](https://img.shields.io/badge/VS_Code-NPM-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=slide&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22apiKey%22%7D%5D&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22%40modelcontextprotocol%2Fserver-slide%22%5D%2C%22env%22%3A%7B%22SLIDE_API_KEY%22%3A%22%24%7Binput%3Aslide_api_key%7D%22%7D%7D) [![Install with NPX in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-NPM-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=slide&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22apiKey%22%7D%5D&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22%40modelcontextprotocol%2Fserver-slide%22%5D%2C%22env%22%3A%7B%22SLIDE_API_KEY%22%3A%22%24%7Binput%3Aslide_api_key%7D%22%7D%7D&quality=insiders)
+
+[![Install with Docker in VS Code](https://img.shields.io/badge/VS_Code-Docker-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=slide&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22apiKey%22%7D%5D&config=%7B%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22run%22%2C%22-i%22%2C%22--rm%22%2C%22-e%22%2C%22SLIDE_API_KEY%22%2C%22mcp%2Fslide%22%5D%2C%22env%22%3A%7B%22SLIDE_API_KEY%22%3A%22%24%7Binput%3Aslide_api_key%7D%22%7D%7D) [![Install with Docker in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Docker-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=slide&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22apiKey%22%7D%5D&config=%7B%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22run%22%2C%22-i%22%2C%22--rm%22%2C%22-e%22%2C%22SLIDE_API_KEY%22%2C%22mcp%2Fslide%22%5D%2C%22env%22%3A%7B%22SLIDE_API_KEY%22%3A%22%24%7Binput%3Aslide_api_key%7D%22%7D%7D&quality=insiders)
+
+For manual installation, add the following JSON block to your User Settings (JSON) file in VS Code. You can do this by pressing `Ctrl + Shift + P` and typing `Preferences: Open User Settings (JSON)`.
+
+Optionally, you can add it to a file called `.vscode/mcp.json` in your workspace. This will allow you to share the configuration with others.
+
+> Note that the `mcp` key is not needed in the `.vscode/mcp.json` file.
+
+#### Docker
+
+```json
+{
+  "mcp": {
+    "inputs": [
+      {
+        "type": "promptString",
+        "id": "slide_api_key",
+        "description": "Slide API Key",
+        "password": true
+      }
+    ],
+    "servers": {
+      "slide": {
+        "command": "docker",
+        "args": [
+          "run",
+          "-i",
+          "--rm",
+          "-e",
+          "SLIDE_API_KEY",
+          "mcp/slide"
+        ],
+        "env": {
+          "SLIDE_API_KEY": "${input:slide_api_key}"
+        }
+      }
+    }
+  }
+}
+```
+
+#### NPX
+
+```json
+{
+  "mcp": {
+    "inputs": [
+      {
+        "type": "promptString",
+        "id": "slide_api_key",
+        "description": "Slide API Key",
+        "password": true
+      }
+    ],
+    "servers": {
+      "slide": {
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-slide"],
+        "env": {
+          "SLIDE_API_KEY": "${input:slide_api_key}"
+        }
+      }
+    }
+  }
+}
+```
+
+## Build
+
+Docker build:
+
+```bash
+docker build -t mcp/slide:latest -f Dockerfile .
+```
+
+## License
+
+This MCP server is licensed under the MIT License. This means you are free to use, modify, and distribute the software, subject to the terms and conditions of the MIT License. For more details, please see the LICENSE file in the project repository.
