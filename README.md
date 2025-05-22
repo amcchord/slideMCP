@@ -2,6 +2,8 @@
 
 An MCP server implementation that integrates with the Slide API, providing device and agent management capabilities.
 
+For quick setup instructions with Claude Desktop, see the [QUICKSTART.md](QUICKSTART.md) guide.
+
 ## Features
 
 - **Device Management**: List all devices with pagination and filtering options
