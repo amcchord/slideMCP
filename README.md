@@ -10,6 +10,9 @@ An MCP server implementation that integrates with the Slide API, providing devic
 - **Snapshot Management**: List and retrieve snapshots with detailed information
 - **Detailed Information**: Get comprehensive details about each device and agent including status, storage, and network information
 - **User Management**: List all users and retrieve detailed user information
+- **Alert Management**: List, retrieve, and resolve system alerts 
+- **Account Management**: List accounts, view account details, and update alert email settings
+- **Client Management**: List, create, update, and delete clients
 - **Flexible Filtering**: Filter devices and agents by client ID, device ID, and other parameters
 - **Pagination Support**: Control results per page with offset and limit parameters
 
@@ -249,6 +252,84 @@ Virtual machines allow you to run a snapshot as a virtualized computer on a Slid
   - Get detailed information about a specific user
   - Inputs:
     - `user_id` (string, required): ID of the user to retrieve
+
+### Alert Tools
+
+- **slide_list_alerts**
+  - List all alerts with pagination and filtering
+  - Inputs:
+    - `limit` (number, optional): Results per page (max 50)
+    - `offset` (number, optional): Pagination offset
+    - `device_id` (string, optional): Filter by device ID
+    - `agent_id` (string, optional): Filter by agent ID
+    - `resolved` (boolean, optional): Filter by resolved status
+    - `sort_asc` (boolean, optional): Sort in ascending order
+    - `sort_by` (string, optional): Sort by field (created)
+
+- **slide_get_alert**
+  - Get detailed information about a specific alert
+  - Inputs:
+    - `alert_id` (string, required): ID of the alert to retrieve
+
+- **slide_update_alert**
+  - Update an alert's properties (primarily used to resolve alerts)
+  - Inputs:
+    - `alert_id` (string, required): ID of the alert to update
+    - `resolved` (boolean, required): Set to true to resolve the alert
+
+### Account Tools
+
+- **slide_list_accounts**
+  - List all accounts with pagination and filtering
+  - Inputs:
+    - `limit` (number, optional): Results per page (max 50)
+    - `offset` (number, optional): Pagination offset
+    - `sort_asc` (boolean, optional): Sort in ascending order
+    - `sort_by` (string, optional): Sort by field (name)
+
+- **slide_get_account**
+  - Get detailed information about a specific account
+  - Inputs:
+    - `account_id` (string, required): ID of the account to retrieve
+
+- **slide_update_account**
+  - Update an account's properties (primarily alert emails)
+  - Inputs:
+    - `account_id` (string, required): ID of the account to update
+    - `alert_emails` (array of strings, required): List of email addresses to send alert emails to
+
+### Client Tools
+
+- **slide_list_clients**
+  - List all clients with pagination and filtering
+  - Inputs:
+    - `limit` (number, optional): Results per page (max 50)
+    - `offset` (number, optional): Pagination offset
+    - `sort_asc` (boolean, optional): Sort in ascending order
+    - `sort_by` (string, optional): Sort by field (id)
+
+- **slide_get_client**
+  - Get detailed information about a specific client
+  - Inputs:
+    - `client_id` (string, required): ID of the client to retrieve
+
+- **slide_create_client**
+  - Create a new client
+  - Inputs:
+    - `name` (string, required): Name of the client
+    - `comments` (string, optional): Comments about the client
+
+- **slide_update_client**
+  - Update a client's properties
+  - Inputs:
+    - `client_id` (string, required): ID of the client to update
+    - `name` (string, optional): New name for the client
+    - `comments` (string, optional): New comments about the client
+
+- **slide_delete_client**
+  - Delete a client
+  - Inputs:
+    - `client_id` (string, required): ID of the client to delete
 
 ## Configuration
 

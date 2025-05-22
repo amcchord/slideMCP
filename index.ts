@@ -187,6 +187,41 @@ interface User {
   role_id: string;
 }
 
+interface Alert {
+  alert_id: string;
+  alert_type: string;
+  alert_fields: string;
+  created_at: string;
+  resolved: boolean;
+  resolved_at?: string;
+  resolved_by?: string;
+  device_id?: string;
+  agent_id?: string;
+}
+
+interface Account {
+  account_id: string;
+  account_name: string;
+  primary_contact: string;
+  primary_email: string;
+  primary_phone: string;
+  billing_address: {
+    Line1: string;
+    Line2?: string;
+    City: string;
+    State: string;
+    PostalCode: string;
+    Country: string;
+  };
+  alert_emails: string[];
+}
+
+interface Client {
+  client_id: string;
+  name: string;
+  comments: string;
+}
+
 interface PaginatedResponse<T> {
   pagination: {
     total: number;
@@ -876,6 +911,251 @@ const GET_USER_TOOL = {
   }
 };
 
+// Define the slide_list_alerts tool
+const LIST_ALERTS_TOOL = {
+  name: "slide_list_alerts",
+  description: "List all alerts with pagination and filtering options",
+  inputSchema: {
+    type: "object",
+    properties: {
+      limit: {
+        type: "number",
+        description: "Number of results per page (max 50)"
+      },
+      offset: {
+        type: "number",
+        description: "Pagination offset"
+      },
+      device_id: {
+        type: "string",
+        description: "Filter by device ID"
+      },
+      agent_id: {
+        type: "string",
+        description: "Filter by agent ID"
+      },
+      resolved: {
+        type: "boolean",
+        description: "Filter by resolved status"
+      },
+      sort_asc: {
+        type: "boolean",
+        description: "Sort in ascending order"
+      },
+      sort_by: {
+        type: "string",
+        description: "Sort by field (created)"
+      }
+    }
+  }
+};
+
+// Define the slide_get_alert tool
+const GET_ALERT_TOOL = {
+  name: "slide_get_alert",
+  description: "Get detailed information about a specific alert",
+  inputSchema: {
+    type: "object",
+    properties: {
+      alert_id: {
+        type: "string",
+        description: "ID of the alert to retrieve"
+      }
+    },
+    required: ["alert_id"]
+  }
+};
+
+// Define the slide_update_alert tool
+const UPDATE_ALERT_TOOL = {
+  name: "slide_update_alert",
+  description: "Update an alert's properties (primarily used to resolve alerts)",
+  inputSchema: {
+    type: "object",
+    properties: {
+      alert_id: {
+        type: "string",
+        description: "ID of the alert to update"
+      },
+      resolved: {
+        type: "boolean",
+        description: "Set to true to resolve the alert"
+      }
+    },
+    required: ["alert_id", "resolved"]
+  }
+};
+
+// Define the slide_list_accounts tool
+const LIST_ACCOUNTS_TOOL = {
+  name: "slide_list_accounts",
+  description: "List all accounts with pagination and filtering options",
+  inputSchema: {
+    type: "object",
+    properties: {
+      limit: {
+        type: "number",
+        description: "Number of results per page (max 50)"
+      },
+      offset: {
+        type: "number",
+        description: "Pagination offset"
+      },
+      sort_asc: {
+        type: "boolean",
+        description: "Sort in ascending order"
+      },
+      sort_by: {
+        type: "string",
+        description: "Sort by field (name)"
+      }
+    }
+  }
+};
+
+// Define the slide_get_account tool
+const GET_ACCOUNT_TOOL = {
+  name: "slide_get_account",
+  description: "Get detailed information about a specific account",
+  inputSchema: {
+    type: "object",
+    properties: {
+      account_id: {
+        type: "string",
+        description: "ID of the account to retrieve"
+      }
+    },
+    required: ["account_id"]
+  }
+};
+
+// Define the slide_update_account tool
+const UPDATE_ACCOUNT_TOOL = {
+  name: "slide_update_account",
+  description: "Update an account's properties (primarily alert emails)",
+  inputSchema: {
+    type: "object",
+    properties: {
+      account_id: {
+        type: "string",
+        description: "ID of the account to update"
+      },
+      alert_emails: {
+        type: "array",
+        items: {
+          type: "string"
+        },
+        description: "List of email addresses to send alert emails to"
+      }
+    },
+    required: ["account_id", "alert_emails"]
+  }
+};
+
+// Define the slide_list_clients tool
+const LIST_CLIENTS_TOOL = {
+  name: "slide_list_clients",
+  description: "List all clients with pagination and filtering options",
+  inputSchema: {
+    type: "object",
+    properties: {
+      limit: {
+        type: "number",
+        description: "Number of results per page (max 50)"
+      },
+      offset: {
+        type: "number",
+        description: "Pagination offset"
+      },
+      sort_asc: {
+        type: "boolean",
+        description: "Sort in ascending order"
+      },
+      sort_by: {
+        type: "string",
+        description: "Sort by field (id)"
+      }
+    }
+  }
+};
+
+// Define the slide_get_client tool
+const GET_CLIENT_TOOL = {
+  name: "slide_get_client",
+  description: "Get detailed information about a specific client",
+  inputSchema: {
+    type: "object",
+    properties: {
+      client_id: {
+        type: "string",
+        description: "ID of the client to retrieve"
+      }
+    },
+    required: ["client_id"]
+  }
+};
+
+// Define the slide_create_client tool
+const CREATE_CLIENT_TOOL = {
+  name: "slide_create_client",
+  description: "Create a new client",
+  inputSchema: {
+    type: "object",
+    properties: {
+      name: {
+        type: "string",
+        description: "Name of the client"
+      },
+      comments: {
+        type: "string",
+        description: "Comments about the client"
+      }
+    },
+    required: ["name"]
+  }
+};
+
+// Define the slide_update_client tool
+const UPDATE_CLIENT_TOOL = {
+  name: "slide_update_client",
+  description: "Update a client's properties",
+  inputSchema: {
+    type: "object",
+    properties: {
+      client_id: {
+        type: "string",
+        description: "ID of the client to update"
+      },
+      name: {
+        type: "string",
+        description: "New name for the client"
+      },
+      comments: {
+        type: "string",
+        description: "New comments about the client"
+      }
+    },
+    required: ["client_id"]
+  }
+};
+
+// Define the slide_delete_client tool
+const DELETE_CLIENT_TOOL = {
+  name: "slide_delete_client",
+  description: "Delete a client",
+  inputSchema: {
+    type: "object",
+    properties: {
+      client_id: {
+        type: "string",
+        description: "ID of the client to delete"
+      }
+    },
+    required: ["client_id"]
+  }
+};
+
+// Function to check if args are valid for the list_devices tool
 // Function to check if args are valid for the list_devices tool
 function isListDevicesArgs(args: unknown): args is { 
   limit?: number; 
@@ -886,6 +1166,69 @@ function isListDevicesArgs(args: unknown): args is {
   return (
     typeof args === "object" &&
     args !== null
+  );
+}
+
+// Function to check if args are valid for the list_clients tool
+function isListClientsArgs(args: unknown): args is {
+  limit?: number;
+  offset?: number;
+  sort_asc?: boolean;
+  sort_by?: string;
+} {
+  return (
+    typeof args === "object" &&
+    args !== null
+  );
+}
+
+// Function to check if args are valid for the get_client tool
+function isGetClientArgs(args: unknown): args is {
+  client_id: string;
+} {
+  return (
+    typeof args === "object" &&
+    args !== null &&
+    typeof (args as any).client_id === "string"
+  );
+}
+
+// Function to check if args are valid for the create_client tool
+function isCreateClientArgs(args: unknown): args is {
+  name: string;
+  comments?: string;
+} {
+  return (
+    typeof args === "object" &&
+    args !== null &&
+    typeof (args as any).name === "string" &&
+    (typeof (args as any).comments === "string" || (args as any).comments === undefined)
+  );
+}
+
+// Function to check if args are valid for the update_client tool
+function isUpdateClientArgs(args: unknown): args is {
+  client_id: string;
+  name?: string;
+  comments?: string;
+} {
+  return (
+    typeof args === "object" &&
+    args !== null &&
+    typeof (args as any).client_id === "string" &&
+    (typeof (args as any).name === "string" || (args as any).name === undefined) &&
+    (typeof (args as any).comments === "string" || (args as any).comments === undefined)
+  );
+}
+
+// Function to check if args are valid for the delete_client tool
+function isDeleteClientArgs(args: unknown): args is {
+  client_id: string;
+} {
+  return (
+    typeof args === "object" &&
+    args !== null &&
+    typeof (args as any).client_id === "string"
   );
 }
 
@@ -1236,6 +1579,84 @@ function isGetUserArgs(args: unknown): args is {
     typeof args === "object" &&
     args !== null &&
     typeof (args as any).user_id === "string"
+  );
+}
+
+// Function to check if args are valid for the list_alerts tool
+function isListAlertsArgs(args: unknown): args is {
+  limit?: number;
+  offset?: number;
+  device_id?: string;
+  agent_id?: string;
+  resolved?: boolean;
+  sort_asc?: boolean;
+  sort_by?: string;
+} {
+  return (
+    typeof args === "object" &&
+    args !== null
+  );
+}
+
+// Function to check if args are valid for the get_alert tool
+function isGetAlertArgs(args: unknown): args is {
+  alert_id: string;
+} {
+  return (
+    typeof args === "object" &&
+    args !== null &&
+    typeof (args as any).alert_id === "string"
+  );
+}
+
+// Function to check if args are valid for the update_alert tool
+function isUpdateAlertArgs(args: unknown): args is {
+  alert_id: string;
+  resolved: boolean;
+} {
+  return (
+    typeof args === "object" &&
+    args !== null &&
+    typeof (args as any).alert_id === "string" &&
+    typeof (args as any).resolved === "boolean"
+  );
+}
+
+// Function to check if args are valid for the list_accounts tool
+function isListAccountsArgs(args: unknown): args is {
+  limit?: number;
+  offset?: number;
+  sort_asc?: boolean;
+  sort_by?: string;
+} {
+  return (
+    typeof args === "object" &&
+    args !== null
+  );
+}
+
+// Function to check if args are valid for the get_account tool
+function isGetAccountArgs(args: unknown): args is {
+  account_id: string;
+} {
+  return (
+    typeof args === "object" &&
+    args !== null &&
+    typeof (args as any).account_id === "string"
+  );
+}
+
+// Function to check if args are valid for the update_account tool
+function isUpdateAccountArgs(args: unknown): args is {
+  account_id: string;
+  alert_emails: string[];
+} {
+  return (
+    typeof args === "object" &&
+    args !== null &&
+    typeof (args as any).account_id === "string" &&
+    Array.isArray((args as any).alert_emails) &&
+    (args as any).alert_emails.every((email: any) => typeof email === "string")
   );
 }
 
@@ -2484,6 +2905,466 @@ async function getUser(args: { user_id: string }) {
   }
 }
 
+// Function to list alerts
+async function listAlerts(args: {
+  limit?: number;
+  offset?: number;
+  device_id?: string;
+  agent_id?: string;
+  resolved?: boolean;
+  sort_asc?: boolean;
+  sort_by?: string;
+}) {
+  try {
+    const queryParams = new URLSearchParams();
+    
+    if (args.limit) {
+      queryParams.append('limit', args.limit.toString());
+    }
+    
+    if (args.offset) {
+      queryParams.append('offset', args.offset.toString());
+    }
+    
+    if (args.device_id) {
+      queryParams.append('device_id', args.device_id);
+    }
+    
+    if (args.agent_id) {
+      queryParams.append('agent_id', args.agent_id);
+    }
+    
+    if (args.resolved !== undefined) {
+      queryParams.append('resolved', args.resolved.toString());
+    }
+    
+    if (args.sort_asc !== undefined) {
+      queryParams.append('sort_asc', args.sort_asc.toString());
+    }
+    
+    if (args.sort_by) {
+      queryParams.append('sort_by', args.sort_by);
+    } else {
+      // Default sort by created
+      queryParams.append('sort_by', 'created');
+    }
+    
+    const response = await axios.get<PaginatedResponse<Alert>>(
+      `${API_BASE_URL}/v1/alert?${queryParams.toString()}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${SLIDE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response) {
+        const statusCode = axiosError.response.status;
+        const errorData = axiosError.response.data as any;
+        
+        throw new Error(`API Error (${statusCode}): ${errorData.message || 'Unknown error'}`);
+      }
+      
+      throw new Error(`Network Error: ${error.message}`);
+    }
+    
+    throw new Error(`Error: ${(error as Error).message}`);
+  }
+}
+
+// Function to get alert by ID
+async function getAlert(args: { alert_id: string }) {
+  try {
+    const response = await axios.get<Alert>(
+      `${API_BASE_URL}/v1/alert/${args.alert_id}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${SLIDE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response) {
+        const statusCode = axiosError.response.status;
+        const errorData = axiosError.response.data as any;
+        
+        throw new Error(`API Error (${statusCode}): ${errorData.message || 'Unknown error'}`);
+      }
+      
+      throw new Error(`Network Error: ${error.message}`);
+    }
+    
+    throw new Error(`Error: ${(error as Error).message}`);
+  }
+}
+
+// Function to update an alert
+async function updateAlert(args: { alert_id: string; resolved: boolean }) {
+  try {
+    const response = await axios.patch<Alert>(
+      `${API_BASE_URL}/v1/alert/${args.alert_id}`,
+      {
+        resolved: args.resolved
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${SLIDE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response) {
+        const statusCode = axiosError.response.status;
+        const errorData = axiosError.response.data as any;
+        
+        throw new Error(`API Error (${statusCode}): ${errorData.message || 'Unknown error'}`);
+      }
+      
+      throw new Error(`Network Error: ${error.message}`);
+    }
+    
+    throw new Error(`Error: ${(error as Error).message}`);
+  }
+}
+
+// Function to list accounts
+async function listAccounts(args: {
+  limit?: number;
+  offset?: number;
+  sort_asc?: boolean;
+  sort_by?: string;
+}) {
+  try {
+    const queryParams = new URLSearchParams();
+    
+    if (args.limit) {
+      queryParams.append('limit', args.limit.toString());
+    }
+    
+    if (args.offset) {
+      queryParams.append('offset', args.offset.toString());
+    }
+    
+    if (args.sort_asc !== undefined) {
+      queryParams.append('sort_asc', args.sort_asc.toString());
+    }
+    
+    if (args.sort_by) {
+      queryParams.append('sort_by', args.sort_by);
+    } else {
+      // Default sort by name
+      queryParams.append('sort_by', 'name');
+    }
+    
+    const response = await axios.get<PaginatedResponse<Account>>(
+      `${API_BASE_URL}/v1/account?${queryParams.toString()}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${SLIDE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response) {
+        const statusCode = axiosError.response.status;
+        const errorData = axiosError.response.data as any;
+        
+        throw new Error(`API Error (${statusCode}): ${errorData.message || 'Unknown error'}`);
+      }
+      
+      throw new Error(`Network Error: ${error.message}`);
+    }
+    
+    throw new Error(`Error: ${(error as Error).message}`);
+  }
+}
+
+// Function to get account by ID
+async function getAccount(args: { account_id: string }) {
+  try {
+    const response = await axios.get<Account>(
+      `${API_BASE_URL}/v1/account/${args.account_id}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${SLIDE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response) {
+        const statusCode = axiosError.response.status;
+        const errorData = axiosError.response.data as any;
+        
+        throw new Error(`API Error (${statusCode}): ${errorData.message || 'Unknown error'}`);
+      }
+      
+      throw new Error(`Network Error: ${error.message}`);
+    }
+    
+    throw new Error(`Error: ${(error as Error).message}`);
+  }
+}
+
+// Function to update an account
+async function updateAccount(args: { account_id: string; alert_emails: string[] }) {
+  try {
+    const response = await axios.patch<Account>(
+      `${API_BASE_URL}/v1/account/${args.account_id}`,
+      {
+        alert_emails: args.alert_emails
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${SLIDE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response) {
+        const statusCode = axiosError.response.status;
+        const errorData = axiosError.response.data as any;
+        
+        throw new Error(`API Error (${statusCode}): ${errorData.message || 'Unknown error'}`);
+      }
+      
+      throw new Error(`Network Error: ${error.message}`);
+    }
+    
+    throw new Error(`Error: ${(error as Error).message}`);
+  }
+}
+
+// Function to list clients
+async function listClients(args: {
+  limit?: number;
+  offset?: number;
+  sort_asc?: boolean;
+  sort_by?: string;
+}) {
+  try {
+    const queryParams = new URLSearchParams();
+    
+    if (args.limit) {
+      queryParams.append('limit', args.limit.toString());
+    }
+    
+    if (args.offset) {
+      queryParams.append('offset', args.offset.toString());
+    }
+    
+    if (args.sort_asc !== undefined) {
+      queryParams.append('sort_asc', args.sort_asc.toString());
+    }
+    
+    if (args.sort_by) {
+      queryParams.append('sort_by', args.sort_by);
+    } else {
+      // Default sort by id
+      queryParams.append('sort_by', 'id');
+    }
+    
+    const response = await axios.get<PaginatedResponse<Client>>(
+      `${API_BASE_URL}/v1/client?${queryParams.toString()}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${SLIDE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response) {
+        const statusCode = axiosError.response.status;
+        const errorData = axiosError.response.data as any;
+        
+        throw new Error(`API Error (${statusCode}): ${errorData.message || 'Unknown error'}`);
+      }
+      
+      throw new Error(`Network Error: ${error.message}`);
+    }
+    
+    throw new Error(`Error: ${(error as Error).message}`);
+  }
+}
+
+// Function to get client by ID
+async function getClient(args: { client_id: string }) {
+  try {
+    const response = await axios.get<Client>(
+      `${API_BASE_URL}/v1/client/${args.client_id}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${SLIDE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response) {
+        const statusCode = axiosError.response.status;
+        const errorData = axiosError.response.data as any;
+        
+        throw new Error(`API Error (${statusCode}): ${errorData.message || 'Unknown error'}`);
+      }
+      
+      throw new Error(`Network Error: ${error.message}`);
+    }
+    
+    throw new Error(`Error: ${(error as Error).message}`);
+  }
+}
+
+// Function to create a client
+async function createClient(args: { name: string; comments?: string }) {
+  try {
+    const requestBody: any = {
+      name: args.name
+    };
+    
+    if (args.comments) {
+      requestBody.comments = args.comments;
+    }
+    
+    const response = await axios.post<Client>(
+      `${API_BASE_URL}/v1/client`,
+      requestBody,
+      {
+        headers: {
+          'Authorization': `Bearer ${SLIDE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response) {
+        const statusCode = axiosError.response.status;
+        const errorData = axiosError.response.data as any;
+        
+        throw new Error(`API Error (${statusCode}): ${errorData.message || 'Unknown error'}`);
+      }
+      
+      throw new Error(`Network Error: ${error.message}`);
+    }
+    
+    throw new Error(`Error: ${(error as Error).message}`);
+  }
+}
+
+// Function to update a client
+async function updateClient(args: { client_id: string; name?: string; comments?: string }) {
+  try {
+    const requestBody: any = {};
+    
+    if (args.name) {
+      requestBody.name = args.name;
+    }
+    
+    if (args.comments !== undefined) {
+      requestBody.comments = args.comments;
+    }
+    
+    const response = await axios.patch<Client>(
+      `${API_BASE_URL}/v1/client/${args.client_id}`,
+      requestBody,
+      {
+        headers: {
+          'Authorization': `Bearer ${SLIDE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response) {
+        const statusCode = axiosError.response.status;
+        const errorData = axiosError.response.data as any;
+        
+        throw new Error(`API Error (${statusCode}): ${errorData.message || 'Unknown error'}`);
+      }
+      
+      throw new Error(`Network Error: ${error.message}`);
+    }
+    
+    throw new Error(`Error: ${(error as Error).message}`);
+  }
+}
+
+// Function to delete a client
+async function deleteClient(args: { client_id: string }) {
+  try {
+    await axios.delete(
+      `${API_BASE_URL}/v1/client/${args.client_id}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${SLIDE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    
+    return { success: true, message: `Client ${args.client_id} deleted successfully` };
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response) {
+        const statusCode = axiosError.response.status;
+        const errorData = axiosError.response.data as any;
+        
+        throw new Error(`API Error (${statusCode}): ${errorData.message || 'Unknown error'}`);
+      }
+      
+      throw new Error(`Network Error: ${error.message}`);
+    }
+    
+    throw new Error(`Error: ${(error as Error).message}`);
+  }
+}
+
 // Server implements the listTools request
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [
@@ -2514,7 +3395,18 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     UPDATE_VIRTUAL_MACHINE_TOOL,
     DELETE_VIRTUAL_MACHINE_TOOL,
     LIST_USERS_TOOL,
-    GET_USER_TOOL
+    GET_USER_TOOL,
+    LIST_ALERTS_TOOL,
+    GET_ALERT_TOOL,
+    UPDATE_ALERT_TOOL,
+    LIST_ACCOUNTS_TOOL,
+    GET_ACCOUNT_TOOL,
+    UPDATE_ACCOUNT_TOOL,
+    LIST_CLIENTS_TOOL,
+    GET_CLIENT_TOOL,
+    CREATE_CLIENT_TOOL,
+    UPDATE_CLIENT_TOOL,
+    DELETE_CLIENT_TOOL
   ],
 }));
 
@@ -3174,6 +4066,239 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         
         return {
           content: [{ type: "text", text: JSON.stringify(enhancedResult, null, 2) }],
+          isError: false,
+        };
+      }
+
+      case "slide_list_alerts": {
+        if (!isListAlertsArgs(args)) {
+          throw new Error("Invalid arguments for slide_list_alerts");
+        }
+        
+        const result = await listAlerts(args);
+        
+        // Add metadata to guide the LLM on how to present and refer to alerts
+        const enhancedResult = {
+          ...result,
+          _metadata: {
+            primary_identifier: "alert_id",
+            presentation_guidance: "When presenting alerts, highlight unresolved alerts first, and categorize by alert_type. Alert IDs are internal identifiers."
+          }
+        };
+        
+        return {
+          content: [{ type: "text", text: JSON.stringify(enhancedResult, null, 2) }],
+          isError: false,
+        };
+      }
+
+      case "slide_get_alert": {
+        if (!isGetAlertArgs(args)) {
+          throw new Error("Invalid arguments for slide_get_alert");
+        }
+        
+        const result = await getAlert(args);
+        
+        // Add metadata to guide the LLM on how to present and refer to the alert
+        const enhancedResult = {
+          ...result,
+          _metadata: {
+            primary_identifier: "alert_id",
+            presentation_guidance: "When presenting the alert, highlight its type, whether it's resolved, and related device or agent if present."
+          }
+        };
+        
+        return {
+          content: [{ type: "text", text: JSON.stringify(enhancedResult, null, 2) }],
+          isError: false,
+        };
+      }
+
+      case "slide_update_alert": {
+        if (!isUpdateAlertArgs(args)) {
+          throw new Error("Invalid arguments for slide_update_alert");
+        }
+        
+        const result = await updateAlert(args);
+        
+        // Add metadata to guide the LLM on how to present the updated alert
+        const enhancedResult = {
+          ...result,
+          _metadata: {
+            primary_identifier: "alert_id",
+            presentation_guidance: "When confirming alert update, indicate whether it was successfully resolved."
+          }
+        };
+        
+        return {
+          content: [{ type: "text", text: JSON.stringify(enhancedResult, null, 2) }],
+          isError: false,
+        };
+      }
+
+      case "slide_list_accounts": {
+        if (!isListAccountsArgs(args)) {
+          throw new Error("Invalid arguments for slide_list_accounts");
+        }
+        
+        const result = await listAccounts(args);
+        
+        // Add metadata to guide the LLM on how to present and refer to accounts
+        const enhancedResult = {
+          ...result,
+          _metadata: {
+            primary_identifier: "account_name",
+            presentation_guidance: "When presenting accounts, use the account name as the primary identifier. Account IDs are internal identifiers not commonly used by humans."
+          }
+        };
+        
+        return {
+          content: [{ type: "text", text: JSON.stringify(enhancedResult, null, 2) }],
+          isError: false,
+        };
+      }
+
+      case "slide_get_account": {
+        if (!isGetAccountArgs(args)) {
+          throw new Error("Invalid arguments for slide_get_account");
+        }
+        
+        const result = await getAccount(args);
+        
+        // Add metadata to guide the LLM on how to present and refer to the account
+        const enhancedResult = {
+          ...result,
+          _metadata: {
+            primary_identifier: "account_name",
+            presentation_guidance: "When presenting account details, highlight account name, primary contact, and alert email settings."
+          }
+        };
+        
+        return {
+          content: [{ type: "text", text: JSON.stringify(enhancedResult, null, 2) }],
+          isError: false,
+        };
+      }
+
+      case "slide_update_account": {
+        if (!isUpdateAccountArgs(args)) {
+          throw new Error("Invalid arguments for slide_update_account");
+        }
+        
+        const result = await updateAccount(args);
+        
+        // Add metadata to guide the LLM on how to present the updated account
+        const enhancedResult = {
+          ...result,
+          _metadata: {
+            primary_identifier: "account_name",
+            presentation_guidance: "When confirming account update, highlight the new alert email settings that were applied."
+          }
+        };
+        
+        return {
+          content: [{ type: "text", text: JSON.stringify(enhancedResult, null, 2) }],
+          isError: false,
+        };
+      }
+
+      case "slide_list_clients": {
+        if (!isListClientsArgs(args)) {
+          throw new Error("Invalid arguments for slide_list_clients");
+        }
+        
+        const result = await listClients(args);
+        
+        // Add metadata to guide the LLM on how to present and refer to clients
+        const enhancedResult = {
+          ...result,
+          _metadata: {
+            primary_identifier: "name",
+            presentation_guidance: "When presenting clients, use the client name as the primary identifier. Client IDs are internal identifiers not commonly used by humans."
+          }
+        };
+        
+        return {
+          content: [{ type: "text", text: JSON.stringify(enhancedResult, null, 2) }],
+          isError: false,
+        };
+      }
+
+      case "slide_get_client": {
+        if (!isGetClientArgs(args)) {
+          throw new Error("Invalid arguments for slide_get_client");
+        }
+        
+        const result = await getClient(args);
+        
+        // Add metadata to guide the LLM on how to present and refer to the client
+        const enhancedResult = {
+          ...result,
+          _metadata: {
+            primary_identifier: "name",
+            presentation_guidance: "When presenting client details, highlight client name and comments."
+          }
+        };
+        
+        return {
+          content: [{ type: "text", text: JSON.stringify(enhancedResult, null, 2) }],
+          isError: false,
+        };
+      }
+
+      case "slide_create_client": {
+        if (!isCreateClientArgs(args)) {
+          throw new Error("Invalid arguments for slide_create_client");
+        }
+        
+        const result = await createClient(args);
+        
+        // Add metadata to guide the LLM on how to present the created client
+        const enhancedResult = {
+          ...result,
+          _metadata: {
+            primary_identifier: "name",
+            presentation_guidance: "When confirming client creation, highlight the new client name and ID."
+          }
+        };
+        
+        return {
+          content: [{ type: "text", text: JSON.stringify(enhancedResult, null, 2) }],
+          isError: false,
+        };
+      }
+
+      case "slide_update_client": {
+        if (!isUpdateClientArgs(args)) {
+          throw new Error("Invalid arguments for slide_update_client");
+        }
+        
+        const result = await updateClient(args);
+        
+        // Add metadata to guide the LLM on how to present the updated client
+        const enhancedResult = {
+          ...result,
+          _metadata: {
+            primary_identifier: "name",
+            presentation_guidance: "When confirming client update, highlight the updated fields."
+          }
+        };
+        
+        return {
+          content: [{ type: "text", text: JSON.stringify(enhancedResult, null, 2) }],
+          isError: false,
+        };
+      }
+
+      case "slide_delete_client": {
+        if (!isDeleteClientArgs(args)) {
+          throw new Error("Invalid arguments for slide_delete_client");
+        }
+        
+        const result = await deleteClient(args);
+        
+        return {
+          content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
           isError: false,
         };
       }
