@@ -13,9 +13,14 @@ dotenv.config();
 
 // Helper function to generate VNC viewer URL
 function generateVncViewerUrl(virtId: string, websocketUri: string, vncPassword: string): string {
-  // URL encode the websocket URI
+  // URL encode the websocket URI and base64 encode the password
   const encodedWebsocketUri = encodeURIComponent(websocketUri);
-  return `https://slide.recipes/mcpTools/vncViewer.php?id=${virtId}&ws=${encodedWebsocketUri}&password=${vncPassword}`;
+  
+  // Use Buffer.from for base64 encoding (Node.js environment)
+  const base64Password = Buffer.from(vncPassword).toString('base64');
+  
+  // Return a browser-accessible VNC viewer URL for easy console access with base64-encoded password
+  return `https://slide.recipes/mcpTools/vncViewer.php?id=${virtId}&ws=${encodedWebsocketUri}&password=${base64Password}&encoding=base64`;
 }
 
 const SLIDE_API_KEY = process.env.SLIDE_API_KEY;
@@ -2812,13 +2817,34 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         
         const result = await listVirtualMachines(args);
         
+        // Process each VM to add VNC viewer URLs
+        if (result.data && result.data.length > 0) {
+          result.data = result.data.map(vm => {
+            // Generate VNC viewer URL if websocket URI is available
+            let vncViewerUrl = null;
+            if (vm.vnc && vm.vnc.length > 0) {
+              const vncInfo = vm.vnc.find(v => v.websocket_uri);
+              if (vncInfo && vncInfo.websocket_uri) {
+                vncViewerUrl = generateVncViewerUrl(vm.virt_id, vncInfo.websocket_uri, vm.vnc_password);
+              }
+            }
+            
+            // Add the VNC viewer URL to each VM
+            return {
+              ...vm,
+              _vnc_viewer_url: vncViewerUrl
+            };
+          });
+        }
+        
         // Add metadata to guide the LLM on how to present and refer to virtual machines
         const enhancedResult = {
           ...result,
           _metadata: {
             primary_identifier: "virt_id",
             presentation_guidance: "When referring to virtual machines, use the virt_id as the primary identifier. Virtual machine IDs are internal identifiers not commonly used by humans.",
-            workflow_guidance: "Virtual machines are created from snapshots. To create a virtual machine, use slide_create_virtual_machine with a snapshot_id and device_id."
+            workflow_guidance: "Virtual machines are created from snapshots. To create a virtual machine, use slide_create_virtual_machine with a snapshot_id and device_id.",
+            vnc_guidance: "Each virtual machine includes a _vnc_viewer_url property that provides a direct link to access its console through a browser-based VNC client."
           }
         };
         
@@ -2850,7 +2876,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           _metadata: {
             primary_identifier: "virt_id",
             presentation_guidance: "When referring to the virtual machine, use the virt_id as the primary identifier. Virtual machine IDs are internal identifiers not commonly used by humans.",
-            vnc_guidance: "If the virtual machine has VNC connections available, they can be used to remotely access the VM's console.",
+            vnc_guidance: "Use the vnc_viewer_url to access the virtual machine's console via a browser-based VNC client.",
             vnc_viewer_url: vncViewerUrl
           }
         };
@@ -2918,6 +2944,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           _metadata: {
             primary_identifier: "virt_id",
             presentation_guidance: "When referring to the virtual machine, use the virt_id as the primary identifier. Virtual machine IDs are internal identifiers not commonly used by humans.",
+            vnc_guidance: "Use the vnc_viewer_url to access the virtual machine's console via a browser-based VNC client.",
             vnc_viewer_url: vncViewerUrl
           }
         };

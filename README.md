@@ -187,7 +187,7 @@ Image exports allow you to export snapshots as disk images for use outside of Sl
 Virtual machines allow you to run a snapshot as a virtualized computer on a Slide device. The typical workflow is:
 1. Create a virtual machine from a snapshot using `slide_create_virtual_machine`
 2. Control the VM using `slide_update_virtual_machine` to start, stop, or modify resources
-3. Access the VM using the VNC details provided in the response
+3. Access the VM using the `vnc_viewer_url` provided in the response metadata (a direct link to a browser-based VNC console)
 4. When finished, delete the virtual machine using `slide_delete_virtual_machine`
 
 - **slide_list_virtual_machines**
@@ -197,11 +197,13 @@ Virtual machines allow you to run a snapshot as a virtualized computer on a Slid
     - `offset` (number, optional): Pagination offset
     - `sort_asc` (boolean, optional): Sort in ascending order
     - `sort_by` (string, optional): Sort by field (created)
+  - Note: Each virtual machine in the response includes a `_vnc_viewer_url` property for direct browser-based console access
 
 - **slide_get_virtual_machine**
   - Get detailed information about a specific virtual machine
   - Inputs:
     - `virt_id` (string, required): ID of the virtual machine to retrieve
+  - Note: The response includes a `vnc_viewer_url` in the metadata for easy browser-based access to the VM console
 
 - **slide_create_virtual_machine**
   - Create a virtual machine from a snapshot
@@ -216,6 +218,7 @@ Virtual machines allow you to run a snapshot as a virtualized computer on a Slid
     - `network_source` (string, optional): Network ID when network_type is network-id
     - `boot_mods` (array of strings, optional): Optional boot modifications to apply (e.g., 'passwordless_admin_user')
   - Note: For most virtual machines, 8192MB of RAM is recommended for optimal performance
+  - Note: The response includes a `vnc_viewer_url` in the metadata for easy browser-based access to the VM console
 
 - **slide_update_virtual_machine**
   - Update a virtual machine's properties
