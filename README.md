@@ -1,24 +1,85 @@
 # Slide MCP Server
 
-An MCP server implementation that integrates with the Slide API, providing device management capabilities.
+An MCP server implementation that integrates with the Slide API, providing device and agent management capabilities.
 
 ## Features
 
 - **Device Management**: List all devices with pagination and filtering options
-- **Detailed Information**: Get comprehensive details about each device including status, storage, and network information
-- **Flexible Filtering**: Filter devices by client ID and sort by hostname
+- **Agent Management**: List, create, pair, and update agents
+- **Backup Management**: List, retrieve, and initiate backups
+- **Detailed Information**: Get comprehensive details about each device and agent including status, storage, and network information
+- **Flexible Filtering**: Filter devices and agents by client ID, device ID, and other parameters
 - **Pagination Support**: Control results per page with offset and limit parameters
 
 ## Tools
 
-- **slide_list_devices**
+### Device Tools
 
+- **slide_list_devices**
   - List all devices with pagination and filtering
   - Inputs:
     - `limit` (number, optional): Results per page (max 50)
     - `offset` (number, optional): Pagination offset
     - `client_id` (string, optional): Filter by client ID
     - `sort_asc` (boolean, optional): Sort in ascending order
+
+### Agent Tools
+
+- **slide_list_agents**
+  - List all agents with pagination and filtering
+  - Inputs:
+    - `limit` (number, optional): Results per page (max 50)
+    - `offset` (number, optional): Pagination offset
+    - `device_id` (string, optional): Filter by device ID
+    - `client_id` (string, optional): Filter by client ID
+    - `sort_asc` (boolean, optional): Sort in ascending order
+    - `sort_by` (string, optional): Sort by field (id, hostname, name)
+
+- **slide_get_agent**
+  - Get detailed information about a specific agent
+  - Inputs:
+    - `agent_id` (string, required): ID of the agent to retrieve
+
+- **slide_create_agent**
+  - Create an agent for auto-pair installation
+  - Inputs:
+    - `display_name` (string, required): Display name for the agent
+    - `device_id` (string, required): ID of the device to associate with the agent
+
+- **slide_pair_agent**
+  - Pair an agent with a device using a pair code
+  - Inputs:
+    - `pair_code` (string, required): Pair code generated during agent creation
+    - `device_id` (string, required): ID of the device to pair with
+
+- **slide_update_agent**
+  - Update an agent's properties
+  - Inputs:
+    - `agent_id` (string, required): ID of the agent to update
+    - `display_name` (string, required): New display name for the agent
+
+### Backup Tools
+
+- **slide_list_backups**
+  - List all backups with pagination and filtering
+  - Inputs:
+    - `limit` (number, optional): Results per page (max 50)
+    - `offset` (number, optional): Pagination offset
+    - `agent_id` (string, optional): Filter by agent ID
+    - `device_id` (string, optional): Filter by device ID
+    - `snapshot_id` (string, optional): Filter by snapshot ID
+    - `sort_asc` (boolean, optional): Sort in ascending order
+    - `sort_by` (string, optional): Sort by field (id, start_time)
+
+- **slide_get_backup**
+  - Get detailed information about a specific backup
+  - Inputs:
+    - `backup_id` (string, required): ID of the backup to retrieve
+
+- **slide_start_backup**
+  - Start a backup for a specific agent
+  - Inputs:
+    - `agent_id` (string, required): ID of the agent to backup
 
 ## Configuration
 
@@ -158,3 +219,4 @@ docker build -t mcp/slide:latest -f Dockerfile .
 ## License
 
 This MCP server is licensed under the MIT License. This means you are free to use, modify, and distribute the software, subject to the terms and conditions of the MIT License. For more details, please see the LICENSE file in the project repository.
+
