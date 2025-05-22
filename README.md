@@ -9,6 +9,7 @@ An MCP server implementation that integrates with the Slide API, providing devic
 - **Backup Management**: List, retrieve, and initiate backups
 - **Snapshot Management**: List and retrieve snapshots with detailed information
 - **Detailed Information**: Get comprehensive details about each device and agent including status, storage, and network information
+- **User Management**: List all users and retrieve detailed user information
 - **Flexible Filtering**: Filter devices and agents by client ID, device ID, and other parameters
 - **Pagination Support**: Control results per page with offset and limit parameters
 
@@ -233,6 +234,21 @@ Virtual machines allow you to run a snapshot as a virtualized computer on a Slid
   - Delete a virtual machine
   - Inputs:
     - `virt_id` (string, required): ID of the virtual machine to delete
+
+### User Tools
+
+- **slide_list_users**
+  - List all users with pagination and filtering
+  - Inputs:
+    - `limit` (number, optional): Results per page (max 50)
+    - `offset` (number, optional): Pagination offset
+    - `sort_asc` (boolean, optional): Sort in ascending order
+    - `sort_by` (string, optional): Sort by field (id)
+
+- **slide_get_user**
+  - Get detailed information about a specific user
+  - Inputs:
+    - `user_id` (string, required): ID of the user to retrieve
 
 ## Configuration
 

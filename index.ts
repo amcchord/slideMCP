@@ -178,6 +178,15 @@ interface VirtualMachine {
   vnc_password: string;
 }
 
+interface User {
+  user_id: string;
+  first_name: string;
+  last_name: string;
+  display_name: string;
+  email: string;
+  role_id: string;
+}
+
 interface PaginatedResponse<T> {
   pagination: {
     total: number;
@@ -824,6 +833,49 @@ const DELETE_VIRTUAL_MACHINE_TOOL = {
   }
 };
 
+// Define the slide_list_users tool
+const LIST_USERS_TOOL = {
+  name: "slide_list_users",
+  description: "List all users with pagination and filtering options",
+  inputSchema: {
+    type: "object",
+    properties: {
+      limit: {
+        type: "number",
+        description: "Number of results per page (max 50)"
+      },
+      offset: {
+        type: "number",
+        description: "Pagination offset"
+      },
+      sort_asc: {
+        type: "boolean",
+        description: "Sort in ascending order"
+      },
+      sort_by: {
+        type: "string",
+        description: "Sort by field (id)"
+      }
+    }
+  }
+};
+
+// Define the slide_get_user tool
+const GET_USER_TOOL = {
+  name: "slide_get_user",
+  description: "Get detailed information about a specific user",
+  inputSchema: {
+    type: "object",
+    properties: {
+      user_id: {
+        type: "string",
+        description: "ID of the user to retrieve"
+      }
+    },
+    required: ["user_id"]
+  }
+};
+
 // Function to check if args are valid for the list_devices tool
 function isListDevicesArgs(args: unknown): args is { 
   limit?: number; 
@@ -1160,6 +1212,30 @@ function isDeleteVirtualMachineArgs(args: unknown): args is {
     typeof args === "object" &&
     args !== null &&
     typeof (args as any).virt_id === "string"
+  );
+}
+
+// Function to check if args are valid for the list_users tool
+function isListUsersArgs(args: unknown): args is {
+  limit?: number;
+  offset?: number;
+  sort_asc?: boolean;
+  sort_by?: string;
+} {
+  return (
+    typeof args === "object" &&
+    args !== null
+  );
+}
+
+// Function to check if args are valid for the get_user tool
+function isGetUserArgs(args: unknown): args is {
+  user_id: string;
+} {
+  return (
+    typeof args === "object" &&
+    args !== null &&
+    typeof (args as any).user_id === "string"
   );
 }
 
@@ -2320,6 +2396,94 @@ async function deleteVirtualMachine(args: { virt_id: string }) {
   }
 }
 
+// Function to list users
+async function listUsers(args: {
+  limit?: number;
+  offset?: number;
+  sort_asc?: boolean;
+  sort_by?: string;
+}) {
+  try {
+    const queryParams = new URLSearchParams();
+    
+    if (args.limit) {
+      queryParams.append('limit', args.limit.toString());
+    }
+    
+    if (args.offset) {
+      queryParams.append('offset', args.offset.toString());
+    }
+    
+    if (args.sort_asc !== undefined) {
+      queryParams.append('sort_asc', args.sort_asc.toString());
+    }
+    
+    if (args.sort_by) {
+      queryParams.append('sort_by', args.sort_by);
+    } else {
+      // Default sort by id
+      queryParams.append('sort_by', 'id');
+    }
+    
+    const response = await axios.get<PaginatedResponse<User>>(
+      `${API_BASE_URL}/v1/user?${queryParams.toString()}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${SLIDE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response) {
+        const statusCode = axiosError.response.status;
+        const errorData = axiosError.response.data as any;
+        
+        throw new Error(`API Error (${statusCode}): ${errorData.message || 'Unknown error'}`);
+      }
+      
+      throw new Error(`Network Error: ${error.message}`);
+    }
+    
+    throw new Error(`Error: ${(error as Error).message}`);
+  }
+}
+
+// Function to get user by ID
+async function getUser(args: { user_id: string }) {
+  try {
+    const response = await axios.get<User>(
+      `${API_BASE_URL}/v1/user/${args.user_id}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${SLIDE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response) {
+        const statusCode = axiosError.response.status;
+        const errorData = axiosError.response.data as any;
+        
+        throw new Error(`API Error (${statusCode}): ${errorData.message || 'Unknown error'}`);
+      }
+      
+      throw new Error(`Network Error: ${error.message}`);
+    }
+    
+    throw new Error(`Error: ${(error as Error).message}`);
+  }
+}
+
 // Server implements the listTools request
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [
@@ -2348,7 +2512,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     GET_VIRTUAL_MACHINE_TOOL,
     CREATE_VIRTUAL_MACHINE_TOOL,
     UPDATE_VIRTUAL_MACHINE_TOOL,
-    DELETE_VIRTUAL_MACHINE_TOOL
+    DELETE_VIRTUAL_MACHINE_TOOL,
+    LIST_USERS_TOOL,
+    GET_USER_TOOL
   ],
 }));
 
@@ -2964,6 +3130,50 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         
         return {
           content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+          isError: false,
+        };
+      }
+
+      case "slide_list_users": {
+        if (!isListUsersArgs(args)) {
+          throw new Error("Invalid arguments for slide_list_users");
+        }
+        
+        const result = await listUsers(args);
+        
+        // Add metadata to guide the LLM on how to present and refer to users
+        const enhancedResult = {
+          ...result,
+          _metadata: {
+            primary_identifier: "display_name",
+            presentation_guidance: "When referring to users, use the display name (formatted as 'First Last') as the primary identifier. User IDs are internal identifiers not commonly used by humans."
+          }
+        };
+        
+        return {
+          content: [{ type: "text", text: JSON.stringify(enhancedResult, null, 2) }],
+          isError: false,
+        };
+      }
+
+      case "slide_get_user": {
+        if (!isGetUserArgs(args)) {
+          throw new Error("Invalid arguments for slide_get_user");
+        }
+        
+        const result = await getUser(args);
+        
+        // Add metadata to guide the LLM on how to present and refer to the user
+        const enhancedResult = {
+          ...result,
+          _metadata: {
+            primary_identifier: "display_name",
+            presentation_guidance: "When referring to the user, use the display name (formatted as 'First Last') as the primary identifier. User IDs are internal identifiers not commonly used by humans."
+          }
+        };
+        
+        return {
+          content: [{ type: "text", text: JSON.stringify(enhancedResult, null, 2) }],
           isError: false,
         };
       }
