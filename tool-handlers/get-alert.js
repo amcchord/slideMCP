@@ -1,0 +1,58 @@
+#!/usr/bin/env node
+
+/**
+ * Claude Desktop Tool Handler: slide_get_alert
+ * This script is executed by Claude Desktop when the slide_get_alert tool is called
+ */
+
+require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
+const { createClient } = require('../index');
+
+// Parse input arguments from Claude Desktop
+const args = process.argv.length > 2 ? JSON.parse(process.argv[2]) : {};
+
+// Get API key from environment variables
+const apiKey = process.env.SLIDE_API_KEY;
+
+if (!apiKey) {
+  console.error('ERROR: No API key found. Please create a .env file with SLIDE_API_KEY');
+  process.exit(1);
+}
+
+// Create Slide client
+const slideClient = createClient(apiKey);
+
+// Execute the API call
+async function getAlert() {
+  try {
+    // Required parameters check
+    if (!args.alert_id) {
+      throw new Error('alert_id is required');
+    }
+
+    const result = await slideClient.getAlert(args.alert_id);
+    
+    // Format the result for better readability in Claude's response
+    const formattedResult = {
+      id: result.alert_id,
+      type: result.type,
+      severity: result.severity,
+      message: result.message,
+      created_at: result.created_at,
+      resolved: result.resolved,
+      resolved_at: result.resolved_at,
+      device_id: result.device_id,
+      agent_id: result.agent_id,
+      details: result.details
+    };
+    
+    // Claude Desktop expects JSON output
+    console.log(JSON.stringify(formattedResult, null, 2));
+  } catch (error) {
+    console.error(JSON.stringify({ error: error.message }));
+    process.exit(1);
+  }
+}
+
+// Run the handler
+getAlert(); 
