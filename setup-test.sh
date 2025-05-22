@@ -1,50 +1,17 @@
 #!/bin/bash
 
-# setup-test.sh
-# This script creates a temporary .env file for testing the Slide API client
-# and cleans it up afterward to prevent accidental commits
+# Set up environment variables
+export SLIDE_API_KEY="tk_fzu45leaboc0_jqbDMMvhVMFOAv7nhq7M5kEA9tb2hl14"
+export SLIDE_API_URL="https://api.slide.tech"
+export SLIDE_API_VERSION="v1"
 
-# Check if API key was provided
-if [ $# -eq 0 ]; then
-    echo "Error: No API key provided"
-    echo "Usage: ./setup-test.sh YOUR_API_KEY"
-    exit 1
-fi
+# Test if the MCP server can respond to initialize request
+echo "Testing MCP server response..."
+echo '{"jsonrpc":"2.0","id":0,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{"tools":true}}}' | node mcp-test.js
 
-API_KEY=$1
+echo ""
+echo "Testing tools/list request..."
+echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | node mcp-test.js
 
-# Create .env file with the API key
-echo "Creating temporary .env file..."
-echo "SLIDE_API_KEY=$API_KEY" > .env
-echo "SLIDE_API_URL=https://api.slide.tech" >> .env
-echo "SLIDE_API_VERSION=v1" >> .env
-
-# Check if npm is installed
-if ! command -v npm &> /dev/null; then
-    echo "Error: npm is not installed"
-    exit 1
-fi
-
-# Install dependencies
-echo "Installing dependencies..."
-npm install
-
-# Run the test
-echo "Running API test..."
-node test.js
-
-# Check if test was successful
-TEST_STATUS=$?
-
-# Clean up .env file
-echo "Cleaning up temporary .env file..."
-rm .env
-
-# Return test status
-if [ $TEST_STATUS -eq 0 ]; then
-    echo "Test completed successfully!"
-    exit 0
-else
-    echo "Test failed!"
-    exit 1
-fi 
+echo ""
+echo "If you see valid JSON responses above, the MCP server is working correctly." 

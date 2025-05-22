@@ -4,7 +4,13 @@
  */
 
 const axios = require('axios');
+const fs = require('fs');
 require('dotenv').config();
+
+// For debugging - log to a file
+function logToFile(message) {
+  fs.appendFileSync('/tmp/slide-mcp.log', new Date().toISOString() + ' ' + message + '\n');
+}
 
 class SlideClient {
   constructor(apiKey, baseURL = 'https://api.slide.tech', version = 'v1') {
@@ -280,6 +286,302 @@ function createClient(apiKey) {
     throw new Error('API key is required');
   }
   return new SlideClient(apiKey);
+}
+
+// Handle tool calls for MCP
+async function handleToolCall(client, toolName, args) {
+  logToFile(`Handling tool call: ${toolName} with args: ${JSON.stringify(args)}`);
+  
+  switch(toolName) {
+    // Devices
+    case 'slide_get_devices':
+      return await client.getDevices(args);
+    case 'slide_get_device':
+      return await client.getDevice(args.device_id);
+    
+    // Agents
+    case 'slide_get_agents':
+      return await client.getAgents(args);
+    case 'slide_get_agent':
+      return await client.getAgent(args.agent_id);
+    
+    // Backups
+    case 'slide_get_backups':
+      return await client.getBackups(args);
+    case 'slide_start_backup':
+      return await client.startBackup({ agent_id: args.agent_id });
+    
+    // Snapshots
+    case 'slide_get_snapshots':
+      return await client.getSnapshots(args);
+    
+    // Virtual Machines
+    case 'slide_create_virtual_machine':
+      return await client.createVirtualMachine(args);
+    
+    default:
+      throw new Error(`Unknown tool: ${toolName}`);
+  }
+}
+
+// Handle MCP protocol if this script is called directly
+if (require.main === module) {
+  // Create a client using API key from environment
+  const apiKey = process.env.SLIDE_API_KEY;
+  if (!apiKey) {
+    logToFile('ERROR: No API key found. Please set SLIDE_API_KEY environment variable');
+    process.exit(1);
+  }
+  
+  try {
+    logToFile(`Starting MCP server with API key: ${apiKey}`);
+    const slideClient = createClient(apiKey);
+    
+    // Set up the line-by-line reader for stdin
+    const readline = require('readline');
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+      terminal: false
+    });
+    
+    // Handle each line of input as a separate request
+    rl.on('line', async (line) => {
+      if (!line.trim()) return;
+      
+      try {
+        logToFile(`Received message: ${line}`);
+        const message = JSON.parse(line);
+        
+        // Handle different message types
+        if (message.jsonrpc === '2.0') {
+          // This is a JSON-RPC message
+          const { id, method, params } = message;
+          
+          if (method === 'initialize') {
+            // Handle initialization request
+            console.log(JSON.stringify({
+              jsonrpc: '2.0',
+              id,
+              result: {
+                protocolVersion: '2025-03-26',
+                serverInfo: {
+                  name: 'slideMCP',
+                  version: '1.0.0'
+                },
+                capabilities: {
+                  runTool: true
+                },
+                tools: [
+                  {
+                    name: 'slide_get_devices',
+                    description: 'Get a list of Slide devices',
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        limit: { type: 'integer' },
+                        offset: { type: 'integer' }
+                      }
+                    }
+                  },
+                  {
+                    name: 'slide_get_device',
+                    description: 'Get details of a specific device by ID',
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        device_id: { type: 'string' }
+                      },
+                      required: ['device_id']
+                    }
+                  },
+                  {
+                    name: 'slide_get_agents',
+                    description: 'Get a list of Slide agents',
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        device_id: { type: 'string' },
+                        limit: { type: 'integer' },
+                        offset: { type: 'integer' }
+                      }
+                    }
+                  },
+                  {
+                    name: 'slide_get_agent',
+                    description: 'Get details of a specific agent by ID',
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        agent_id: { type: 'string' }
+                      },
+                      required: ['agent_id']
+                    }
+                  },
+                  {
+                    name: 'slide_get_backups',
+                    description: 'Get a list of backups',
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        agent_id: { type: 'string' },
+                        limit: { type: 'integer' },
+                        offset: { type: 'integer' }
+                      }
+                    }
+                  },
+                  {
+                    name: 'slide_start_backup',
+                    description: 'Start a new backup for a specific agent',
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        agent_id: { type: 'string' }
+                      },
+                      required: ['agent_id']
+                    }
+                  },
+                  {
+                    name: 'slide_get_snapshots',
+                    description: 'Get a list of snapshots',
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        agent_id: { type: 'string' },
+                        limit: { type: 'integer' },
+                        offset: { type: 'integer' }
+                      }
+                    }
+                  },
+                  {
+                    name: 'slide_create_virtual_machine',
+                    description: 'Create a new virtual machine from a snapshot',
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        snapshot_id: { type: 'string' },
+                        device_id: { type: 'string' },
+                        cpu_count: { type: 'integer' },
+                        memory_in_mb: { type: 'integer' }
+                      },
+                      required: ['snapshot_id', 'device_id']
+                    }
+                  }
+                ]
+              }
+            }));
+          } else if (method === 'run') {
+            // Handle tool execution
+            try {
+              const { name, arguments: args } = params;
+              const result = await handleToolCall(slideClient, name, args || {});
+              console.log(JSON.stringify({
+                jsonrpc: '2.0',
+                id,
+                result
+              }));
+            } catch (error) {
+              logToFile(`Tool execution error: ${error.message}`);
+              console.log(JSON.stringify({
+                jsonrpc: '2.0',
+                id,
+                error: {
+                  code: -32000,
+                  message: error.message
+                }
+              }));
+            }
+          } else if (method === 'listFunctions') {
+            // Respond with list of supported tools
+            console.log(JSON.stringify({
+              jsonrpc: '2.0',
+              id,
+              result: [
+                'slide_get_devices',
+                'slide_get_device',
+                'slide_get_agents',
+                'slide_get_agent',
+                'slide_get_backups',
+                'slide_start_backup',
+                'slide_get_snapshots',
+                'slide_create_virtual_machine'
+              ]
+            }));
+          } else {
+            // Unknown method
+            console.log(JSON.stringify({
+              jsonrpc: '2.0',
+              id,
+              error: {
+                code: -32601,
+                message: `Method not found: ${method}`
+              }
+            }));
+          }
+        } else {
+          // Legacy MCP message format
+          const { name, arguments: args } = message;
+          
+          if (name && args) {
+            try {
+              const result = await handleToolCall(slideClient, name, args);
+              console.log(JSON.stringify({
+                jsonrpc: '2.0',
+                id: message.id || 0,
+                result
+              }));
+            } catch (error) {
+              logToFile(`Tool execution error: ${error.message}`);
+              console.log(JSON.stringify({
+                jsonrpc: '2.0',
+                id: message.id || 0,
+                error: {
+                  code: -32000,
+                  message: error.message
+                }
+              }));
+            }
+          } else {
+            logToFile('Invalid message format');
+            console.log(JSON.stringify({
+              jsonrpc: '2.0',
+              id: message.id || 0,
+              error: {
+                code: -32600,
+                message: 'Invalid message format'
+              }
+            }));
+          }
+        }
+      } catch (error) {
+        logToFile(`Error processing message: ${error.message}`);
+        // Generic error response with fallback ID to ensure we always have required fields
+        console.log(JSON.stringify({
+          jsonrpc: '2.0',
+          id: 0,
+          error: {
+            code: -32603,
+            message: `Internal error: ${error.message}`
+          }
+        }));
+      }
+    });
+    
+    // Handle end of input
+    rl.on('close', () => {
+      logToFile('Input stream closed, exiting');
+      process.exit(0);
+    });
+    
+    // Keep the process alive
+    process.stdin.resume();
+    
+    // Log that we're ready
+    logToFile('MCP server ready to process requests');
+  } catch (error) {
+    logToFile(`Fatal error: ${error.message}`);
+    process.exit(1);
+  }
 }
 
 module.exports = {
