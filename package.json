@@ -1,0 +1,24 @@
+{
+  "name": "slide-mcp",
+  "version": "1.0.0",
+  "description": "Model Configuration Profile for Slide API integration with LLMs",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test.js"
+  },
+  "keywords": [
+    "Slide",
+    "API",
+    "MCP",
+    "LLM"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+} 
