@@ -11,6 +11,13 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+// Helper function to generate VNC viewer URL
+function generateVncViewerUrl(virtId: string, websocketUri: string, vncPassword: string): string {
+  // URL encode the websocket URI
+  const encodedWebsocketUri = encodeURIComponent(websocketUri);
+  return `https://slide.recipes/mcpTools/vncViewer.php?id=${virtId}&ws=${encodedWebsocketUri}&password=${vncPassword}`;
+}
+
 const SLIDE_API_KEY = process.env.SLIDE_API_KEY;
 const API_BASE_URL = 'https://api.slide.tech';
 
@@ -122,6 +129,48 @@ interface FileRestoreEntry {
     uri: string;
   }[];
   symlink_target_path?: string;
+}
+
+interface ImageExport {
+  image_export_id: string;
+  device_id: string;
+  agent_id: string;
+  snapshot_id: string;
+  image_type: string;
+  created_at: string;
+}
+
+interface ImageExportEntry {
+  disk_id: string;
+  name: string;
+  size: number;
+  download_uris: {
+    type: string;
+    uri: string;
+  }[];
+}
+
+interface VirtualMachine {
+  virt_id: string;
+  device_id: string;
+  agent_id: string;
+  snapshot_id: string;
+  state: string;
+  created_at: string;
+  expires_at?: string;
+  cpu_count: number;
+  memory_in_mb: number;
+  disk_bus: string;
+  network_model: string;
+  network_type?: string;
+  network_source?: string;
+  vnc: {
+    type: string;
+    host?: string;
+    port?: number;
+    websocket_uri?: string;
+  }[];
+  vnc_password: string;
 }
 
 interface PaginatedResponse<T> {
@@ -512,6 +561,264 @@ const BROWSE_FILE_RESTORE_TOOL = {
   }
 };
 
+// Define the slide_list_image_exports tool
+const LIST_IMAGE_EXPORTS_TOOL = {
+  name: "slide_list_image_exports",
+  description: "List all image exports with pagination and filtering options",
+  inputSchema: {
+    type: "object",
+    properties: {
+      limit: {
+        type: "number",
+        description: "Number of results per page (max 50)"
+      },
+      offset: {
+        type: "number",
+        description: "Pagination offset"
+      },
+      sort_asc: {
+        type: "boolean",
+        description: "Sort in ascending order"
+      },
+      sort_by: {
+        type: "string",
+        description: "Sort by field (id)"
+      }
+    }
+  }
+};
+
+// Define the slide_get_image_export tool
+const GET_IMAGE_EXPORT_TOOL = {
+  name: "slide_get_image_export",
+  description: "Get detailed information about a specific image export",
+  inputSchema: {
+    type: "object",
+    properties: {
+      image_export_id: {
+        type: "string",
+        description: "ID of the image export to retrieve"
+      }
+    },
+    required: ["image_export_id"]
+  }
+};
+
+// Define the slide_create_image_export tool
+const CREATE_IMAGE_EXPORT_TOOL = {
+  name: "slide_create_image_export",
+  description: "Create an image export from a snapshot",
+  inputSchema: {
+    type: "object",
+    properties: {
+      snapshot_id: {
+        type: "string",
+        description: "ID of the snapshot to export from"
+      },
+      device_id: {
+        type: "string",
+        description: "ID of the device to export to"
+      },
+      image_type: {
+        type: "string",
+        description: "Image type to export (vhdx, vhdx-dynamic, vhd, raw)"
+      },
+      boot_mods: {
+        type: "array",
+        items: {
+          type: "string",
+          enum: ["passwordless_admin_user"]
+        },
+        description: "Optional boot modifications to apply (e.g., 'passwordless_admin_user')"
+      }
+    },
+    required: ["snapshot_id", "device_id", "image_type"]
+  }
+};
+
+// Define the slide_delete_image_export tool
+const DELETE_IMAGE_EXPORT_TOOL = {
+  name: "slide_delete_image_export",
+  description: "Delete an image export",
+  inputSchema: {
+    type: "object",
+    properties: {
+      image_export_id: {
+        type: "string",
+        description: "ID of the image export to delete"
+      }
+    },
+    required: ["image_export_id"]
+  }
+};
+
+// Define the slide_browse_image_export tool
+const BROWSE_IMAGE_EXPORT_TOOL = {
+  name: "slide_browse_image_export",
+  description: "Browse the contents of an image export. IMPORTANT: You must first create an image export using slide_create_image_export before you can browse it.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      image_export_id: {
+        type: "string",
+        description: "ID of the image export to browse"
+      },
+      limit: {
+        type: "number",
+        description: "Number of results per page (max 50)"
+      },
+      offset: {
+        type: "number",
+        description: "Pagination offset"
+      }
+    },
+    required: ["image_export_id"]
+  }
+};
+
+// Define the slide_list_virtual_machines tool
+const LIST_VIRTUAL_MACHINES_TOOL = {
+  name: "slide_list_virtual_machines",
+  description: "List all virtual machines with pagination and filtering options",
+  inputSchema: {
+    type: "object",
+    properties: {
+      limit: {
+        type: "number",
+        description: "Number of results per page (max 50)"
+      },
+      offset: {
+        type: "number",
+        description: "Pagination offset"
+      },
+      sort_asc: {
+        type: "boolean",
+        description: "Sort in ascending order"
+      },
+      sort_by: {
+        type: "string",
+        description: "Sort by field (created)"
+      }
+    }
+  }
+};
+
+// Define the slide_get_virtual_machine tool
+const GET_VIRTUAL_MACHINE_TOOL = {
+  name: "slide_get_virtual_machine",
+  description: "Get detailed information about a specific virtual machine",
+  inputSchema: {
+    type: "object",
+    properties: {
+      virt_id: {
+        type: "string",
+        description: "ID of the virtual machine to retrieve"
+      }
+    },
+    required: ["virt_id"]
+  }
+};
+
+// Define the slide_create_virtual_machine tool
+const CREATE_VIRTUAL_MACHINE_TOOL = {
+  name: "slide_create_virtual_machine",
+  description: "Create a virtual machine from a snapshot",
+  inputSchema: {
+    type: "object",
+    properties: {
+      snapshot_id: {
+        type: "string",
+        description: "ID of the snapshot to restore from"
+      },
+      device_id: {
+        type: "string",
+        description: "ID of the device to restore to"
+      },
+      cpu_count: {
+        type: "number",
+        description: "Number of CPU cores (1-16)"
+      },
+      memory_in_mb: {
+        type: "number",
+        description: "Amount of memory in MB (1024-12288). Recommended default: 8192MB"
+      },
+      disk_bus: {
+        type: "string",
+        description: "Disk bus type (sata or virtio)"
+      },
+      network_model: {
+        type: "string",
+        description: "Network adapter model (hypervisor_default, e1000, rtl8139)"
+      },
+      network_type: {
+        type: "string",
+        description: "Network type (network, network-isolated, bridge, network-id)"
+      },
+      network_source: {
+        type: "string",
+        description: "Network ID when network_type is network-id"
+      },
+      boot_mods: {
+        type: "array",
+        items: {
+          type: "string",
+          enum: ["passwordless_admin_user"]
+        },
+        description: "Optional boot modifications to apply (e.g., 'passwordless_admin_user')"
+      }
+    },
+    required: ["snapshot_id", "device_id"]
+  }
+};
+
+// Define the slide_update_virtual_machine tool
+const UPDATE_VIRTUAL_MACHINE_TOOL = {
+  name: "slide_update_virtual_machine",
+  description: "Update a virtual machine's properties",
+  inputSchema: {
+    type: "object",
+    properties: {
+      virt_id: {
+        type: "string",
+        description: "ID of the virtual machine to update"
+      },
+      state: {
+        type: "string",
+        description: "New state of the VM (running, stopped, paused)"
+      },
+      expires_at: {
+        type: "string",
+        description: "Expiration time in ISO 8601 format (e.g., 2024-08-23T01:25:08Z)"
+      },
+      memory_in_mb: {
+        type: "number",
+        description: "New amount of memory in MB (1024-12288)"
+      },
+      cpu_count: {
+        type: "number",
+        description: "New number of CPU cores (1-16)"
+      }
+    },
+    required: ["virt_id"]
+  }
+};
+
+// Define the slide_delete_virtual_machine tool
+const DELETE_VIRTUAL_MACHINE_TOOL = {
+  name: "slide_delete_virtual_machine",
+  description: "Delete a virtual machine",
+  inputSchema: {
+    type: "object",
+    properties: {
+      virt_id: {
+        type: "string",
+        description: "ID of the virtual machine to delete"
+      }
+    },
+    required: ["virt_id"]
+  }
+};
+
 // Function to check if args are valid for the list_devices tool
 function isListDevicesArgs(args: unknown): args is { 
   limit?: number; 
@@ -714,6 +1021,140 @@ function isBrowseFileRestoreArgs(args: unknown): args is {
     args !== null &&
     typeof (args as any).file_restore_id === "string" &&
     typeof (args as any).path === "string"
+  );
+}
+
+// Function to check if args are valid for the list_image_exports tool
+function isListImageExportsArgs(args: unknown): args is {
+  limit?: number;
+  offset?: number;
+  sort_asc?: boolean;
+  sort_by?: string;
+} {
+  return (
+    typeof args === "object" &&
+    args !== null
+  );
+}
+
+// Function to check if args are valid for the get_image_export tool
+function isGetImageExportArgs(args: unknown): args is {
+  image_export_id: string;
+} {
+  return (
+    typeof args === "object" &&
+    args !== null &&
+    typeof (args as any).image_export_id === "string"
+  );
+}
+
+// Function to check if args are valid for the create_image_export tool
+function isCreateImageExportArgs(args: unknown): args is {
+  snapshot_id: string;
+  device_id: string;
+  image_type: string;
+  boot_mods?: string[];
+} {
+  return (
+    typeof args === "object" &&
+    args !== null &&
+    typeof (args as any).snapshot_id === "string" &&
+    typeof (args as any).device_id === "string" &&
+    typeof (args as any).image_type === "string"
+  );
+}
+
+// Function to check if args are valid for the delete_image_export tool
+function isDeleteImageExportArgs(args: unknown): args is {
+  image_export_id: string;
+} {
+  return (
+    typeof args === "object" &&
+    args !== null &&
+    typeof (args as any).image_export_id === "string"
+  );
+}
+
+// Function to check if args are valid for the browse_image_export tool
+function isBrowseImageExportArgs(args: unknown): args is {
+  image_export_id: string;
+  limit?: number;
+  offset?: number;
+} {
+  return (
+    typeof args === "object" &&
+    args !== null &&
+    typeof (args as any).image_export_id === "string"
+  );
+}
+
+// Function to check if args are valid for the list_virtual_machines tool
+function isListVirtualMachinesArgs(args: unknown): args is {
+  limit?: number;
+  offset?: number;
+  sort_asc?: boolean;
+  sort_by?: string;
+} {
+  return (
+    typeof args === "object" &&
+    args !== null
+  );
+}
+
+// Function to check if args are valid for the get_virtual_machine tool
+function isGetVirtualMachineArgs(args: unknown): args is {
+  virt_id: string;
+} {
+  return (
+    typeof args === "object" &&
+    args !== null &&
+    typeof (args as any).virt_id === "string"
+  );
+}
+
+// Function to check if args are valid for the create_virtual_machine tool
+function isCreateVirtualMachineArgs(args: unknown): args is {
+  snapshot_id: string;
+  device_id: string;
+  cpu_count?: number;
+  memory_in_mb?: number;
+  disk_bus?: string;
+  network_model?: string;
+  network_type?: string;
+  network_source?: string;
+  boot_mods?: string[];
+} {
+  return (
+    typeof args === "object" &&
+    args !== null &&
+    typeof (args as any).snapshot_id === "string" &&
+    typeof (args as any).device_id === "string"
+  );
+}
+
+// Function to check if args are valid for the update_virtual_machine tool
+function isUpdateVirtualMachineArgs(args: unknown): args is {
+  virt_id: string;
+  state?: string;
+  expires_at?: string;
+  memory_in_mb?: number;
+  cpu_count?: number;
+} {
+  return (
+    typeof args === "object" &&
+    args !== null &&
+    typeof (args as any).virt_id === "string"
+  );
+}
+
+// Function to check if args are valid for the delete_virtual_machine tool
+function isDeleteVirtualMachineArgs(args: unknown): args is {
+  virt_id: string;
+} {
+  return (
+    typeof args === "object" &&
+    args !== null &&
+    typeof (args as any).virt_id === "string"
   );
 }
 
@@ -1413,6 +1854,467 @@ async function browseFileRestore(args: {
   }
 }
 
+// Function to list image exports
+async function listImageExports(args: {
+  limit?: number;
+  offset?: number;
+  sort_asc?: boolean;
+  sort_by?: string;
+}) {
+  try {
+    const queryParams = new URLSearchParams();
+    
+    if (args.limit) {
+      queryParams.append('limit', args.limit.toString());
+    }
+    
+    if (args.offset) {
+      queryParams.append('offset', args.offset.toString());
+    }
+    
+    if (args.sort_asc !== undefined) {
+      queryParams.append('sort_asc', args.sort_asc.toString());
+    }
+    
+    if (args.sort_by) {
+      queryParams.append('sort_by', args.sort_by);
+    } else {
+      // Default sort by id
+      queryParams.append('sort_by', 'id');
+    }
+    
+    const response = await axios.get<PaginatedResponse<ImageExport>>(
+      `${API_BASE_URL}/v1/restore/image?${queryParams.toString()}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${SLIDE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response) {
+        const statusCode = axiosError.response.status;
+        const errorData = axiosError.response.data as any;
+        
+        throw new Error(`API Error (${statusCode}): ${errorData.message || 'Unknown error'}`);
+      }
+      
+      throw new Error(`Network Error: ${error.message}`);
+    }
+    
+    throw new Error(`Error: ${(error as Error).message}`);
+  }
+}
+
+// Function to get image export by ID
+async function getImageExport(args: { image_export_id: string }) {
+  try {
+    const response = await axios.get<ImageExport>(
+      `${API_BASE_URL}/v1/restore/image/${args.image_export_id}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${SLIDE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response) {
+        const statusCode = axiosError.response.status;
+        const errorData = axiosError.response.data as any;
+        
+        throw new Error(`API Error (${statusCode}): ${errorData.message || 'Unknown error'}`);
+      }
+      
+      throw new Error(`Network Error: ${error.message}`);
+    }
+    
+    throw new Error(`Error: ${(error as Error).message}`);
+  }
+}
+
+// Function to create an image export
+async function createImageExport(args: { 
+  snapshot_id: string; 
+  device_id: string;
+  image_type: string;
+  boot_mods?: string[];
+}) {
+  try {
+    const requestBody: any = {
+      snapshot_id: args.snapshot_id,
+      device_id: args.device_id,
+      image_type: args.image_type
+    };
+    
+    if (args.boot_mods) {
+      requestBody.boot_mods = args.boot_mods;
+    }
+    
+    const response = await axios.post<ImageExport>(
+      `${API_BASE_URL}/v1/restore/image`,
+      requestBody,
+      {
+        headers: {
+          'Authorization': `Bearer ${SLIDE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response) {
+        const statusCode = axiosError.response.status;
+        const errorData = axiosError.response.data as any;
+        
+        throw new Error(`API Error (${statusCode}): ${errorData.message || 'Unknown error'}`);
+      }
+      
+      throw new Error(`Network Error: ${error.message}`);
+    }
+    
+    throw new Error(`Error: ${(error as Error).message}`);
+  }
+}
+
+// Function to delete an image export
+async function deleteImageExport(args: { image_export_id: string }) {
+  try {
+    await axios.delete(
+      `${API_BASE_URL}/v1/restore/image/${args.image_export_id}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${SLIDE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    
+    return { success: true, message: `Image export ${args.image_export_id} deleted successfully` };
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response) {
+        const statusCode = axiosError.response.status;
+        const errorData = axiosError.response.data as any;
+        
+        throw new Error(`API Error (${statusCode}): ${errorData.message || 'Unknown error'}`);
+      }
+      
+      throw new Error(`Network Error: ${error.message}`);
+    }
+    
+    throw new Error(`Error: ${(error as Error).message}`);
+  }
+}
+
+// Function to browse an image export
+async function browseImageExport(args: { 
+  image_export_id: string;
+  limit?: number;
+  offset?: number;
+}) {
+  try {
+    const queryParams = new URLSearchParams();
+    
+    if (args.limit) {
+      queryParams.append('limit', args.limit.toString());
+    }
+    
+    if (args.offset) {
+      queryParams.append('offset', args.offset.toString());
+    }
+    
+    const response = await axios.get<PaginatedResponse<ImageExportEntry>>(
+      `${API_BASE_URL}/v1/restore/image/${args.image_export_id}/browse?${queryParams.toString()}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${SLIDE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response) {
+        const statusCode = axiosError.response.status;
+        const errorData = axiosError.response.data as any;
+        
+        throw new Error(`API Error (${statusCode}): ${errorData.message || 'Unknown error'}`);
+      }
+      
+      throw new Error(`Network Error: ${error.message}`);
+    }
+    
+    throw new Error(`Error: ${(error as Error).message}`);
+  }
+}
+
+// Function to list virtual machines
+async function listVirtualMachines(args: {
+  limit?: number;
+  offset?: number;
+  sort_asc?: boolean;
+  sort_by?: string;
+}) {
+  try {
+    const queryParams = new URLSearchParams();
+    
+    if (args.limit) {
+      queryParams.append('limit', args.limit.toString());
+    }
+    
+    if (args.offset) {
+      queryParams.append('offset', args.offset.toString());
+    }
+    
+    if (args.sort_asc !== undefined) {
+      queryParams.append('sort_asc', args.sort_asc.toString());
+    }
+    
+    if (args.sort_by) {
+      queryParams.append('sort_by', args.sort_by);
+    } else {
+      // Default sort by created
+      queryParams.append('sort_by', 'created');
+    }
+    
+    const response = await axios.get<PaginatedResponse<VirtualMachine>>(
+      `${API_BASE_URL}/v1/restore/virt?${queryParams.toString()}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${SLIDE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response) {
+        const statusCode = axiosError.response.status;
+        const errorData = axiosError.response.data as any;
+        
+        throw new Error(`API Error (${statusCode}): ${errorData.message || 'Unknown error'}`);
+      }
+      
+      throw new Error(`Network Error: ${error.message}`);
+    }
+    
+    throw new Error(`Error: ${(error as Error).message}`);
+  }
+}
+
+// Function to get virtual machine by ID
+async function getVirtualMachine(args: { virt_id: string }) {
+  try {
+    const response = await axios.get<VirtualMachine>(
+      `${API_BASE_URL}/v1/restore/virt/${args.virt_id}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${SLIDE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response) {
+        const statusCode = axiosError.response.status;
+        const errorData = axiosError.response.data as any;
+        
+        throw new Error(`API Error (${statusCode}): ${errorData.message || 'Unknown error'}`);
+      }
+      
+      throw new Error(`Network Error: ${error.message}`);
+    }
+    
+    throw new Error(`Error: ${(error as Error).message}`);
+  }
+}
+
+// Function to create a virtual machine
+async function createVirtualMachine(args: { 
+  snapshot_id: string; 
+  device_id: string;
+  cpu_count?: number;
+  memory_in_mb?: number;
+  disk_bus?: string;
+  network_model?: string;
+  network_type?: string;
+  network_source?: string;
+  boot_mods?: string[];
+}) {
+  try {
+    const requestBody: any = {
+      snapshot_id: args.snapshot_id,
+      device_id: args.device_id
+    };
+    
+    if (args.cpu_count !== undefined) {
+      requestBody.cpu_count = args.cpu_count;
+    }
+    
+    if (args.memory_in_mb !== undefined) {
+      requestBody.memory_in_mb = args.memory_in_mb;
+    }
+    
+    if (args.disk_bus) {
+      requestBody.disk_bus = args.disk_bus;
+    }
+    
+    if (args.network_model) {
+      requestBody.network_model = args.network_model;
+    }
+    
+    if (args.network_type) {
+      requestBody.network_type = args.network_type;
+    }
+    
+    if (args.network_source) {
+      requestBody.network_source = args.network_source;
+    }
+    
+    if (args.boot_mods) {
+      requestBody.boot_mods = args.boot_mods;
+    }
+    
+    const response = await axios.post<VirtualMachine>(
+      `${API_BASE_URL}/v1/restore/virt`,
+      requestBody,
+      {
+        headers: {
+          'Authorization': `Bearer ${SLIDE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response) {
+        const statusCode = axiosError.response.status;
+        const errorData = axiosError.response.data as any;
+        
+        throw new Error(`API Error (${statusCode}): ${errorData.message || 'Unknown error'}`);
+      }
+      
+      throw new Error(`Network Error: ${error.message}`);
+    }
+    
+    throw new Error(`Error: ${(error as Error).message}`);
+  }
+}
+
+// Function to update a virtual machine
+async function updateVirtualMachine(args: { 
+  virt_id: string;
+  state?: string;
+  expires_at?: string;
+  memory_in_mb?: number;
+  cpu_count?: number;
+}) {
+  try {
+    const requestBody: any = {};
+    
+    if (args.state) {
+      requestBody.state = args.state;
+    }
+    
+    if (args.expires_at) {
+      requestBody.expires_at = args.expires_at;
+    }
+    
+    if (args.memory_in_mb !== undefined) {
+      requestBody.memory_in_mb = args.memory_in_mb;
+    }
+    
+    if (args.cpu_count !== undefined) {
+      requestBody.cpu_count = args.cpu_count;
+    }
+    
+    const response = await axios.patch<VirtualMachine>(
+      `${API_BASE_URL}/v1/restore/virt/${args.virt_id}`,
+      requestBody,
+      {
+        headers: {
+          'Authorization': `Bearer ${SLIDE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response) {
+        const statusCode = axiosError.response.status;
+        const errorData = axiosError.response.data as any;
+        
+        throw new Error(`API Error (${statusCode}): ${errorData.message || 'Unknown error'}`);
+      }
+      
+      throw new Error(`Network Error: ${error.message}`);
+    }
+    
+    throw new Error(`Error: ${(error as Error).message}`);
+  }
+}
+
+// Function to delete a virtual machine
+async function deleteVirtualMachine(args: { virt_id: string }) {
+  try {
+    await axios.delete(
+      `${API_BASE_URL}/v1/restore/virt/${args.virt_id}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${SLIDE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    
+    return { success: true, message: `Virtual machine ${args.virt_id} deleted successfully` };
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError;
+      if (axiosError.response) {
+        const statusCode = axiosError.response.status;
+        const errorData = axiosError.response.data as any;
+        
+        throw new Error(`API Error (${statusCode}): ${errorData.message || 'Unknown error'}`);
+      }
+      
+      throw new Error(`Network Error: ${error.message}`);
+    }
+    
+    throw new Error(`Error: ${(error as Error).message}`);
+  }
+}
+
 // Server implements the listTools request
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [
@@ -1431,7 +2333,17 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     GET_FILE_RESTORE_TOOL,
     CREATE_FILE_RESTORE_TOOL,
     DELETE_FILE_RESTORE_TOOL,
-    BROWSE_FILE_RESTORE_TOOL
+    BROWSE_FILE_RESTORE_TOOL,
+    LIST_IMAGE_EXPORTS_TOOL,
+    GET_IMAGE_EXPORT_TOOL,
+    CREATE_IMAGE_EXPORT_TOOL,
+    DELETE_IMAGE_EXPORT_TOOL,
+    BROWSE_IMAGE_EXPORT_TOOL,
+    LIST_VIRTUAL_MACHINES_TOOL,
+    GET_VIRTUAL_MACHINE_TOOL,
+    CREATE_VIRTUAL_MACHINE_TOOL,
+    UPDATE_VIRTUAL_MACHINE_TOOL,
+    DELETE_VIRTUAL_MACHINE_TOOL
   ],
 }));
 
@@ -1479,7 +2391,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           ...result,
           _metadata: {
             primary_identifier: "display_name",
-            presentation_guidance: "When referring to agents, use the Display Name as the primary identifier. If its blank use hostname. Agent IDs are internal identifiers not commonly used by humans."
+            presentation_guidance: "When referring to agents, use the Display Name as the primary identifier. If Display Name is blank, use hostname instead. Agent IDs are internal identifiers not commonly used by humans."
           }
         };
         
@@ -1786,6 +2698,245 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         
         return {
           content: [{ type: "text", text: JSON.stringify(enhancedResult, null, 2) }],
+          isError: false,
+        };
+      }
+
+      case "slide_list_image_exports": {
+        if (!isListImageExportsArgs(args)) {
+          throw new Error("Invalid arguments for slide_list_image_exports");
+        }
+        
+        const result = await listImageExports(args);
+        
+        // Add metadata to guide the LLM on how to present and refer to image exports
+        const enhancedResult = {
+          ...result,
+          _metadata: {
+            primary_identifier: "image_export_id",
+            presentation_guidance: "When referring to image exports, use the image_export_id as the primary identifier. Image export IDs are internal identifiers not commonly used by humans.",
+            workflow_guidance: "Image exports must be created before they can be browsed. To create an image export, use slide_create_image_export with a snapshot_id, device_id, and image_type."
+          }
+        };
+        
+        return {
+          content: [{ type: "text", text: JSON.stringify(enhancedResult, null, 2) }],
+          isError: false,
+        };
+      }
+
+      case "slide_get_image_export": {
+        if (!isGetImageExportArgs(args)) {
+          throw new Error("Invalid arguments for slide_get_image_export");
+        }
+        
+        const result = await getImageExport(args);
+        
+        // Add metadata to guide the LLM on how to present and refer to the image export
+        const enhancedResult = {
+          ...result,
+          _metadata: {
+            primary_identifier: "image_export_id",
+            presentation_guidance: "When referring to the image export, use the image_export_id as the primary identifier. Image export IDs are internal identifiers not commonly used by humans."
+          }
+        };
+        
+        return {
+          content: [{ type: "text", text: JSON.stringify(enhancedResult, null, 2) }],
+          isError: false,
+        };
+      }
+
+      case "slide_create_image_export": {
+        if (!isCreateImageExportArgs(args)) {
+          throw new Error("Invalid arguments for slide_create_image_export");
+        }
+        
+        const result = await createImageExport(args);
+        
+        // Add metadata to guide the LLM on how to present and refer to the image export
+        const enhancedResult = {
+          ...result,
+          _metadata: {
+            primary_identifier: "image_export_id",
+            presentation_guidance: "When referring to the image export, use the image_export_id as the primary identifier. Image export IDs are internal identifiers not commonly used by humans.",
+            next_steps: "Now that you've created an image export, you can browse its contents using slide_browse_image_export with this image_export_id."
+          }
+        };
+        
+        return {
+          content: [{ type: "text", text: JSON.stringify(enhancedResult, null, 2) }],
+          isError: false,
+        };
+      }
+
+      case "slide_delete_image_export": {
+        if (!isDeleteImageExportArgs(args)) {
+          throw new Error("Invalid arguments for slide_delete_image_export");
+        }
+        
+        const result = await deleteImageExport(args);
+        
+        return {
+          content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+          isError: false,
+        };
+      }
+
+      case "slide_browse_image_export": {
+        if (!isBrowseImageExportArgs(args)) {
+          throw new Error("Invalid arguments for slide_browse_image_export");
+        }
+        
+        const result = await browseImageExport(args);
+        
+        // Add metadata to guide the LLM on how to present image export browse results
+        const enhancedResult = {
+          ...result,
+          _metadata: {
+            presentation_guidance: "When presenting image export results, highlight download options for disk images.",
+            workflow_guidance: "Image exports are temporary. If an image_export_id is not found, it may have expired or not been created yet. Create an image export using slide_create_image_export before browsing."
+          }
+        };
+        
+        return {
+          content: [{ type: "text", text: JSON.stringify(enhancedResult, null, 2) }],
+          isError: false,
+        };
+      }
+
+      case "slide_list_virtual_machines": {
+        if (!isListVirtualMachinesArgs(args)) {
+          throw new Error("Invalid arguments for slide_list_virtual_machines");
+        }
+        
+        const result = await listVirtualMachines(args);
+        
+        // Add metadata to guide the LLM on how to present and refer to virtual machines
+        const enhancedResult = {
+          ...result,
+          _metadata: {
+            primary_identifier: "virt_id",
+            presentation_guidance: "When referring to virtual machines, use the virt_id as the primary identifier. Virtual machine IDs are internal identifiers not commonly used by humans.",
+            workflow_guidance: "Virtual machines are created from snapshots. To create a virtual machine, use slide_create_virtual_machine with a snapshot_id and device_id."
+          }
+        };
+        
+        return {
+          content: [{ type: "text", text: JSON.stringify(enhancedResult, null, 2) }],
+          isError: false,
+        };
+      }
+
+      case "slide_get_virtual_machine": {
+        if (!isGetVirtualMachineArgs(args)) {
+          throw new Error("Invalid arguments for slide_get_virtual_machine");
+        }
+        
+        const result = await getVirtualMachine(args);
+        
+        // Generate VNC viewer URL if websocket URI is available
+        let vncViewerUrl = null;
+        if (result.vnc && result.vnc.length > 0) {
+          const vncInfo = result.vnc.find(v => v.websocket_uri);
+          if (vncInfo && vncInfo.websocket_uri) {
+            vncViewerUrl = generateVncViewerUrl(result.virt_id, vncInfo.websocket_uri, result.vnc_password);
+          }
+        }
+        
+        // Add metadata to guide the LLM on how to present and refer to the virtual machine
+        const enhancedResult = {
+          ...result,
+          _metadata: {
+            primary_identifier: "virt_id",
+            presentation_guidance: "When referring to the virtual machine, use the virt_id as the primary identifier. Virtual machine IDs are internal identifiers not commonly used by humans.",
+            vnc_guidance: "If the virtual machine has VNC connections available, they can be used to remotely access the VM's console.",
+            vnc_viewer_url: vncViewerUrl
+          }
+        };
+        
+        return {
+          content: [{ type: "text", text: JSON.stringify(enhancedResult, null, 2) }],
+          isError: false,
+        };
+      }
+
+      case "slide_create_virtual_machine": {
+        if (!isCreateVirtualMachineArgs(args)) {
+          throw new Error("Invalid arguments for slide_create_virtual_machine");
+        }
+        
+        const result = await createVirtualMachine(args);
+        
+        // Generate VNC viewer URL if websocket URI is available
+        let vncViewerUrl = null;
+        if (result.vnc && result.vnc.length > 0) {
+          const vncInfo = result.vnc.find(v => v.websocket_uri);
+          if (vncInfo && vncInfo.websocket_uri) {
+            vncViewerUrl = generateVncViewerUrl(result.virt_id, vncInfo.websocket_uri, result.vnc_password);
+          }
+        }
+        
+        // Add metadata to guide the LLM on how to present and refer to the virtual machine
+        const enhancedResult = {
+          ...result,
+          _metadata: {
+            primary_identifier: "virt_id",
+            presentation_guidance: "When referring to the virtual machine, use the virt_id as the primary identifier. Virtual machine IDs are internal identifiers not commonly used by humans.",
+            next_steps: "Now that you've created a virtual machine, you can control it using slide_update_virtual_machine to change its state (running, stopped, paused) or update resources.",
+            vnc_guidance: "Use the vnc_viewer_url to access the virtual machine's console.",
+            resource_guidance: "For optimal performance, 8192MB of RAM is recommended for most VMs. You can adjust this as needed using slide_update_virtual_machine.",
+            vnc_viewer_url: vncViewerUrl
+          }
+        };
+        
+        return {
+          content: [{ type: "text", text: JSON.stringify(enhancedResult, null, 2) }],
+          isError: false,
+        };
+      }
+
+      case "slide_update_virtual_machine": {
+        if (!isUpdateVirtualMachineArgs(args)) {
+          throw new Error("Invalid arguments for slide_update_virtual_machine");
+        }
+        
+        const result = await updateVirtualMachine(args);
+        
+        // Generate VNC viewer URL if websocket URI is available
+        let vncViewerUrl = null;
+        if (result.vnc && result.vnc.length > 0) {
+          const vncInfo = result.vnc.find(v => v.websocket_uri);
+          if (vncInfo && vncInfo.websocket_uri) {
+            vncViewerUrl = generateVncViewerUrl(result.virt_id, vncInfo.websocket_uri, result.vnc_password);
+          }
+        }
+        
+        // Add metadata to guide the LLM on how to present and refer to the updated virtual machine
+        const enhancedResult = {
+          ...result,
+          _metadata: {
+            primary_identifier: "virt_id",
+            presentation_guidance: "When referring to the virtual machine, use the virt_id as the primary identifier. Virtual machine IDs are internal identifiers not commonly used by humans.",
+            vnc_viewer_url: vncViewerUrl
+          }
+        };
+        
+        return {
+          content: [{ type: "text", text: JSON.stringify(enhancedResult, null, 2) }],
+          isError: false,
+        };
+      }
+
+      case "slide_delete_virtual_machine": {
+        if (!isDeleteVirtualMachineArgs(args)) {
+          throw new Error("Invalid arguments for slide_delete_virtual_machine");
+        }
+        
+        const result = await deleteVirtualMachine(args);
+        
+        return {
+          content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
           isError: false,
         };
       }

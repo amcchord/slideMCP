@@ -140,6 +140,97 @@ File restores provide access to files within a snapshot. The typical workflow is
     - `offset` (number, optional): Pagination offset
   - Note: Requires a file restore to be created first using `slide_create_file_restore`
 
+### Image Export Tools
+
+Image exports allow you to export snapshots as disk images for use outside of Slide. The typical workflow is:
+1. Create an image export from a snapshot using `slide_create_image_export`
+2. Browse the available disk images using `slide_browse_image_export`
+3. When finished, delete the image export using `slide_delete_image_export`
+
+- **slide_list_image_exports**
+  - List all image exports with pagination and filtering
+  - Inputs:
+    - `limit` (number, optional): Results per page (max 50)
+    - `offset` (number, optional): Pagination offset
+    - `sort_asc` (boolean, optional): Sort in ascending order
+    - `sort_by` (string, optional): Sort by field (id)
+
+- **slide_get_image_export**
+  - Get detailed information about a specific image export
+  - Inputs:
+    - `image_export_id` (string, required): ID of the image export to retrieve
+
+- **slide_create_image_export**
+  - Create an image export from a snapshot
+  - Inputs:
+    - `snapshot_id` (string, required): ID of the snapshot to export from
+    - `device_id` (string, required): ID of the device to export to
+    - `image_type` (string, required): Image type to export (vhdx, vhdx-dynamic, vhd, raw)
+    - `boot_mods` (array of strings, optional): Optional boot modifications to apply (e.g., 'passwordless_admin_user')
+  - Note: You must create an image export before you can browse its contents
+
+- **slide_delete_image_export**
+  - Delete an image export
+  - Inputs:
+    - `image_export_id` (string, required): ID of the image export to delete
+
+- **slide_browse_image_export**
+  - Browse the contents of an image export (the disk images available for download)
+  - Inputs:
+    - `image_export_id` (string, required): ID of the image export to browse
+    - `limit` (number, optional): Results per page (max 50)
+    - `offset` (number, optional): Pagination offset
+  - Note: Requires an image export to be created first using `slide_create_image_export`
+
+### Virtual Machine Tools
+
+Virtual machines allow you to run a snapshot as a virtualized computer on a Slide device. The typical workflow is:
+1. Create a virtual machine from a snapshot using `slide_create_virtual_machine`
+2. Control the VM using `slide_update_virtual_machine` to start, stop, or modify resources
+3. Access the VM using the VNC details provided in the response
+4. When finished, delete the virtual machine using `slide_delete_virtual_machine`
+
+- **slide_list_virtual_machines**
+  - List all virtual machines with pagination and filtering
+  - Inputs:
+    - `limit` (number, optional): Results per page (max 50)
+    - `offset` (number, optional): Pagination offset
+    - `sort_asc` (boolean, optional): Sort in ascending order
+    - `sort_by` (string, optional): Sort by field (created)
+
+- **slide_get_virtual_machine**
+  - Get detailed information about a specific virtual machine
+  - Inputs:
+    - `virt_id` (string, required): ID of the virtual machine to retrieve
+
+- **slide_create_virtual_machine**
+  - Create a virtual machine from a snapshot
+  - Inputs:
+    - `snapshot_id` (string, required): ID of the snapshot to restore from
+    - `device_id` (string, required): ID of the device to restore to
+    - `cpu_count` (number, optional): Number of CPU cores (1-16)
+    - `memory_in_mb` (number, optional): Amount of memory in MB (1024-12288)
+    - `disk_bus` (string, optional): Disk bus type (sata or virtio)
+    - `network_model` (string, optional): Network adapter model (hypervisor_default, e1000, rtl8139)
+    - `network_type` (string, optional): Network type (network, network-isolated, bridge, network-id)
+    - `network_source` (string, optional): Network ID when network_type is network-id
+    - `boot_mods` (array of strings, optional): Optional boot modifications to apply (e.g., 'passwordless_admin_user')
+  - Note: For most virtual machines, 8192MB of RAM is recommended for optimal performance
+
+- **slide_update_virtual_machine**
+  - Update a virtual machine's properties
+  - Inputs:
+    - `virt_id` (string, required): ID of the virtual machine to update
+    - `state` (string, optional): New state of the VM (running, stopped, paused)
+    - `expires_at` (string, optional): Expiration time in ISO 8601 format (e.g., 2024-08-23T01:25:08Z)
+    - `memory_in_mb` (number, optional): New amount of memory in MB (1024-12288)
+    - `cpu_count` (number, optional): New number of CPU cores (1-16)
+
+- **slide_delete_virtual_machine**
+  - Delete a virtual machine
+  - Inputs:
+    - `virt_id` (string, required): ID of the virtual machine to delete
+
 ## Configuration
 
 ### Getting an API Key
