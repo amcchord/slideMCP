@@ -2,16 +2,21 @@
 
 An MCP server implementation that integrates with the Slide API, providing device and agent management capabilities.
 
-## 🚀 Two Versions Available
+## 🚀 Three Ways to Use Slide MCP
 
-### **Go Version (Recommended)** 🆕
+### **Option 1: Hosted Web Server (Easiest)** 🌐 🆕
+- **Zero Installation**: Use `www.slide.recipes/mcp` directly
+- **Always Updated**: Latest version automatically available
+- **Multi-User**: Secure per-user API key authentication
+- **High Availability**: Monitored production infrastructure
+
+### **Option 2: Go Binary (Best Performance)** ⚡
 - **Single binary**: No dependencies, just download and run
 - **60x faster startup**: ~50ms vs 2-3 seconds
 - **5x less memory**: 10-20MB vs 50-100MB
 - **Cross-platform**: Linux, macOS, Windows binaries
-- **Easy deployment**: Copy one file anywhere
 
-### **TypeScript/Node.js Version** 
+### **Option 3: TypeScript/Node.js Version** 📦
 - Original implementation with full feature set
 - Requires Node.js runtime and NPM installation
 - Available via NPX or Docker
@@ -469,6 +474,94 @@ echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' | ./slide-mcp-
   }
 }
 ```
+
+### **Option 3: Hosted Web Server (No Installation Required)** 🌐
+
+Use the hosted multi-user web server at `www.slide.recipes/mcp` - no local installation needed!
+
+#### Advantages
+- ✅ **Zero Installation**: No binaries, dependencies, or Docker required
+- ✅ **Always Updated**: Latest version automatically available
+- ✅ **Multi-User**: Each user uses their own API key securely
+- ✅ **Cross-Platform**: Works on any system that can run Claude Desktop
+- ✅ **High Availability**: Hosted infrastructure with monitoring
+
+#### Quick Setup
+
+1. **Download the bridge script**:
+   ```bash
+   curl -o slide-mcp-bridge.js https://www.slide.recipes/mcp/slide-mcp-bridge.js
+   chmod +x slide-mcp-bridge.js
+   ```
+
+2. **Configure Claude Desktop** by adding this to your `claude_desktop_config.json`:
+   ```json
+   {
+     "mcpServers": {
+       "slide": {
+         "command": "node",
+         "args": ["/path/to/slide-mcp-bridge.js"],
+         "env": {
+           "SLIDE_API_KEY": "YOUR_API_KEY_HERE"
+         }
+       }
+     }
+   }
+   ```
+
+#### Alternative: Direct Configuration (Advanced)
+
+For advanced users who prefer not to download the bridge script, you can use this inline configuration:
+
+```json
+{
+  "mcpServers": {
+    "slide": {
+      "command": "node", 
+      "args": ["-e", "const https=require('https'),readline=require('readline');const key=process.env.SLIDE_API_KEY;if(!key){console.error(JSON.stringify({jsonrpc:'2.0',id:null,error:{code:-32602,message:'SLIDE_API_KEY not set'}}));process.exit(1)}const rl=readline.createInterface({input:process.stdin,output:process.stdout,terminal:false});rl.on('line',line=>{if(!line.trim())return;try{const req=JSON.parse(line),data=JSON.stringify(req),opts={hostname:'www.slide.recipes',path:'/mcp',method:'POST',headers:{'Content-Type':'application/json','X-API-Key':key}};const httpReq=https.request(opts,res=>{let resp='';res.on('data',chunk=>resp+=chunk);res.on('end',()=>{try{console.log(JSON.stringify(JSON.parse(resp)))}catch{console.log(JSON.stringify({jsonrpc:'2.0',id:req.id,error:{code:-32603,message:'Invalid server response'}}))}})});httpReq.on('error',err=>console.log(JSON.stringify({jsonrpc:'2.0',id:req.id,error:{code:-32603,message:`Network error: ${err.message}`}})));httpReq.write(data);httpReq.end()}catch{console.log(JSON.stringify({jsonrpc:'2.0',id:null,error:{code:-32700,message:'Parse error'}}))}});"],
+      "env": {
+        "SLIDE_API_KEY": "YOUR_API_KEY_HERE"
+      }
+    }
+  }
+}
+```
+
+#### Test the Hosted Server
+
+You can test the hosted server directly:
+
+```bash
+# Test health endpoint
+curl -X GET https://www.slide.recipes/mcp/health
+
+# Test MCP initialize (replace YOUR_API_KEY with your actual key)
+curl -X POST https://www.slide.recipes/mcp \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: YOUR_API_KEY" \
+  -d '{"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}}'
+
+# List available tools
+curl -X POST https://www.slide.recipes/mcp \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: YOUR_API_KEY" \
+  -d '{"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}'
+```
+
+#### Authentication Methods
+
+The hosted server accepts your Slide API key via:
+- **X-API-Key Header**: `X-API-Key: YOUR_API_KEY`
+- **Authorization Header**: `Authorization: Bearer YOUR_API_KEY`
+- **Query Parameter**: `?api_key=YOUR_API_KEY`
+
+#### Server Features
+
+- **Multi-User**: Secure per-user API key authentication
+- **CORS Enabled**: Works with web applications
+- **Full API Coverage**: All 30+ Slide API tools available
+- **High Availability**: Monitored production service
+- **Documentation**: Visit `https://www.slide.recipes/mcp/` for interactive docs
 
 ### Usage with VS Code
 
