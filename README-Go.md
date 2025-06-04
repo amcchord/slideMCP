@@ -32,13 +32,13 @@ This Go implementation provides the same comprehensive Slide API functionality a
 1. **Download** the latest release for your platform:
    ```bash
    # Linux AMD64
-   curl -L -o slide-mcp-server https://github.com/yourusername/slide-mcp-go/releases/latest/download/slide-mcp-server-linux-amd64
+   curl -L -o slide-mcp-server https://github.com/amcchord/slide-mcp-go/releases/latest/download/slide-mcp-server-linux-amd64
    
    # macOS AMD64
-   curl -L -o slide-mcp-server https://github.com/yourusername/slide-mcp-go/releases/latest/download/slide-mcp-server-darwin-amd64
+   curl -L -o slide-mcp-server https://github.com/amcchord/slide-mcp-go/releases/latest/download/slide-mcp-server-darwin-amd64
    
    # macOS ARM64 (Apple Silicon)
-   curl -L -o slide-mcp-server https://github.com/yourusername/slide-mcp-go/releases/latest/download/slide-mcp-server-darwin-arm64
+   curl -L -o slide-mcp-server https://github.com/amcchord/slide-mcp-go/releases/latest/download/slide-mcp-server-darwin-arm64
    ```
 
 2. **Make it executable**:
