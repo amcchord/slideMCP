@@ -216,6 +216,524 @@ func handleToolCall(request MCPRequest) MCPResponse {
 			}
 		}
 	
+	case "slide_get_agent":
+		data, err := getAgent(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+	
+	case "slide_create_agent":
+		data, err := createAgent(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+	
+	case "slide_pair_agent":
+		data, err := pairAgent(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+	
+	case "slide_update_agent":
+		data, err := updateAgent(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+	
+	case "slide_list_backups":
+		data, err := listBackups(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+	
+	case "slide_get_backup":
+		data, err := getBackup(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+	
+	case "slide_start_backup":
+		data, err := startBackup(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+	
+	case "slide_list_snapshots":
+		data, err := listSnapshots(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+	
+	case "slide_get_snapshot":
+		data, err := getSnapshot(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+	
+	case "slide_list_file_restores":
+		data, err := listFileRestores(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+	
+	case "slide_get_file_restore":
+		data, err := getFileRestore(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+	
+	case "slide_create_file_restore":
+		data, err := createFileRestore(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+	
+	case "slide_delete_file_restore":
+		data, err := deleteFileRestore(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+	
+	case "slide_browse_file_restore":
+		data, err := browseFileRestore(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+	
+	case "slide_list_image_exports":
+		data, err := listImageExports(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+	
+	case "slide_get_image_export":
+		data, err := getImageExport(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+	
+	case "slide_create_image_export":
+		data, err := createImageExport(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+	
+	case "slide_delete_image_export":
+		data, err := deleteImageExport(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+	
+	case "slide_browse_image_export":
+		data, err := browseImageExport(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+	
+	case "slide_list_virtual_machines":
+		data, err := listVirtualMachines(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+	
+	case "slide_get_virtual_machine":
+		data, err := getVirtualMachine(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+	
+	case "slide_create_virtual_machine":
+		data, err := createVirtualMachine(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+	
+	case "slide_update_virtual_machine":
+		data, err := updateVirtualMachine(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+	
+	case "slide_delete_virtual_machine":
+		data, err := deleteVirtualMachine(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+	
+	case "slide_list_users":
+		data, err := listUsers(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+	
+	case "slide_get_user":
+		data, err := getUser(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+	
+	case "slide_list_alerts":
+		data, err := listAlerts(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+	
+	case "slide_get_alert":
+		data, err := getAlert(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+	
+	case "slide_update_alert":
+		data, err := updateAlert(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+	
+	case "slide_list_accounts":
+		data, err := listAccounts(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+	
+	case "slide_get_account":
+		data, err := getAccount(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+	
+	case "slide_update_account":
+		data, err := updateAccount(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+	
+	case "slide_list_clients":
+		data, err := listClients(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+	
+	case "slide_get_client":
+		data, err := getClient(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+	
+	case "slide_create_client":
+		data, err := createClient(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+	
+	case "slide_update_client":
+		data, err := updateClient(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+	
+	case "slide_delete_client":
+		data, err := deleteClient(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+	
 	default:
 		result = ToolResult{
 			Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Unknown tool: %s", name)}},
@@ -270,6 +788,11 @@ func getAllTools() []ToolInfo {
 						"type":        "boolean",
 						"description": "Sort in ascending order",
 					},
+					"sort_by": map[string]interface{}{
+						"type":        "string",
+						"description": "Sort by field (hostname)",
+						"enum":        []string{"hostname"},
+					},
 				},
 			},
 		},
@@ -302,8 +825,798 @@ func getAllTools() []ToolInfo {
 					"sort_by": map[string]interface{}{
 						"type":        "string",
 						"description": "Sort by field (id, hostname, name)",
+						"enum":        []string{"id", "hostname", "name"},
 					},
 				},
+			},
+		},
+		{
+			Name:        "slide_get_agent",
+			Description: "Get detailed information about a specific agent by ID",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"agent_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the agent to retrieve",
+					},
+				},
+				"required": []string{"agent_id"},
+			},
+		},
+		{
+			Name:        "slide_create_agent",
+			Description: "Create an agent for auto-pair installation",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"display_name": map[string]interface{}{
+						"type":        "string",
+						"description": "Display name for the agent",
+					},
+					"device_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the device to associate with the agent",
+					},
+				},
+				"required": []string{"display_name", "device_id"},
+			},
+		},
+		{
+			Name:        "slide_pair_agent",
+			Description: "Pair an agent with a device using a pair code",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"pair_code": map[string]interface{}{
+						"type":        "string",
+						"description": "Pair code generated during agent creation",
+					},
+					"device_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the device to pair with",
+					},
+				},
+				"required": []string{"pair_code", "device_id"},
+			},
+		},
+		{
+			Name:        "slide_update_agent",
+			Description: "Update an agent's properties",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"agent_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the agent to update",
+					},
+					"display_name": map[string]interface{}{
+						"type":        "string",
+						"description": "New display name for the agent",
+					},
+				},
+				"required": []string{"agent_id", "display_name"},
+			},
+		},
+		{
+			Name:        "slide_list_backups",
+			Description: "List all backups with pagination and filtering options",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"limit": map[string]interface{}{
+						"type":        "number",
+						"description": "Number of results per page (max 50)",
+					},
+					"offset": map[string]interface{}{
+						"type":        "number",
+						"description": "Pagination offset",
+					},
+					"agent_id": map[string]interface{}{
+						"type":        "string",
+						"description": "Filter by agent ID",
+					},
+					"device_id": map[string]interface{}{
+						"type":        "string",
+						"description": "Filter by device ID",
+					},
+					"snapshot_id": map[string]interface{}{
+						"type":        "string",
+						"description": "Filter by snapshot ID",
+					},
+					"sort_asc": map[string]interface{}{
+						"type":        "boolean",
+						"description": "Sort in ascending order",
+					},
+					"sort_by": map[string]interface{}{
+						"type":        "string",
+						"description": "Sort by field (id, start_time)",
+						"enum":        []string{"id", "start_time"},
+					},
+				},
+			},
+		},
+		{
+			Name:        "slide_get_backup",
+			Description: "Get detailed information about a specific backup",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"backup_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the backup to retrieve",
+					},
+				},
+				"required": []string{"backup_id"},
+			},
+		},
+		{
+			Name:        "slide_start_backup",
+			Description: "Start a backup for a specific agent",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"agent_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the agent to backup",
+					},
+				},
+				"required": []string{"agent_id"},
+			},
+		},
+		{
+			Name:        "slide_list_snapshots",
+			Description: "List all snapshots with pagination and filtering options",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"limit": map[string]interface{}{
+						"type":        "number",
+						"description": "Number of results per page (max 50)",
+					},
+					"offset": map[string]interface{}{
+						"type":        "number",
+						"description": "Pagination offset",
+					},
+					"agent_id": map[string]interface{}{
+						"type":        "string",
+						"description": "Filter by agent ID",
+					},
+					"snapshot_location": map[string]interface{}{
+						"type":        "string",
+						"description": "Filter by snapshot location",
+						"enum":        []string{"exists_local", "exists_cloud", "exists_deleted", "exists_deleted_retention", "exists_deleted_manual", "exists_deleted_other"},
+					},
+					"sort_asc": map[string]interface{}{
+						"type":        "boolean",
+						"description": "Sort in ascending order",
+					},
+					"sort_by": map[string]interface{}{
+						"type":        "string",
+						"description": "Sort by field",
+						"enum":        []string{"backup_start_time", "backup_end_time", "created"},
+					},
+				},
+			},
+		},
+		{
+			Name:        "slide_get_snapshot",
+			Description: "Get detailed information about a specific snapshot",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"snapshot_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the snapshot to retrieve",
+					},
+				},
+				"required": []string{"snapshot_id"},
+			},
+		},
+		{
+			Name:        "slide_list_file_restores",
+			Description: "List all file restores with pagination and filtering options",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"limit": map[string]interface{}{
+						"type":        "number",
+						"description": "Number of results per page (max 50)",
+					},
+					"offset": map[string]interface{}{
+						"type":        "number",
+						"description": "Pagination offset",
+					},
+					"sort_asc": map[string]interface{}{
+						"type":        "boolean",
+						"description": "Sort in ascending order",
+					},
+					"sort_by": map[string]interface{}{
+						"type":        "string",
+						"description": "Sort by field (id)",
+						"enum":        []string{"id"},
+					},
+				},
+			},
+		},
+		{
+			Name:        "slide_get_file_restore",
+			Description: "Get detailed information about a specific file restore",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"file_restore_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the file restore to retrieve",
+					},
+				},
+				"required": []string{"file_restore_id"},
+			},
+		},
+		{
+			Name:        "slide_create_file_restore",
+			Description: "Create a file restore from a snapshot",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"snapshot_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the snapshot to restore from",
+					},
+					"device_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the device to restore to",
+					},
+				},
+				"required": []string{"snapshot_id", "device_id"},
+			},
+		},
+		{
+			Name:        "slide_delete_file_restore",
+			Description: "Delete a file restore",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"file_restore_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the file restore to delete",
+					},
+				},
+				"required": []string{"file_restore_id"},
+			},
+		},
+		{
+			Name:        "slide_browse_file_restore",
+			Description: "Browse files in a file restore",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"file_restore_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the file restore to browse",
+					},
+					"path": map[string]interface{}{
+						"type":        "string",
+						"description": "Path to browse within the restore",
+					},
+					"limit": map[string]interface{}{
+						"type":        "number",
+						"description": "Number of results per page (max 50)",
+					},
+					"offset": map[string]interface{}{
+						"type":        "number",
+						"description": "Pagination offset",
+					},
+				},
+				"required": []string{"file_restore_id", "path"},
+			},
+		},
+		{
+			Name:        "slide_list_image_exports",
+			Description: "List all image exports with pagination and filtering options",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"limit": map[string]interface{}{
+						"type":        "number",
+						"description": "Number of results per page (max 50)",
+					},
+					"offset": map[string]interface{}{
+						"type":        "number",
+						"description": "Pagination offset",
+					},
+					"sort_asc": map[string]interface{}{
+						"type":        "boolean",
+						"description": "Sort in ascending order",
+					},
+					"sort_by": map[string]interface{}{
+						"type":        "string",
+						"description": "Sort by field (id)",
+						"enum":        []string{"id"},
+					},
+				},
+			},
+		},
+		{
+			Name:        "slide_get_image_export",
+			Description: "Get detailed information about a specific image export",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"image_export_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the image export to retrieve",
+					},
+				},
+				"required": []string{"image_export_id"},
+			},
+		},
+		{
+			Name:        "slide_create_image_export",
+			Description: "Create an image export from a snapshot",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"snapshot_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the snapshot to export from",
+					},
+					"device_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the device to export to",
+					},
+					"image_type": map[string]interface{}{
+						"type":        "string",
+						"description": "Type of image to create",
+						"enum":        []string{"vhdx", "vhdx-dynamic", "vhd", "raw"},
+					},
+					"boot_mods": map[string]interface{}{
+						"type":        "array",
+						"description": "Optional boot modifications",
+						"items": map[string]interface{}{
+							"type": "string",
+						},
+					},
+				},
+				"required": []string{"snapshot_id", "device_id", "image_type"},
+			},
+		},
+		{
+			Name:        "slide_delete_image_export",
+			Description: "Delete an image export",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"image_export_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the image export to delete",
+					},
+				},
+				"required": []string{"image_export_id"},
+			},
+		},
+		{
+			Name:        "slide_browse_image_export",
+			Description: "Browse images in an image export",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"image_export_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the image export to browse",
+					},
+					"limit": map[string]interface{}{
+						"type":        "number",
+						"description": "Number of results per page (max 50)",
+					},
+					"offset": map[string]interface{}{
+						"type":        "number",
+						"description": "Pagination offset",
+					},
+				},
+				"required": []string{"image_export_id"},
+			},
+		},
+		{
+			Name:        "slide_list_virtual_machines",
+			Description: "List all virtual machines with pagination and filtering options",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"limit": map[string]interface{}{
+						"type":        "number",
+						"description": "Number of results per page (max 50)",
+					},
+					"offset": map[string]interface{}{
+						"type":        "number",
+						"description": "Pagination offset",
+					},
+					"sort_asc": map[string]interface{}{
+						"type":        "boolean",
+						"description": "Sort in ascending order",
+					},
+					"sort_by": map[string]interface{}{
+						"type":        "string",
+						"description": "Sort by field (created)",
+						"enum":        []string{"created"},
+					},
+				},
+			},
+		},
+		{
+			Name:        "slide_get_virtual_machine",
+			Description: "Get detailed information about a specific virtual machine",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"virt_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the virtual machine to retrieve",
+					},
+				},
+				"required": []string{"virt_id"},
+			},
+		},
+		{
+			Name:        "slide_create_virtual_machine",
+			Description: "Create a virtual machine from a snapshot",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"snapshot_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the snapshot to create VM from",
+					},
+					"device_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the device to create VM on",
+					},
+					"cpu_count": map[string]interface{}{
+						"type":        "number",
+						"description": "Number of CPUs for the VM",
+					},
+					"memory_in_mb": map[string]interface{}{
+						"type":        "number",
+						"description": "Memory in MB for the VM",
+					},
+					"disk_bus": map[string]interface{}{
+						"type":        "string",
+						"description": "Disk bus type",
+						"enum":        []string{"sata", "virtio"},
+					},
+					"network_model": map[string]interface{}{
+						"type":        "string",
+						"description": "Network model",
+						"enum":        []string{"hypervisor_default", "e1000", "rtl8139"},
+					},
+					"network_type": map[string]interface{}{
+						"type":        "string",
+						"description": "Network type",
+						"enum":        []string{"network", "network-isolated", "bridge", "network-id"},
+					},
+					"network_source": map[string]interface{}{
+						"type":        "string",
+						"description": "Network source ID",
+					},
+					"boot_mods": map[string]interface{}{
+						"type":        "array",
+						"description": "Optional boot modifications",
+						"items": map[string]interface{}{
+							"type": "string",
+						},
+					},
+				},
+				"required": []string{"snapshot_id", "device_id"},
+			},
+		},
+		{
+			Name:        "slide_update_virtual_machine",
+			Description: "Update a virtual machine's properties",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"virt_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the virtual machine to update",
+					},
+					"state": map[string]interface{}{
+						"type":        "string",
+						"description": "New state for the VM",
+						"enum":        []string{"running", "stopped", "paused"},
+					},
+					"expires_at": map[string]interface{}{
+						"type":        "string",
+						"description": "Expiration timestamp",
+					},
+					"memory_in_mb": map[string]interface{}{
+						"type":        "number",
+						"description": "Memory in MB",
+					},
+					"cpu_count": map[string]interface{}{
+						"type":        "number",
+						"description": "Number of CPUs",
+					},
+				},
+				"required": []string{"virt_id"},
+			},
+		},
+		{
+			Name:        "slide_delete_virtual_machine",
+			Description: "Delete a virtual machine",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"virt_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the virtual machine to delete",
+					},
+				},
+				"required": []string{"virt_id"},
+			},
+		},
+		{
+			Name:        "slide_list_users",
+			Description: "List all users with pagination and filtering options",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"limit": map[string]interface{}{
+						"type":        "number",
+						"description": "Number of results per page (max 50)",
+					},
+					"offset": map[string]interface{}{
+						"type":        "number",
+						"description": "Pagination offset",
+					},
+					"sort_asc": map[string]interface{}{
+						"type":        "boolean",
+						"description": "Sort in ascending order",
+					},
+					"sort_by": map[string]interface{}{
+						"type":        "string",
+						"description": "Sort by field (id)",
+						"enum":        []string{"id"},
+					},
+				},
+			},
+		},
+		{
+			Name:        "slide_get_user",
+			Description: "Get detailed information about a specific user",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"user_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the user to retrieve",
+					},
+				},
+				"required": []string{"user_id"},
+			},
+		},
+		{
+			Name:        "slide_list_alerts",
+			Description: "List all alerts with pagination and filtering options",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"limit": map[string]interface{}{
+						"type":        "number",
+						"description": "Number of results per page (max 50)",
+					},
+					"offset": map[string]interface{}{
+						"type":        "number",
+						"description": "Pagination offset",
+					},
+					"device_id": map[string]interface{}{
+						"type":        "string",
+						"description": "Filter by device ID",
+					},
+					"agent_id": map[string]interface{}{
+						"type":        "string",
+						"description": "Filter by agent ID",
+					},
+					"resolved": map[string]interface{}{
+						"type":        "boolean",
+						"description": "Filter by resolved status",
+					},
+					"sort_asc": map[string]interface{}{
+						"type":        "boolean",
+						"description": "Sort in ascending order",
+					},
+					"sort_by": map[string]interface{}{
+						"type":        "string",
+						"description": "Sort by field (created)",
+						"enum":        []string{"created"},
+					},
+				},
+			},
+		},
+		{
+			Name:        "slide_get_alert",
+			Description: "Get detailed information about a specific alert",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"alert_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the alert to retrieve",
+					},
+				},
+				"required": []string{"alert_id"},
+			},
+		},
+		{
+			Name:        "slide_update_alert",
+			Description: "Update an alert's status (resolve/unresolve)",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"alert_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the alert to update",
+					},
+					"resolved": map[string]interface{}{
+						"type":        "boolean",
+						"description": "Whether the alert is resolved",
+					},
+				},
+				"required": []string{"alert_id", "resolved"},
+			},
+		},
+		{
+			Name:        "slide_list_accounts",
+			Description: "List all accounts with pagination and filtering options",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"limit": map[string]interface{}{
+						"type":        "number",
+						"description": "Number of results per page (max 50)",
+					},
+					"offset": map[string]interface{}{
+						"type":        "number",
+						"description": "Pagination offset",
+					},
+					"sort_asc": map[string]interface{}{
+						"type":        "boolean",
+						"description": "Sort in ascending order",
+					},
+					"sort_by": map[string]interface{}{
+						"type":        "string",
+						"description": "Sort by field (name)",
+						"enum":        []string{"name"},
+					},
+				},
+			},
+		},
+		{
+			Name:        "slide_get_account",
+			Description: "Get detailed information about a specific account",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"account_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the account to retrieve",
+					},
+				},
+				"required": []string{"account_id"},
+			},
+		},
+		{
+			Name:        "slide_update_account",
+			Description: "Update an account's properties",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"account_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the account to update",
+					},
+					"alert_emails": map[string]interface{}{
+						"type":        "array",
+						"description": "List of email addresses for alerts",
+						"items": map[string]interface{}{
+							"type": "string",
+						},
+					},
+				},
+				"required": []string{"account_id", "alert_emails"},
+			},
+		},
+		{
+			Name:        "slide_list_clients",
+			Description: "List all clients with pagination and filtering options",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"limit": map[string]interface{}{
+						"type":        "number",
+						"description": "Number of results per page (max 50)",
+					},
+					"offset": map[string]interface{}{
+						"type":        "number",
+						"description": "Pagination offset",
+					},
+					"sort_asc": map[string]interface{}{
+						"type":        "boolean",
+						"description": "Sort in ascending order",
+					},
+					"sort_by": map[string]interface{}{
+						"type":        "string",
+						"description": "Sort by field (id)",
+						"enum":        []string{"id"},
+					},
+				},
+			},
+		},
+		{
+			Name:        "slide_get_client",
+			Description: "Get detailed information about a specific client",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"client_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the client to retrieve",
+					},
+				},
+				"required": []string{"client_id"},
+			},
+		},
+		{
+			Name:        "slide_create_client",
+			Description: "Create a new client",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"name": map[string]interface{}{
+						"type":        "string",
+						"description": "Name of the client",
+					},
+					"comments": map[string]interface{}{
+						"type":        "string",
+						"description": "Comments about the client",
+					},
+				},
+				"required": []string{"name"},
+			},
+		},
+		{
+			Name:        "slide_update_client",
+			Description: "Update a client's properties",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"client_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the client to update",
+					},
+					"name": map[string]interface{}{
+						"type":        "string",
+						"description": "New name for the client",
+					},
+					"comments": map[string]interface{}{
+						"type":        "string",
+						"description": "New comments for the client",
+					},
+				},
+				"required": []string{"client_id"},
+			},
+		},
+		{
+			Name:        "slide_delete_client",
+			Description: "Delete a client",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"client_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the client to delete",
+					},
+				},
+				"required": []string{"client_id"},
 			},
 		},
 	}
