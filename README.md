@@ -488,7 +488,21 @@ Use the hosted multi-user web server at `www.slide.recipes/mcp` - no local insta
 - ✅ **Cross-Platform**: Works on any system that can run Claude Desktop
 - ✅ **High Availability**: Hosted infrastructure with monitoring
 
-#### Quick Setup
+#### 🔧 Quick Troubleshooting 
+
+**Getting "spawn node ENOENT" errors?** Find your Node.js path:
+```bash
+# Find Node.js location
+which node
+
+# Common paths:
+# Linux: /usr/bin/node  
+# macOS (Homebrew): /opt/homebrew/bin/node
+# macOS (older): /usr/local/bin/node
+```
+Use the full path in your Claude Desktop configuration instead of just `node`.
+
+#### Quick Setup (Recommended)
 
 1. **Download the bridge script**:
    ```bash
@@ -501,7 +515,7 @@ Use the hosted multi-user web server at `www.slide.recipes/mcp` - no local insta
    {
      "mcpServers": {
        "slide": {
-         "command": "node",
+         "command": "/usr/bin/node",
          "args": ["/path/to/slide-mcp-bridge.js"],
          "env": {
            "SLIDE_API_KEY": "YOUR_API_KEY_HERE"
@@ -510,6 +524,8 @@ Use the hosted multi-user web server at `www.slide.recipes/mcp` - no local insta
      }
    }
    ```
+   
+   > **Note**: If you get "spawn node ENOENT" errors, use the full path to node. Find your node path with `which node` or try common locations like `/usr/bin/node`, `/usr/local/bin/node`, or on macOS with Homebrew: `/opt/homebrew/bin/node`
 
 #### Alternative: Direct Configuration (Advanced)
 
@@ -519,7 +535,7 @@ For advanced users who prefer not to download the bridge script, you can use thi
 {
   "mcpServers": {
     "slide": {
-      "command": "node", 
+      "command": "/usr/bin/node", 
       "args": ["-e", "const https=require('https'),readline=require('readline');const key=process.env.SLIDE_API_KEY;if(!key){console.error(JSON.stringify({jsonrpc:'2.0',id:null,error:{code:-32602,message:'SLIDE_API_KEY not set'}}));process.exit(1)}const rl=readline.createInterface({input:process.stdin,output:process.stdout,terminal:false});rl.on('line',line=>{if(!line.trim())return;try{const req=JSON.parse(line),data=JSON.stringify(req),opts={hostname:'www.slide.recipes',port:443,path:'/mcp',method:'POST',headers:{'Content-Type':'application/json','X-API-Key':key}};const httpReq=https.request(opts,res=>{let resp='';res.on('data',chunk=>resp+=chunk);res.on('end',()=>{try{console.log(JSON.stringify(JSON.parse(resp)))}catch{console.log(JSON.stringify({jsonrpc:'2.0',id:req.id,error:{code:-32603,message:'Invalid server response'}}))}})});httpReq.on('error',err=>console.log(JSON.stringify({jsonrpc:'2.0',id:req.id,error:{code:-32603,message:`Network error: ${err.message}`}})));httpReq.write(data);httpReq.end()}catch{console.log(JSON.stringify({jsonrpc:'2.0',id:null,error:{code:-32700,message:'Parse error'}}))}});"],
       "env": {
         "SLIDE_API_KEY": "YOUR_API_KEY_HERE"
@@ -528,6 +544,12 @@ For advanced users who prefer not to download the bridge script, you can use thi
   }
 }
 ```
+
+> **Troubleshooting**: If you encounter "spawn node ENOENT" errors, Node.js might not be in your PATH or installed. Solutions:
+> 1. **Find your Node.js path**: Run `which node` or `whereis node` in terminal
+> 2. **Common paths**: `/usr/bin/node`, `/usr/local/bin/node`, `/opt/homebrew/bin/node` (macOS Homebrew)
+> 3. **Install Node.js**: Visit [nodejs.org](https://nodejs.org/) if not installed
+> 4. **Use bridge script**: Download the bridge script instead for easier setup
 
 #### Test the Hosted Server
 
