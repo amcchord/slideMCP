@@ -69,15 +69,39 @@ func startMCPServer() {
 		
 		var request MCPRequest
 		if err := json.Unmarshal([]byte(line), &request); err != nil {
-			sendError(request.ID, -32700, "Parse error", nil)
+			// Only send error response if we can determine there was an ID
+			var rawMsg map[string]interface{}
+			if json.Unmarshal([]byte(line), &rawMsg) == nil {
+				if id, exists := rawMsg["id"]; exists {
+					response := sendError(id, -32700, "Parse error", nil)
+					if responseJSON, err := json.Marshal(response); err == nil {
+						fmt.Println(string(responseJSON))
+					}
+				}
+			}
 			continue
 		}
 		
+		// Check if this is a notification (no ID field)
+		var rawMsg map[string]interface{}
+		json.Unmarshal([]byte(line), &rawMsg)
+		_, hasID := rawMsg["id"]
+		
+		if !hasID {
+			// This is a notification - handle it but don't send a response
+			handleNotification(request)
+			continue
+		}
+		
+		// This is a request - handle it and send a response
 		response := handleRequest(request)
 		
 		responseJSON, err := json.Marshal(response)
 		if err != nil {
-			sendError(request.ID, -32603, "Internal error", nil)
+			errorResponse := sendError(request.ID, -32603, "Internal error", nil)
+			if errorJSON, err := json.Marshal(errorResponse); err == nil {
+				fmt.Println(string(errorJSON))
+			}
 			continue
 		}
 		
@@ -86,6 +110,20 @@ func startMCPServer() {
 	
 	if err := scanner.Err(); err != nil {
 		log.Printf("Error reading input: %v", err)
+	}
+}
+
+func handleNotification(request MCPRequest) {
+	switch request.Method {
+	case "notifications/initialized":
+		// Client has initialized - no response needed
+		log.Println("Client initialized")
+	case "notifications/cancelled":
+		// Request was cancelled - no response needed
+		log.Println("Request cancelled")
+	default:
+		// Unknown notification - just log it
+		log.Printf("Unknown notification: %s", request.Method)
 	}
 }
 
