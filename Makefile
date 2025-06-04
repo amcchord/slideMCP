@@ -1,7 +1,7 @@
 # Slide MCP Server Makefile
 
 BINARY_NAME=slide-mcp-server
-VERSION=0.1.0
+VERSION=v1.11
 BUILD_DIR=build
 
 # Default target
