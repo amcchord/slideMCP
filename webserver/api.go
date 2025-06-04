@@ -2109,10 +2109,11 @@ func main() {
 	http.HandleFunc("/mcp", handleMCPRequest)
 	http.HandleFunc("/health", handleHealth)
 
-	log.Printf("Slide MCP Web Server starting on port %s...", port)
+	log.Printf("Slide MCP Web Server starting on localhost:%s...", port)
 	log.Printf("MCP endpoint: http://localhost:%s/mcp", port)
 	log.Printf("Documentation: http://localhost:%s/", port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	log.Printf("External access via Apache proxy: https://www.slide.recipes/")
+	log.Fatal(http.ListenAndServe("localhost:"+port, nil))
 }
 
 func handleHealth(w http.ResponseWriter, r *http.Request) {

@@ -479,6 +479,8 @@ echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' | ./slide-mcp-
 
 Use the hosted multi-user web server at `www.slide.recipes/mcp` - no local installation needed!
 
+**🏗️ Production Architecture**: Apache HTTP Server with SSL termination reverse-proxying to a high-performance Go backend, ensuring enterprise-grade security and reliability.
+
 #### Advantages
 - ✅ **Zero Installation**: No binaries, dependencies, or Docker required
 - ✅ **Always Updated**: Latest version automatically available
@@ -490,7 +492,7 @@ Use the hosted multi-user web server at `www.slide.recipes/mcp` - no local insta
 
 1. **Download the bridge script**:
    ```bash
-   curl -o slide-mcp-bridge.js https://www.slide.recipes/mcp/slide-mcp-bridge.js
+   curl -o slide-mcp-bridge.js https://www.slide.recipes/slide-mcp-bridge.js
    chmod +x slide-mcp-bridge.js
    ```
 
@@ -518,7 +520,7 @@ For advanced users who prefer not to download the bridge script, you can use thi
   "mcpServers": {
     "slide": {
       "command": "node", 
-      "args": ["-e", "const https=require('https'),readline=require('readline');const key=process.env.SLIDE_API_KEY;if(!key){console.error(JSON.stringify({jsonrpc:'2.0',id:null,error:{code:-32602,message:'SLIDE_API_KEY not set'}}));process.exit(1)}const rl=readline.createInterface({input:process.stdin,output:process.stdout,terminal:false});rl.on('line',line=>{if(!line.trim())return;try{const req=JSON.parse(line),data=JSON.stringify(req),opts={hostname:'www.slide.recipes',path:'/mcp',method:'POST',headers:{'Content-Type':'application/json','X-API-Key':key}};const httpReq=https.request(opts,res=>{let resp='';res.on('data',chunk=>resp+=chunk);res.on('end',()=>{try{console.log(JSON.stringify(JSON.parse(resp)))}catch{console.log(JSON.stringify({jsonrpc:'2.0',id:req.id,error:{code:-32603,message:'Invalid server response'}}))}})});httpReq.on('error',err=>console.log(JSON.stringify({jsonrpc:'2.0',id:req.id,error:{code:-32603,message:`Network error: ${err.message}`}})));httpReq.write(data);httpReq.end()}catch{console.log(JSON.stringify({jsonrpc:'2.0',id:null,error:{code:-32700,message:'Parse error'}}))}});"],
+      "args": ["-e", "const https=require('https'),readline=require('readline');const key=process.env.SLIDE_API_KEY;if(!key){console.error(JSON.stringify({jsonrpc:'2.0',id:null,error:{code:-32602,message:'SLIDE_API_KEY not set'}}));process.exit(1)}const rl=readline.createInterface({input:process.stdin,output:process.stdout,terminal:false});rl.on('line',line=>{if(!line.trim())return;try{const req=JSON.parse(line),data=JSON.stringify(req),opts={hostname:'www.slide.recipes',port:443,path:'/mcp',method:'POST',headers:{'Content-Type':'application/json','X-API-Key':key}};const httpReq=https.request(opts,res=>{let resp='';res.on('data',chunk=>resp+=chunk);res.on('end',()=>{try{console.log(JSON.stringify(JSON.parse(resp)))}catch{console.log(JSON.stringify({jsonrpc:'2.0',id:req.id,error:{code:-32603,message:'Invalid server response'}}))}})});httpReq.on('error',err=>console.log(JSON.stringify({jsonrpc:'2.0',id:req.id,error:{code:-32603,message:`Network error: ${err.message}`}})));httpReq.write(data);httpReq.end()}catch{console.log(JSON.stringify({jsonrpc:'2.0',id:null,error:{code:-32700,message:'Parse error'}}))}});"],
       "env": {
         "SLIDE_API_KEY": "YOUR_API_KEY_HERE"
       }
@@ -533,7 +535,7 @@ You can test the hosted server directly:
 
 ```bash
 # Test health endpoint
-curl -X GET https://www.slide.recipes/mcp/health
+curl -X GET https://www.slide.recipes/health
 
 # Test MCP initialize (replace YOUR_API_KEY with your actual key)
 curl -X POST https://www.slide.recipes/mcp \
@@ -557,11 +559,13 @@ The hosted server accepts your Slide API key via:
 
 #### Server Features
 
-- **Multi-User**: Secure per-user API key authentication
-- **CORS Enabled**: Works with web applications
-- **Full API Coverage**: All 30+ Slide API tools available
-- **High Availability**: Monitored production service
-- **Documentation**: Visit `https://www.slide.recipes/mcp/` for interactive docs
+- **🔒 HTTPS Security**: SSL/TLS encryption with Let's Encrypt certificates  
+- **🏢 Multi-User**: Secure per-user API key authentication
+- **🌐 CORS Enabled**: Works with web applications
+- **📚 Full API Coverage**: All 30+ Slide API tools available
+- **⚡ High Performance**: Apache reverse proxy with Go backend
+- **🔧 High Availability**: Monitored production service with systemd
+- **📖 Documentation**: Visit `https://www.slide.recipes/` for interactive docs
 
 ### Usage with VS Code
 
