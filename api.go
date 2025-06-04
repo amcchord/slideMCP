@@ -23,25 +23,25 @@ var (
 
 // Data structures
 type Device struct {
-	DeviceID                string   `json:"device_id"`
-	DisplayName             string   `json:"display_name"`
-	LastSeenAt              string   `json:"last_seen_at"`
-	Hostname                string   `json:"hostname"`
-	IPAddresses             []string `json:"ip_addresses"`
-	Addresses               []any    `json:"addresses"`
-	PublicIPAddress         string   `json:"public_ip_address"`
-	ImageVersion            string   `json:"image_version"`
-	PackageVersion          string   `json:"package_version"`
-	StorageUsedBytes        int64    `json:"storage_used_bytes"`
-	StorageTotalBytes       int64    `json:"storage_total_bytes"`
-	SerialNumber            string   `json:"serial_number"`
-	HardwareModelName       string   `json:"hardware_model_name"`
-	ServiceModelName        string   `json:"service_model_name"`
-	ServiceModelNameShort   string   `json:"service_model_name_short"`
-	ServiceStatus           string   `json:"service_status"`
-	NFR                     bool     `json:"nfr"`
-	ClientID                *string  `json:"client_id,omitempty"`
-	BootedAt                *string  `json:"booted_at,omitempty"`
+	DeviceID              string   `json:"device_id"`
+	DisplayName           string   `json:"display_name"`
+	LastSeenAt            string   `json:"last_seen_at"`
+	Hostname              string   `json:"hostname"`
+	IPAddresses           []string `json:"ip_addresses"`
+	Addresses             []any    `json:"addresses"`
+	PublicIPAddress       string   `json:"public_ip_address"`
+	ImageVersion          string   `json:"image_version"`
+	PackageVersion        string   `json:"package_version"`
+	StorageUsedBytes      int64    `json:"storage_used_bytes"`
+	StorageTotalBytes     int64    `json:"storage_total_bytes"`
+	SerialNumber          string   `json:"serial_number"`
+	HardwareModelName     string   `json:"hardware_model_name"`
+	ServiceModelName      string   `json:"service_model_name"`
+	ServiceModelNameShort string   `json:"service_model_name_short"`
+	ServiceStatus         string   `json:"service_status"`
+	NFR                   bool     `json:"nfr"`
+	ClientID              *string  `json:"client_id,omitempty"`
+	BootedAt              *string  `json:"booted_at,omitempty"`
 }
 
 type Agent struct {
@@ -97,23 +97,23 @@ type Location struct {
 }
 
 type Deletion struct {
-	Type              string  `json:"type"`
-	Deleted           string  `json:"deleted"`
-	DeletedBy         string  `json:"deleted_by"`
-	FirstAndLastName  *string `json:"first_and_last_name,omitempty"`
+	Type             string  `json:"type"`
+	Deleted          string  `json:"deleted"`
+	DeletedBy        string  `json:"deleted_by"`
+	FirstAndLastName *string `json:"first_and_last_name,omitempty"`
 }
 
 type Snapshot struct {
-	SnapshotID               string     `json:"snapshot_id"`
-	AgentID                  string     `json:"agent_id"`
-	Locations                []Location `json:"locations"`
-	BackupStartedAt          string     `json:"backup_started_at"`
-	BackupEndedAt            string     `json:"backup_ended_at"`
-	Deleted                  *string    `json:"deleted,omitempty"`
-	Deletions                []Deletion `json:"deletions,omitempty"`
-	VerifyBootStatus         *string    `json:"verify_boot_status,omitempty"`
-	VerifyFsStatus           *string    `json:"verify_fs_status,omitempty"`
-	VerifyBootScreenshotURL  *string    `json:"verify_boot_screenshot_url,omitempty"`
+	SnapshotID              string     `json:"snapshot_id"`
+	AgentID                 string     `json:"agent_id"`
+	Locations               []Location `json:"locations"`
+	BackupStartedAt         string     `json:"backup_started_at"`
+	BackupEndedAt           string     `json:"backup_ended_at"`
+	Deleted                 *string    `json:"deleted,omitempty"`
+	Deletions               []Deletion `json:"deletions,omitempty"`
+	VerifyBootStatus        *string    `json:"verify_boot_status,omitempty"`
+	VerifyFsStatus          *string    `json:"verify_fs_status,omitempty"`
+	VerifyBootScreenshotURL *string    `json:"verify_boot_screenshot_url,omitempty"`
 }
 
 type FileRestore struct {
@@ -131,13 +131,13 @@ type DownloadURI struct {
 }
 
 type FileRestoreEntry struct {
-	Name               string        `json:"name"`
-	Path               string        `json:"path"`
-	Size               int64         `json:"size"`
-	Type               string        `json:"type"`
-	ModifiedAt         string        `json:"modified_at"`
-	DownloadURIs       []DownloadURI `json:"download_uris"`
-	SymlinkTargetPath  *string       `json:"symlink_target_path,omitempty"`
+	Name              string        `json:"name"`
+	Path              string        `json:"path"`
+	Size              int64         `json:"size"`
+	Type              string        `json:"type"`
+	ModifiedAt        string        `json:"modified_at"`
+	DownloadURIs      []DownloadURI `json:"download_uris"`
+	SymlinkTargetPath *string       `json:"symlink_target_path,omitempty"`
 }
 
 type ImageExport struct {
@@ -191,15 +191,15 @@ type User struct {
 }
 
 type Alert struct {
-	AlertID      string  `json:"alert_id"`
-	AlertType    string  `json:"alert_type"`
-	AlertFields  string  `json:"alert_fields"`
-	CreatedAt    string  `json:"created_at"`
-	Resolved     bool    `json:"resolved"`
-	ResolvedAt   *string `json:"resolved_at,omitempty"`
-	ResolvedBy   *string `json:"resolved_by,omitempty"`
-	DeviceID     *string `json:"device_id,omitempty"`
-	AgentID      *string `json:"agent_id,omitempty"`
+	AlertID     string  `json:"alert_id"`
+	AlertType   string  `json:"alert_type"`
+	AlertFields string  `json:"alert_fields"`
+	CreatedAt   string  `json:"created_at"`
+	Resolved    bool    `json:"resolved"`
+	ResolvedAt  *string `json:"resolved_at,omitempty"`
+	ResolvedBy  *string `json:"resolved_by,omitempty"`
+	DeviceID    *string `json:"device_id,omitempty"`
+	AgentID     *string `json:"agent_id,omitempty"`
 }
 
 type BillingAddress struct {
@@ -326,9 +326,9 @@ func listDevices(args map[string]interface{}) (string, error) {
 		"pagination": result.Pagination,
 		"data":       result.Data,
 		"_metadata": map[string]interface{}{
-			"primary_identifier":      "hostname",
-			"presentation_guidance":   "When referring to devices, use the hostname as the primary identifier. Device IDs are internal identifiers not commonly used by humans.",
-			"workflow_guidance":       "Devices are the physical machines running the Slide appliance. Agents are the backup software installed on computers that get backed up to these devices.",
+			"primary_identifier":    "hostname",
+			"presentation_guidance": "When referring to devices, use the hostname as the primary identifier. Device IDs are internal identifiers not commonly used by humans.",
+			"workflow_guidance":     "Devices are the physical machines running the Slide appliance. Agents are the backup software installed on computers that get backed up to these devices.",
 		},
 	}
 
@@ -394,9 +394,9 @@ func listAgents(args map[string]interface{}) (string, error) {
 		"pagination": result.Pagination,
 		"data":       result.Data,
 		"_metadata": map[string]interface{}{
-			"primary_identifier":      "display_name",
-			"presentation_guidance":   "When referring to agents, use the display name as the primary identifier. If display name is blank, use hostname instead. Agent IDs are internal identifiers not commonly used by humans.",
-			"workflow_guidance":       "Agents are backup software installed on computers. They connect to devices (Slide appliances) to store backups.",
+			"primary_identifier":    "display_name",
+			"presentation_guidance": "When referring to agents, use the display name as the primary identifier. If display name is blank, use hostname instead. Agent IDs are internal identifiers not commonly used by humans.",
+			"workflow_guidance":     "Agents are backup software installed on computers. They connect to devices (Slide appliances) to store backups.",
 		},
 	}
 
@@ -1203,13 +1203,47 @@ func listVirtualMachines(args map[string]interface{}) (string, error) {
 		return "", fmt.Errorf("failed to parse response: %w", err)
 	}
 
+	// Process each VM to add VNC viewer URLs
+	enhancedVMs := make([]map[string]interface{}, len(result.Data))
+	for i, vm := range result.Data {
+		vmMap := map[string]interface{}{
+			"virt_id":        vm.VirtID,
+			"device_id":      vm.DeviceID,
+			"agent_id":       vm.AgentID,
+			"snapshot_id":    vm.SnapshotID,
+			"state":          vm.State,
+			"created_at":     vm.CreatedAt,
+			"expires_at":     vm.ExpiresAt,
+			"cpu_count":      vm.CPUCount,
+			"memory_in_mb":   vm.MemoryInMB,
+			"disk_bus":       vm.DiskBus,
+			"network_model":  vm.NetworkModel,
+			"network_type":   vm.NetworkType,
+			"network_source": vm.NetworkSource,
+			"vnc":            vm.VNC,
+			"vnc_password":   vm.VNCPassword,
+		}
+
+		// Generate VNC viewer URL if websocket URI is available
+		for _, vnc := range vm.VNC {
+			if vnc.WebsocketURI != nil {
+				vncViewerURL := generateVNCViewerURL(vm.VirtID, *vnc.WebsocketURI, vm.VNCPassword)
+				vmMap["_vnc_viewer_url"] = vncViewerURL
+				break
+			}
+		}
+
+		enhancedVMs[i] = vmMap
+	}
+
 	enhancedResult := map[string]interface{}{
 		"pagination": result.Pagination,
-		"data":       result.Data,
+		"data":       enhancedVMs,
 		"_metadata": map[string]interface{}{
 			"primary_identifier":    "virt_id",
 			"presentation_guidance": "Virtual machines created from snapshots for testing or disaster recovery.",
 			"workflow_guidance":     "VMs can be started/stopped and accessed via VNC. Great for testing backups before full restore.",
+			"vnc_guidance":          "Each virtual machine includes a _vnc_viewer_url property that provides a direct link to access its console through a browser-based VNC client.",
 		},
 	}
 
@@ -1238,15 +1272,36 @@ func getVirtualMachine(args map[string]interface{}) (string, error) {
 		return "", fmt.Errorf("failed to parse response: %w", err)
 	}
 
-	// Add VNC viewer URL if websocket URI is available
+	// Generate VNC viewer URL if websocket URI is available
 	enhancedResult := map[string]interface{}{
-		"virtual_machine": result,
+		"virt_id":        result.VirtID,
+		"device_id":      result.DeviceID,
+		"agent_id":       result.AgentID,
+		"snapshot_id":    result.SnapshotID,
+		"state":          result.State,
+		"created_at":     result.CreatedAt,
+		"expires_at":     result.ExpiresAt,
+		"cpu_count":      result.CPUCount,
+		"memory_in_mb":   result.MemoryInMB,
+		"disk_bus":       result.DiskBus,
+		"network_model":  result.NetworkModel,
+		"network_type":   result.NetworkType,
+		"network_source": result.NetworkSource,
+		"vnc":            result.VNC,
+		"vnc_password":   result.VNCPassword,
+		"_metadata": map[string]interface{}{
+			"primary_identifier":    "virt_id",
+			"presentation_guidance": "When referring to the virtual machine, use the virt_id as the primary identifier. Virtual machine IDs are internal identifiers not commonly used by humans.",
+		},
 	}
 
 	for _, vnc := range result.VNC {
 		if vnc.WebsocketURI != nil {
 			vncViewerURL := generateVNCViewerURL(result.VirtID, *vnc.WebsocketURI, result.VNCPassword)
-			enhancedResult["vnc_viewer_url"] = vncViewerURL
+			enhancedResult["_vnc_viewer_url"] = vncViewerURL
+			// Add to metadata as well
+			enhancedResult["_metadata"].(map[string]interface{})["vnc_guidance"] = "Use the _vnc_viewer_url to access the virtual machine's console via a browser-based VNC client."
+			enhancedResult["_metadata"].(map[string]interface{})["vnc_viewer_url"] = vncViewerURL
 			break
 		}
 	}
@@ -1312,7 +1367,43 @@ func createVirtualMachine(args map[string]interface{}) (string, error) {
 		return "", fmt.Errorf("failed to parse response: %w", err)
 	}
 
-	jsonData, err := json.MarshalIndent(result, "", "  ")
+	// Generate VNC viewer URL if websocket URI is available
+	enhancedResult := map[string]interface{}{
+		"virt_id":        result.VirtID,
+		"device_id":      result.DeviceID,
+		"agent_id":       result.AgentID,
+		"snapshot_id":    result.SnapshotID,
+		"state":          result.State,
+		"created_at":     result.CreatedAt,
+		"expires_at":     result.ExpiresAt,
+		"cpu_count":      result.CPUCount,
+		"memory_in_mb":   result.MemoryInMB,
+		"disk_bus":       result.DiskBus,
+		"network_model":  result.NetworkModel,
+		"network_type":   result.NetworkType,
+		"network_source": result.NetworkSource,
+		"vnc":            result.VNC,
+		"vnc_password":   result.VNCPassword,
+		"_metadata": map[string]interface{}{
+			"primary_identifier":    "virt_id",
+			"presentation_guidance": "When referring to the virtual machine, use the virt_id as the primary identifier. Virtual machine IDs are internal identifiers not commonly used by humans.",
+			"next_steps":            "Now that you've created a virtual machine, you can control it using slide_update_virtual_machine to change its state (running, stopped, paused) or update resources.",
+			"resource_guidance":     "For optimal performance, 8192MB of RAM is recommended for most VMs. You can adjust this as needed using slide_update_virtual_machine.",
+		},
+	}
+
+	for _, vnc := range result.VNC {
+		if vnc.WebsocketURI != nil {
+			vncViewerURL := generateVNCViewerURL(result.VirtID, *vnc.WebsocketURI, result.VNCPassword)
+			enhancedResult["_vnc_viewer_url"] = vncViewerURL
+			// Add to metadata as well
+			enhancedResult["_metadata"].(map[string]interface{})["vnc_guidance"] = "Use the _vnc_viewer_url to access the virtual machine's console via a browser-based VNC client."
+			enhancedResult["_metadata"].(map[string]interface{})["vnc_viewer_url"] = vncViewerURL
+			break
+		}
+	}
+
+	jsonData, err := json.MarshalIndent(enhancedResult, "", "  ")
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal result: %w", err)
 	}
@@ -1357,7 +1448,41 @@ func updateVirtualMachine(args map[string]interface{}) (string, error) {
 		return "", fmt.Errorf("failed to parse response: %w", err)
 	}
 
-	jsonData, err := json.MarshalIndent(result, "", "  ")
+	// Generate VNC viewer URL if websocket URI is available
+	enhancedResult := map[string]interface{}{
+		"virt_id":        result.VirtID,
+		"device_id":      result.DeviceID,
+		"agent_id":       result.AgentID,
+		"snapshot_id":    result.SnapshotID,
+		"state":          result.State,
+		"created_at":     result.CreatedAt,
+		"expires_at":     result.ExpiresAt,
+		"cpu_count":      result.CPUCount,
+		"memory_in_mb":   result.MemoryInMB,
+		"disk_bus":       result.DiskBus,
+		"network_model":  result.NetworkModel,
+		"network_type":   result.NetworkType,
+		"network_source": result.NetworkSource,
+		"vnc":            result.VNC,
+		"vnc_password":   result.VNCPassword,
+		"_metadata": map[string]interface{}{
+			"primary_identifier":    "virt_id",
+			"presentation_guidance": "When referring to the virtual machine, use the virt_id as the primary identifier. Virtual machine IDs are internal identifiers not commonly used by humans.",
+		},
+	}
+
+	for _, vnc := range result.VNC {
+		if vnc.WebsocketURI != nil {
+			vncViewerURL := generateVNCViewerURL(result.VirtID, *vnc.WebsocketURI, result.VNCPassword)
+			enhancedResult["_vnc_viewer_url"] = vncViewerURL
+			// Add to metadata as well
+			enhancedResult["_metadata"].(map[string]interface{})["vnc_guidance"] = "Use the _vnc_viewer_url to access the virtual machine's console via a browser-based VNC client."
+			enhancedResult["_metadata"].(map[string]interface{})["vnc_viewer_url"] = vncViewerURL
+			break
+		}
+	}
+
+	jsonData, err := json.MarshalIndent(enhancedResult, "", "  ")
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal result: %w", err)
 	}
