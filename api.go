@@ -227,6 +227,38 @@ type Client struct {
 	Comments string `json:"comments"`
 }
 
+type Network struct {
+	NetworkID        string   `json:"network_id"`
+	Type             string   `json:"type"`
+	Name             string   `json:"name"`
+	Comments         string   `json:"comments"`
+	BridgeDeviceID   string   `json:"bridge_device_id"`
+	RouterPrefix     string   `json:"router_prefix"`
+	DHCP             bool     `json:"dhcp"`
+	DHCPRangeStart   string   `json:"dhcp_range_start"`
+	DHCPRangeEnd     string   `json:"dhcp_range_end"`
+	Nameservers      string   `json:"nameservers"`
+	Internet         bool     `json:"internet"`
+	ConnectedVirtIDs []string `json:"connected_virt_ids"`
+	ClientID         *string  `json:"client_id,omitempty"`
+}
+
+type NetworkPortForward struct {
+	NetworkID string `json:"network_id"`
+	Proto     string `json:"proto"`
+	Port      int    `json:"port"`
+	Dest      string `json:"dest"`
+}
+
+type NetworkWGPeer struct {
+	NetworkID      string   `json:"network_id"`
+	PeerName       string   `json:"peer_name"`
+	WGPublicKey    string   `json:"wg_public_key"`
+	WGPrivateKey   string   `json:"wg_private_key"`
+	WGAddress      string   `json:"wg_address"`
+	RemoteNetworks []string `json:"remote_networks"`
+}
+
 // Helper function to generate VNC viewer URL
 func generateVNCViewerURL(virtID, websocketURI, vncPassword string) string {
 	encodedWebsocketURI := url.QueryEscape(websocketURI)
@@ -333,6 +365,123 @@ func listDevices(args map[string]interface{}) (string, error) {
 	}
 
 	jsonData, err := json.MarshalIndent(enhancedResult, "", "  ")
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal result: %w", err)
+	}
+
+	return string(jsonData), nil
+}
+
+func getDevice(args map[string]interface{}) (string, error) {
+	deviceID, ok := args["device_id"].(string)
+	if !ok {
+		return "", fmt.Errorf("device_id is required")
+	}
+
+	endpoint := fmt.Sprintf("/v1/device/%s", deviceID)
+	data, err := makeAPIRequest("GET", endpoint, nil)
+	if err != nil {
+		return "", err
+	}
+
+	var result Device
+	if err := json.Unmarshal(data, &result); err != nil {
+		return "", fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	jsonData, err := json.MarshalIndent(result, "", "  ")
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal result: %w", err)
+	}
+
+	return string(jsonData), nil
+}
+
+func updateDevice(args map[string]interface{}) (string, error) {
+	deviceID, ok := args["device_id"].(string)
+	if !ok {
+		return "", fmt.Errorf("device_id is required")
+	}
+
+	payload := make(map[string]interface{})
+
+	if displayName, ok := args["display_name"]; ok {
+		payload["display_name"] = displayName
+	}
+	if hostname, ok := args["hostname"]; ok {
+		payload["hostname"] = hostname
+	}
+	if clientID, ok := args["client_id"]; ok {
+		payload["client_id"] = clientID
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	endpoint := fmt.Sprintf("/v1/device/%s", deviceID)
+	data, err := makeAPIRequest("PATCH", endpoint, body)
+	if err != nil {
+		return "", err
+	}
+
+	var result Device
+	if err := json.Unmarshal(data, &result); err != nil {
+		return "", fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	jsonData, err := json.MarshalIndent(result, "", "  ")
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal result: %w", err)
+	}
+
+	return string(jsonData), nil
+}
+
+func powerOffDevice(args map[string]interface{}) (string, error) {
+	deviceID, ok := args["device_id"].(string)
+	if !ok {
+		return "", fmt.Errorf("device_id is required")
+	}
+
+	endpoint := fmt.Sprintf("/v1/device/%s/shutdown/poweroff", deviceID)
+	data, err := makeAPIRequest("POST", endpoint, nil)
+	if err != nil {
+		return "", err
+	}
+
+	var result Device
+	if err := json.Unmarshal(data, &result); err != nil {
+		return "", fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	jsonData, err := json.MarshalIndent(result, "", "  ")
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal result: %w", err)
+	}
+
+	return string(jsonData), nil
+}
+
+func rebootDevice(args map[string]interface{}) (string, error) {
+	deviceID, ok := args["device_id"].(string)
+	if !ok {
+		return "", fmt.Errorf("device_id is required")
+	}
+
+	endpoint := fmt.Sprintf("/v1/device/%s/shutdown/reboot", deviceID)
+	data, err := makeAPIRequest("POST", endpoint, nil)
+	if err != nil {
+		return "", err
+	}
+
+	var result Device
+	if err := json.Unmarshal(data, &result); err != nil {
+		return "", fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	jsonData, err := json.MarshalIndent(result, "", "  ")
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal result: %w", err)
 	}
@@ -1243,7 +1392,8 @@ func listVirtualMachines(args map[string]interface{}) (string, error) {
 			"primary_identifier":    "virt_id",
 			"presentation_guidance": "Virtual machines created from snapshots for testing or disaster recovery.",
 			"workflow_guidance":     "VMs can be started/stopped and accessed via VNC. Great for testing backups before full restore.",
-			"vnc_guidance":          "Each virtual machine includes a _vnc_viewer_url property that provides a direct link to access its console through a browser-based VNC client.",
+			"vnc_guidance":          "The easiest way to access a virtual machine is through the _vnc_viewer_url property - this provides a direct browser link to the VM console that requires no additional software or configuration.",
+			"console_access":        "Always use the _vnc_viewer_url for immediate browser-based console access. This is much easier than configuring a separate VNC client.",
 		},
 	}
 
@@ -1292,6 +1442,7 @@ func getVirtualMachine(args map[string]interface{}) (string, error) {
 		"_metadata": map[string]interface{}{
 			"primary_identifier":    "virt_id",
 			"presentation_guidance": "When referring to the virtual machine, use the virt_id as the primary identifier. Virtual machine IDs are internal identifiers not commonly used by humans.",
+			"console_access":        "The easiest way to access this virtual machine is through the _vnc_viewer_url property - this provides a direct browser link to the VM console that requires no additional software or configuration.",
 		},
 	}
 
@@ -1300,7 +1451,7 @@ func getVirtualMachine(args map[string]interface{}) (string, error) {
 			vncViewerURL := generateVNCViewerURL(result.VirtID, *vnc.WebsocketURI, result.VNCPassword)
 			enhancedResult["_vnc_viewer_url"] = vncViewerURL
 			// Add to metadata as well
-			enhancedResult["_metadata"].(map[string]interface{})["vnc_guidance"] = "Use the _vnc_viewer_url to access the virtual machine's console via a browser-based VNC client."
+			enhancedResult["_metadata"].(map[string]interface{})["vnc_guidance"] = "The _vnc_viewer_url is the easiest way to access this VM console - simply click the link to open the VM in your browser. No VNC client setup required."
 			enhancedResult["_metadata"].(map[string]interface{})["vnc_viewer_url"] = vncViewerURL
 			break
 		}
@@ -1389,6 +1540,7 @@ func createVirtualMachine(args map[string]interface{}) (string, error) {
 			"presentation_guidance": "When referring to the virtual machine, use the virt_id as the primary identifier. Virtual machine IDs are internal identifiers not commonly used by humans.",
 			"next_steps":            "Now that you've created a virtual machine, you can control it using slide_update_virtual_machine to change its state (running, stopped, paused) or update resources.",
 			"resource_guidance":     "For optimal performance, 8192MB of RAM is recommended for most VMs. You can adjust this as needed using slide_update_virtual_machine.",
+			"console_access":        "The easiest way to access this virtual machine is through the _vnc_viewer_url property - this provides a direct browser link to the VM console that requires no additional software or configuration.",
 		},
 	}
 
@@ -1397,7 +1549,7 @@ func createVirtualMachine(args map[string]interface{}) (string, error) {
 			vncViewerURL := generateVNCViewerURL(result.VirtID, *vnc.WebsocketURI, result.VNCPassword)
 			enhancedResult["_vnc_viewer_url"] = vncViewerURL
 			// Add to metadata as well
-			enhancedResult["_metadata"].(map[string]interface{})["vnc_guidance"] = "Use the _vnc_viewer_url to access the virtual machine's console via a browser-based VNC client."
+			enhancedResult["_metadata"].(map[string]interface{})["vnc_guidance"] = "The _vnc_viewer_url is the easiest way to access this VM console - simply click the link to open the VM in your browser. No VNC client setup required."
 			enhancedResult["_metadata"].(map[string]interface{})["vnc_viewer_url"] = vncViewerURL
 			break
 		}
@@ -1468,6 +1620,7 @@ func updateVirtualMachine(args map[string]interface{}) (string, error) {
 		"_metadata": map[string]interface{}{
 			"primary_identifier":    "virt_id",
 			"presentation_guidance": "When referring to the virtual machine, use the virt_id as the primary identifier. Virtual machine IDs are internal identifiers not commonly used by humans.",
+			"console_access":        "The easiest way to access this virtual machine is through the _vnc_viewer_url property - this provides a direct browser link to the VM console that requires no additional software or configuration.",
 		},
 	}
 
@@ -1476,7 +1629,7 @@ func updateVirtualMachine(args map[string]interface{}) (string, error) {
 			vncViewerURL := generateVNCViewerURL(result.VirtID, *vnc.WebsocketURI, result.VNCPassword)
 			enhancedResult["_vnc_viewer_url"] = vncViewerURL
 			// Add to metadata as well
-			enhancedResult["_metadata"].(map[string]interface{})["vnc_guidance"] = "Use the _vnc_viewer_url to access the virtual machine's console via a browser-based VNC client."
+			enhancedResult["_metadata"].(map[string]interface{})["vnc_guidance"] = "The _vnc_viewer_url is the easiest way to access this VM console - simply click the link to open the VM in your browser. No VNC client setup required."
 			enhancedResult["_metadata"].(map[string]interface{})["vnc_viewer_url"] = vncViewerURL
 			break
 		}
@@ -2033,4 +2186,446 @@ func deleteClient(args map[string]interface{}) (string, error) {
 	}
 
 	return "Client deleted successfully", nil
+}
+
+// Network API functions
+func listNetworks(args map[string]interface{}) (string, error) {
+	params := url.Values{}
+
+	if limit, ok := args["limit"]; ok {
+		if l, ok := limit.(float64); ok {
+			params.Set("limit", strconv.Itoa(int(l)))
+		}
+	}
+	if offset, ok := args["offset"]; ok {
+		if o, ok := offset.(float64); ok {
+			params.Set("offset", strconv.Itoa(int(o)))
+		}
+	}
+	if sortAsc, ok := args["sort_asc"]; ok {
+		if sa, ok := sortAsc.(bool); ok {
+			params.Set("sort_asc", strconv.FormatBool(sa))
+		}
+	}
+	if sortBy, ok := args["sort_by"]; ok {
+		if sb, ok := sortBy.(string); ok {
+			params.Set("sort_by", sb)
+		}
+	} else {
+		params.Set("sort_by", "id")
+	}
+
+	endpoint := "/v1/network"
+	if len(params) > 0 {
+		endpoint += "?" + params.Encode()
+	}
+
+	data, err := makeAPIRequest("GET", endpoint, nil)
+	if err != nil {
+		return "", err
+	}
+
+	var result PaginatedResponse[Network]
+	if err := json.Unmarshal(data, &result); err != nil {
+		return "", fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	enhancedResult := map[string]interface{}{
+		"pagination": result.Pagination,
+		"data":       result.Data,
+		"_metadata": map[string]interface{}{
+			"primary_identifier":    "name",
+			"presentation_guidance": "Networks enable disaster recovery and isolated networking for virtual machines.",
+			"workflow_guidance":     "Networks can be standard (isolated) or bridge-lan (connected to device LAN). Virtual machines can be connected to networks.",
+		},
+	}
+
+	jsonData, err := json.MarshalIndent(enhancedResult, "", "  ")
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal result: %w", err)
+	}
+
+	return string(jsonData), nil
+}
+
+func getNetwork(args map[string]interface{}) (string, error) {
+	networkID, ok := args["network_id"].(string)
+	if !ok {
+		return "", fmt.Errorf("network_id is required")
+	}
+
+	endpoint := fmt.Sprintf("/v1/network/%s", networkID)
+	data, err := makeAPIRequest("GET", endpoint, nil)
+	if err != nil {
+		return "", err
+	}
+
+	var result Network
+	if err := json.Unmarshal(data, &result); err != nil {
+		return "", fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	jsonData, err := json.MarshalIndent(result, "", "  ")
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal result: %w", err)
+	}
+
+	return string(jsonData), nil
+}
+
+func createNetwork(args map[string]interface{}) (string, error) {
+	name, ok := args["name"].(string)
+	if !ok {
+		return "", fmt.Errorf("name is required")
+	}
+	networkType, ok := args["type"].(string)
+	if !ok {
+		return "", fmt.Errorf("type is required")
+	}
+
+	payload := map[string]interface{}{
+		"name": name,
+		"type": networkType,
+	}
+
+	// Add optional parameters
+	if bridgeDeviceID, ok := args["bridge_device_id"]; ok {
+		payload["bridge_device_id"] = bridgeDeviceID
+	}
+	if clientID, ok := args["client_id"]; ok {
+		payload["client_id"] = clientID
+	}
+	if comments, ok := args["comments"]; ok {
+		payload["comments"] = comments
+	}
+	if dhcp, ok := args["dhcp"]; ok {
+		payload["dhcp"] = dhcp
+	}
+	if dhcpRangeStart, ok := args["dhcp_range_start"]; ok {
+		payload["dhcp_range_start"] = dhcpRangeStart
+	}
+	if dhcpRangeEnd, ok := args["dhcp_range_end"]; ok {
+		payload["dhcp_range_end"] = dhcpRangeEnd
+	}
+	if internet, ok := args["internet"]; ok {
+		payload["internet"] = internet
+	}
+	if nameservers, ok := args["nameservers"]; ok {
+		payload["nameservers"] = nameservers
+	}
+	if routerPrefix, ok := args["router_prefix"]; ok {
+		payload["router_prefix"] = routerPrefix
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	data, err := makeAPIRequest("POST", "/v1/network", body)
+	if err != nil {
+		return "", err
+	}
+
+	var result Network
+	if err := json.Unmarshal(data, &result); err != nil {
+		return "", fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	jsonData, err := json.MarshalIndent(result, "", "  ")
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal result: %w", err)
+	}
+
+	return string(jsonData), nil
+}
+
+func updateNetwork(args map[string]interface{}) (string, error) {
+	networkID, ok := args["network_id"].(string)
+	if !ok {
+		return "", fmt.Errorf("network_id is required")
+	}
+
+	payload := make(map[string]interface{})
+
+	if name, ok := args["name"]; ok {
+		payload["name"] = name
+	}
+	if comments, ok := args["comments"]; ok {
+		payload["comments"] = comments
+	}
+	if dhcp, ok := args["dhcp"]; ok {
+		payload["dhcp"] = dhcp
+	}
+	if dhcpRangeStart, ok := args["dhcp_range_start"]; ok {
+		payload["dhcp_range_start"] = dhcpRangeStart
+	}
+	if dhcpRangeEnd, ok := args["dhcp_range_end"]; ok {
+		payload["dhcp_range_end"] = dhcpRangeEnd
+	}
+	if internet, ok := args["internet"]; ok {
+		payload["internet"] = internet
+	}
+	if nameservers, ok := args["nameservers"]; ok {
+		payload["nameservers"] = nameservers
+	}
+	if routerPrefix, ok := args["router_prefix"]; ok {
+		payload["router_prefix"] = routerPrefix
+	}
+	if wg, ok := args["wg"]; ok {
+		payload["wg"] = wg
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	endpoint := fmt.Sprintf("/v1/network/%s", networkID)
+	data, err := makeAPIRequest("PATCH", endpoint, body)
+	if err != nil {
+		return "", err
+	}
+
+	var result Network
+	if err := json.Unmarshal(data, &result); err != nil {
+		return "", fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	jsonData, err := json.MarshalIndent(result, "", "  ")
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal result: %w", err)
+	}
+
+	return string(jsonData), nil
+}
+
+func deleteNetwork(args map[string]interface{}) (string, error) {
+	networkID, ok := args["network_id"].(string)
+	if !ok {
+		return "", fmt.Errorf("network_id is required")
+	}
+
+	endpoint := fmt.Sprintf("/v1/network/%s", networkID)
+	_, err := makeAPIRequest("DELETE", endpoint, nil)
+	if err != nil {
+		return "", err
+	}
+
+	return "Network deleted successfully", nil
+}
+
+// Network Port Forward functions
+func createNetworkPortForward(args map[string]interface{}) (string, error) {
+	networkID, ok := args["network_id"].(string)
+	if !ok {
+		return "", fmt.Errorf("network_id is required")
+	}
+	proto, ok := args["proto"].(string)
+	if !ok {
+		return "", fmt.Errorf("proto is required")
+	}
+	dest, ok := args["dest"].(string)
+	if !ok {
+		return "", fmt.Errorf("dest is required")
+	}
+
+	payload := map[string]interface{}{
+		"proto": proto,
+		"dest":  dest,
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	endpoint := fmt.Sprintf("/v1/network/%s/port-forwards", networkID)
+	data, err := makeAPIRequest("POST", endpoint, body)
+	if err != nil {
+		return "", err
+	}
+
+	var result NetworkPortForward
+	if err := json.Unmarshal(data, &result); err != nil {
+		return "", fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	jsonData, err := json.MarshalIndent(result, "", "  ")
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal result: %w", err)
+	}
+
+	return string(jsonData), nil
+}
+
+func deleteNetworkPortForward(args map[string]interface{}) (string, error) {
+	networkID, ok := args["network_id"].(string)
+	if !ok {
+		return "", fmt.Errorf("network_id is required")
+	}
+	proto, ok := args["proto"].(string)
+	if !ok {
+		return "", fmt.Errorf("proto is required")
+	}
+	port, ok := args["port"].(float64)
+	if !ok {
+		return "", fmt.Errorf("port is required")
+	}
+
+	payload := map[string]interface{}{
+		"proto": proto,
+		"port":  int(port),
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	endpoint := fmt.Sprintf("/v1/network/%s/port-forwards", networkID)
+	_, err = makeAPIRequest("DELETE", endpoint, body)
+	if err != nil {
+		return "", err
+	}
+
+	return "Network port forward deleted successfully", nil
+}
+
+// Network WireGuard Peer functions
+func createNetworkWGPeer(args map[string]interface{}) (string, error) {
+	networkID, ok := args["network_id"].(string)
+	if !ok {
+		return "", fmt.Errorf("network_id is required")
+	}
+	peerName, ok := args["peer_name"].(string)
+	if !ok {
+		return "", fmt.Errorf("peer_name is required")
+	}
+	remoteNetworks, ok := args["remote_networks"].([]interface{})
+	if !ok {
+		return "", fmt.Errorf("remote_networks is required")
+	}
+
+	// Convert []interface{} to []string
+	remoteNetworkStrings := make([]string, len(remoteNetworks))
+	for i, network := range remoteNetworks {
+		if networkStr, netOk := network.(string); netOk {
+			remoteNetworkStrings[i] = networkStr
+		} else {
+			return "", fmt.Errorf("remote_networks must be an array of strings")
+		}
+	}
+
+	payload := map[string]interface{}{
+		"peer_name":       peerName,
+		"remote_networks": remoteNetworkStrings,
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	endpoint := fmt.Sprintf("/v1/network/%s/wg-peers", networkID)
+	data, err := makeAPIRequest("POST", endpoint, body)
+	if err != nil {
+		return "", err
+	}
+
+	var result NetworkWGPeer
+	if err := json.Unmarshal(data, &result); err != nil {
+		return "", fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	jsonData, err := json.MarshalIndent(result, "", "  ")
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal result: %w", err)
+	}
+
+	return string(jsonData), nil
+}
+
+func updateNetworkWGPeer(args map[string]interface{}) (string, error) {
+	networkID, ok := args["network_id"].(string)
+	if !ok {
+		return "", fmt.Errorf("network_id is required")
+	}
+	wgAddress, ok := args["wg_address"].(string)
+	if !ok {
+		return "", fmt.Errorf("wg_address is required")
+	}
+
+	payload := map[string]interface{}{
+		"wg_address": wgAddress,
+	}
+
+	if peerName, ok := args["peer_name"]; ok {
+		payload["peer_name"] = peerName
+	}
+	if remoteNetworks, ok := args["remote_networks"]; ok {
+		if networks, ok := remoteNetworks.([]interface{}); ok {
+			// Convert []interface{} to []string
+			remoteNetworkStrings := make([]string, len(networks))
+			for i, network := range networks {
+				if networkStr, netOk := network.(string); netOk {
+					remoteNetworkStrings[i] = networkStr
+				} else {
+					return "", fmt.Errorf("remote_networks must be an array of strings")
+				}
+			}
+			payload["remote_networks"] = remoteNetworkStrings
+		}
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	endpoint := fmt.Sprintf("/v1/network/%s/wg-peers", networkID)
+	data, err := makeAPIRequest("PATCH", endpoint, body)
+	if err != nil {
+		return "", err
+	}
+
+	var result NetworkWGPeer
+	if err := json.Unmarshal(data, &result); err != nil {
+		return "", fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	jsonData, err := json.MarshalIndent(result, "", "  ")
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal result: %w", err)
+	}
+
+	return string(jsonData), nil
+}
+
+func deleteNetworkWGPeer(args map[string]interface{}) (string, error) {
+	networkID, ok := args["network_id"].(string)
+	if !ok {
+		return "", fmt.Errorf("network_id is required")
+	}
+	wgAddress, ok := args["wg_address"].(string)
+	if !ok {
+		return "", fmt.Errorf("wg_address is required")
+	}
+
+	payload := map[string]interface{}{
+		"wg_address": wgAddress,
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	endpoint := fmt.Sprintf("/v1/network/%s/wg-peers", networkID)
+	_, err = makeAPIRequest("DELETE", endpoint, body)
+	if err != nil {
+		return "", err
+	}
+
+	return "Network WireGuard peer deleted successfully", nil
 }

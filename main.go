@@ -53,20 +53,20 @@ func main() {
 	}
 
 	log.Println("Slide MCP Server starting...")
-	
+
 	// Start MCP server
 	startMCPServer()
 }
 
 func startMCPServer() {
 	scanner := bufio.NewScanner(os.Stdin)
-	
+
 	for scanner.Scan() {
 		line := scanner.Text()
 		if line == "" {
 			continue
 		}
-		
+
 		var request MCPRequest
 		if err := json.Unmarshal([]byte(line), &request); err != nil {
 			// Only send error response if we can determine there was an ID
@@ -81,21 +81,21 @@ func startMCPServer() {
 			}
 			continue
 		}
-		
+
 		// Check if this is a notification (no ID field)
 		var rawMsg map[string]interface{}
 		json.Unmarshal([]byte(line), &rawMsg)
 		_, hasID := rawMsg["id"]
-		
+
 		if !hasID {
 			// This is a notification - handle it but don't send a response
 			handleNotification(request)
 			continue
 		}
-		
+
 		// This is a request - handle it and send a response
 		response := handleRequest(request)
-		
+
 		responseJSON, err := json.Marshal(response)
 		if err != nil {
 			errorResponse := sendError(request.ID, -32603, "Internal error", nil)
@@ -104,10 +104,10 @@ func startMCPServer() {
 			}
 			continue
 		}
-		
+
 		fmt.Println(string(responseJSON))
 	}
-	
+
 	if err := scanner.Err(); err != nil {
 		log.Printf("Error reading input: %v", err)
 	}
@@ -144,7 +144,7 @@ func handleRequest(request MCPRequest) MCPResponse {
 				},
 			},
 		}
-	
+
 	case "tools/list":
 		return MCPResponse{
 			JSONRPC: "2.0",
@@ -153,10 +153,10 @@ func handleRequest(request MCPRequest) MCPResponse {
 				"tools": getAllTools(),
 			},
 		}
-	
+
 	case "tools/call":
 		return handleToolCall(request)
-	
+
 	default:
 		return MCPResponse{
 			JSONRPC: "2.0",
@@ -174,19 +174,19 @@ func handleToolCall(request MCPRequest) MCPResponse {
 	if !ok {
 		return sendError(request.ID, -32602, "Invalid params", nil)
 	}
-	
+
 	name, ok := params["name"].(string)
 	if !ok {
 		return sendError(request.ID, -32602, "Tool name required", nil)
 	}
-	
+
 	args, ok := params["arguments"].(map[string]interface{})
 	if !ok {
 		args = make(map[string]interface{})
 	}
-	
+
 	var result ToolResult
-	
+
 	switch name {
 	case "slide_list_devices":
 		data, err := listDevices(args)
@@ -201,7 +201,7 @@ func handleToolCall(request MCPRequest) MCPResponse {
 				IsError: false,
 			}
 		}
-	
+
 	case "slide_list_agents":
 		data, err := listAgents(args)
 		if err != nil {
@@ -215,7 +215,7 @@ func handleToolCall(request MCPRequest) MCPResponse {
 				IsError: false,
 			}
 		}
-	
+
 	case "slide_get_agent":
 		data, err := getAgent(args)
 		if err != nil {
@@ -229,7 +229,7 @@ func handleToolCall(request MCPRequest) MCPResponse {
 				IsError: false,
 			}
 		}
-	
+
 	case "slide_create_agent":
 		data, err := createAgent(args)
 		if err != nil {
@@ -243,7 +243,7 @@ func handleToolCall(request MCPRequest) MCPResponse {
 				IsError: false,
 			}
 		}
-	
+
 	case "slide_pair_agent":
 		data, err := pairAgent(args)
 		if err != nil {
@@ -257,7 +257,7 @@ func handleToolCall(request MCPRequest) MCPResponse {
 				IsError: false,
 			}
 		}
-	
+
 	case "slide_update_agent":
 		data, err := updateAgent(args)
 		if err != nil {
@@ -271,7 +271,7 @@ func handleToolCall(request MCPRequest) MCPResponse {
 				IsError: false,
 			}
 		}
-	
+
 	case "slide_list_backups":
 		data, err := listBackups(args)
 		if err != nil {
@@ -285,7 +285,7 @@ func handleToolCall(request MCPRequest) MCPResponse {
 				IsError: false,
 			}
 		}
-	
+
 	case "slide_get_backup":
 		data, err := getBackup(args)
 		if err != nil {
@@ -299,7 +299,7 @@ func handleToolCall(request MCPRequest) MCPResponse {
 				IsError: false,
 			}
 		}
-	
+
 	case "slide_start_backup":
 		data, err := startBackup(args)
 		if err != nil {
@@ -313,7 +313,7 @@ func handleToolCall(request MCPRequest) MCPResponse {
 				IsError: false,
 			}
 		}
-	
+
 	case "slide_list_snapshots":
 		data, err := listSnapshots(args)
 		if err != nil {
@@ -327,7 +327,7 @@ func handleToolCall(request MCPRequest) MCPResponse {
 				IsError: false,
 			}
 		}
-	
+
 	case "slide_get_snapshot":
 		data, err := getSnapshot(args)
 		if err != nil {
@@ -341,7 +341,7 @@ func handleToolCall(request MCPRequest) MCPResponse {
 				IsError: false,
 			}
 		}
-	
+
 	case "slide_list_file_restores":
 		data, err := listFileRestores(args)
 		if err != nil {
@@ -355,7 +355,7 @@ func handleToolCall(request MCPRequest) MCPResponse {
 				IsError: false,
 			}
 		}
-	
+
 	case "slide_get_file_restore":
 		data, err := getFileRestore(args)
 		if err != nil {
@@ -369,7 +369,7 @@ func handleToolCall(request MCPRequest) MCPResponse {
 				IsError: false,
 			}
 		}
-	
+
 	case "slide_create_file_restore":
 		data, err := createFileRestore(args)
 		if err != nil {
@@ -383,7 +383,7 @@ func handleToolCall(request MCPRequest) MCPResponse {
 				IsError: false,
 			}
 		}
-	
+
 	case "slide_delete_file_restore":
 		data, err := deleteFileRestore(args)
 		if err != nil {
@@ -397,7 +397,7 @@ func handleToolCall(request MCPRequest) MCPResponse {
 				IsError: false,
 			}
 		}
-	
+
 	case "slide_browse_file_restore":
 		data, err := browseFileRestore(args)
 		if err != nil {
@@ -411,7 +411,7 @@ func handleToolCall(request MCPRequest) MCPResponse {
 				IsError: false,
 			}
 		}
-	
+
 	case "slide_list_image_exports":
 		data, err := listImageExports(args)
 		if err != nil {
@@ -425,7 +425,7 @@ func handleToolCall(request MCPRequest) MCPResponse {
 				IsError: false,
 			}
 		}
-	
+
 	case "slide_get_image_export":
 		data, err := getImageExport(args)
 		if err != nil {
@@ -439,7 +439,7 @@ func handleToolCall(request MCPRequest) MCPResponse {
 				IsError: false,
 			}
 		}
-	
+
 	case "slide_create_image_export":
 		data, err := createImageExport(args)
 		if err != nil {
@@ -453,7 +453,7 @@ func handleToolCall(request MCPRequest) MCPResponse {
 				IsError: false,
 			}
 		}
-	
+
 	case "slide_delete_image_export":
 		data, err := deleteImageExport(args)
 		if err != nil {
@@ -467,7 +467,7 @@ func handleToolCall(request MCPRequest) MCPResponse {
 				IsError: false,
 			}
 		}
-	
+
 	case "slide_browse_image_export":
 		data, err := browseImageExport(args)
 		if err != nil {
@@ -481,7 +481,7 @@ func handleToolCall(request MCPRequest) MCPResponse {
 				IsError: false,
 			}
 		}
-	
+
 	case "slide_list_virtual_machines":
 		data, err := listVirtualMachines(args)
 		if err != nil {
@@ -495,7 +495,7 @@ func handleToolCall(request MCPRequest) MCPResponse {
 				IsError: false,
 			}
 		}
-	
+
 	case "slide_get_virtual_machine":
 		data, err := getVirtualMachine(args)
 		if err != nil {
@@ -509,7 +509,7 @@ func handleToolCall(request MCPRequest) MCPResponse {
 				IsError: false,
 			}
 		}
-	
+
 	case "slide_create_virtual_machine":
 		data, err := createVirtualMachine(args)
 		if err != nil {
@@ -523,7 +523,7 @@ func handleToolCall(request MCPRequest) MCPResponse {
 				IsError: false,
 			}
 		}
-	
+
 	case "slide_update_virtual_machine":
 		data, err := updateVirtualMachine(args)
 		if err != nil {
@@ -537,7 +537,7 @@ func handleToolCall(request MCPRequest) MCPResponse {
 				IsError: false,
 			}
 		}
-	
+
 	case "slide_delete_virtual_machine":
 		data, err := deleteVirtualMachine(args)
 		if err != nil {
@@ -551,7 +551,7 @@ func handleToolCall(request MCPRequest) MCPResponse {
 				IsError: false,
 			}
 		}
-	
+
 	case "slide_list_users":
 		data, err := listUsers(args)
 		if err != nil {
@@ -565,7 +565,7 @@ func handleToolCall(request MCPRequest) MCPResponse {
 				IsError: false,
 			}
 		}
-	
+
 	case "slide_get_user":
 		data, err := getUser(args)
 		if err != nil {
@@ -579,7 +579,7 @@ func handleToolCall(request MCPRequest) MCPResponse {
 				IsError: false,
 			}
 		}
-	
+
 	case "slide_list_alerts":
 		data, err := listAlerts(args)
 		if err != nil {
@@ -593,7 +593,7 @@ func handleToolCall(request MCPRequest) MCPResponse {
 				IsError: false,
 			}
 		}
-	
+
 	case "slide_get_alert":
 		data, err := getAlert(args)
 		if err != nil {
@@ -607,7 +607,7 @@ func handleToolCall(request MCPRequest) MCPResponse {
 				IsError: false,
 			}
 		}
-	
+
 	case "slide_update_alert":
 		data, err := updateAlert(args)
 		if err != nil {
@@ -621,7 +621,7 @@ func handleToolCall(request MCPRequest) MCPResponse {
 				IsError: false,
 			}
 		}
-	
+
 	case "slide_list_accounts":
 		data, err := listAccounts(args)
 		if err != nil {
@@ -635,7 +635,7 @@ func handleToolCall(request MCPRequest) MCPResponse {
 				IsError: false,
 			}
 		}
-	
+
 	case "slide_get_account":
 		data, err := getAccount(args)
 		if err != nil {
@@ -649,7 +649,7 @@ func handleToolCall(request MCPRequest) MCPResponse {
 				IsError: false,
 			}
 		}
-	
+
 	case "slide_update_account":
 		data, err := updateAccount(args)
 		if err != nil {
@@ -663,7 +663,7 @@ func handleToolCall(request MCPRequest) MCPResponse {
 				IsError: false,
 			}
 		}
-	
+
 	case "slide_list_clients":
 		data, err := listClients(args)
 		if err != nil {
@@ -677,7 +677,7 @@ func handleToolCall(request MCPRequest) MCPResponse {
 				IsError: false,
 			}
 		}
-	
+
 	case "slide_get_client":
 		data, err := getClient(args)
 		if err != nil {
@@ -691,7 +691,7 @@ func handleToolCall(request MCPRequest) MCPResponse {
 				IsError: false,
 			}
 		}
-	
+
 	case "slide_create_client":
 		data, err := createClient(args)
 		if err != nil {
@@ -705,7 +705,7 @@ func handleToolCall(request MCPRequest) MCPResponse {
 				IsError: false,
 			}
 		}
-	
+
 	case "slide_update_client":
 		data, err := updateClient(args)
 		if err != nil {
@@ -719,7 +719,7 @@ func handleToolCall(request MCPRequest) MCPResponse {
 				IsError: false,
 			}
 		}
-	
+
 	case "slide_delete_client":
 		data, err := deleteClient(args)
 		if err != nil {
@@ -733,14 +733,14 @@ func handleToolCall(request MCPRequest) MCPResponse {
 				IsError: false,
 			}
 		}
-	
+
 	default:
 		result = ToolResult{
 			Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Unknown tool: %s", name)}},
 			IsError: true,
 		}
 	}
-	
+
 	return MCPResponse{
 		JSONRPC: "2.0",
 		ID:      request.ID,
@@ -756,7 +756,7 @@ func sendError(id interface{}, code int, message string, data interface{}) MCPRe
 	if data != nil {
 		errorObj["data"] = data
 	}
-	
+
 	return MCPResponse{
 		JSONRPC: "2.0",
 		ID:      id,
@@ -1620,4 +1620,4 @@ func getAllTools() []ToolInfo {
 			},
 		},
 	}
-} 
+}

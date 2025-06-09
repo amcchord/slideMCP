@@ -2,21 +2,16 @@
 
 An MCP server implementation that integrates with the Slide API, providing device and agent management capabilities.
 
-## 🚀 Three Ways to Use Slide MCP
+## 🚀 Two Ways to Use Slide MCP
 
-### **Option 1: Hosted Web Server (Easiest)** 🌐 🆕
-- **Zero Installation**: Use `www.slide.recipes/mcp` directly
-- **Always Updated**: Latest version automatically available
-- **Multi-User**: Secure per-user API key authentication
-- **High Availability**: Monitored production infrastructure
-
-### **Option 2: Go Binary (Best Performance)** ⚡
+### **Option 1: Go Binary (Recommended - Easiest)** ⚡
 - **Single binary**: No dependencies, just download and run
 - **60x faster startup**: ~50ms vs 2-3 seconds
 - **5x less memory**: 10-20MB vs 50-100MB
 - **Cross-platform**: Linux, macOS, Windows binaries
+- **Zero Installation Hassle**: Simple download and configure
 
-### **Option 3: TypeScript/Node.js Version** 📦
+### **Option 2: TypeScript/Node.js Version** 📦
 - Original implementation with full feature set
 - Requires Node.js runtime and NPM installation
 - Available via NPX or Docker
@@ -475,20 +470,7 @@ echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' | ./slide-mcp-
 }
 ```
 
-### **Option 3: Hosted Web Server (No Installation Required)** 🌐
-
-Use the hosted multi-user web server at `www.slide.recipes/mcp` - no local installation needed!
-
-**🏗️ Production Architecture**: Apache HTTP Server with SSL termination reverse-proxying to a high-performance Go backend, ensuring enterprise-grade security and reliability.
-
-#### Advantages
-- ✅ **Zero Installation**: No binaries, dependencies, or Docker required
-- ✅ **Always Updated**: Latest version automatically available
-- ✅ **Multi-User**: Each user uses their own API key securely
-- ✅ **Cross-Platform**: Works on any system that can run Claude Desktop
-- ✅ **High Availability**: Hosted infrastructure with monitoring
-
-#### 🔧 Quick Troubleshooting 
+#### 🔧 Troubleshooting
 
 **Getting "spawn node ENOENT" errors?** Find your Node.js path:
 ```bash
@@ -502,108 +484,15 @@ which node
 ```
 Use the full path in your Claude Desktop configuration instead of just `node`.
 
-#### Quick Setup (Recommended)
-
-1. **Download the bridge script**:
-   ```bash
-   curl -o slide-mcp-bridge.js https://www.slide.recipes/slide-mcp-bridge.js
-   chmod +x slide-mcp-bridge.js
-   ```
-
-2. **Configure Claude Desktop** by adding this to your `claude_desktop_config.json`:
-   ```json
-   {
-     "mcpServers": {
-       "slide": {
-         "command": "/usr/bin/node",
-         "args": ["/path/to/slide-mcp-bridge.js"],
-         "env": {
-           "SLIDE_API_KEY": "YOUR_API_KEY_HERE"
-         }
-       }
-     }
-   }
-   ```
-   
-   > **Note**: If you get "spawn node ENOENT" errors, use the full path to node. Find your node path with `which node` or try common locations like `/usr/bin/node`, `/usr/local/bin/node`, or on macOS with Homebrew: `/opt/homebrew/bin/node`
-
-#### Alternative: Direct Configuration (Advanced)
-
-For advanced users who prefer not to download the bridge script, you can use this inline configuration:
-
-```json
-{
-  "mcpServers": {
-    "slide": {
-      "command": "/usr/bin/node", 
-      "args": ["-e", "const https=require('https'),readline=require('readline');const key=process.env.SLIDE_API_KEY;if(!key){console.error(JSON.stringify({jsonrpc:'2.0',id:null,error:{code:-32602,message:'SLIDE_API_KEY not set'}}));process.exit(1)}const rl=readline.createInterface({input:process.stdin,output:process.stdout,terminal:false});rl.on('line',line=>{if(!line.trim())return;try{const req=JSON.parse(line),data=JSON.stringify(req),opts={hostname:'www.slide.recipes',port:443,path:'/mcp',method:'POST',headers:{'Content-Type':'application/json','X-API-Key':key}};const httpReq=https.request(opts,res=>{let resp='';res.on('data',chunk=>resp+=chunk);res.on('end',()=>{try{console.log(JSON.stringify(JSON.parse(resp)))}catch{console.log(JSON.stringify({jsonrpc:'2.0',id:req.id,error:{code:-32603,message:'Invalid server response'}}))}})});httpReq.on('error',err=>console.log(JSON.stringify({jsonrpc:'2.0',id:req.id,error:{code:-32603,message:`Network error: ${err.message}`}})));httpReq.write(data);httpReq.end()}catch{console.log(JSON.stringify({jsonrpc:'2.0',id:null,error:{code:-32700,message:'Parse error'}}))}});"],
-      "env": {
-        "SLIDE_API_KEY": "YOUR_API_KEY_HERE"
-      }
-    }
-  }
-}
-```
-
-> **Troubleshooting**: If you encounter "spawn node ENOENT" errors, Node.js might not be in your PATH or installed. Solutions:
-> 1. **Find your Node.js path**: Run `which node` or `whereis node` in terminal
-> 2. **Common paths**: `/usr/bin/node`, `/usr/local/bin/node`, `/opt/homebrew/bin/node` (macOS Homebrew)
-> 3. **Install Node.js**: Visit [nodejs.org](https://nodejs.org/) if not installed
-> 4. **Use bridge script**: Download the bridge script instead for easier setup
-
-#### Test the Hosted Server
-
-You can test the hosted server directly:
-
-```bash
-# Test health endpoint
-curl -X GET https://www.slide.recipes/health
-
-# Test MCP initialize (replace YOUR_API_KEY with your actual key)
-curl -X POST https://www.slide.recipes/mcp \
-  -H "Content-Type: application/json" \
-  -H "X-API-Key: YOUR_API_KEY" \
-  -d '{"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}}'
-
-# List available tools
-curl -X POST https://www.slide.recipes/mcp \
-  -H "Content-Type: application/json" \
-  -H "X-API-Key: YOUR_API_KEY" \
-  -d '{"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}'
-```
-
-#### Authentication Methods
-
-The hosted server accepts your Slide API key via:
-- **X-API-Key Header**: `X-API-Key: YOUR_API_KEY`
-- **Authorization Header**: `Authorization: Bearer YOUR_API_KEY`
-- **Query Parameter**: `?api_key=YOUR_API_KEY`
-
-#### Server Features
-
-- **🔒 HTTPS Security**: SSL/TLS encryption with Let's Encrypt certificates  
-- **🏢 Multi-User**: Secure per-user API key authentication
-- **🌐 CORS Enabled**: Works with web applications
-- **📚 Full API Coverage**: All 30+ Slide API tools available
-- **⚡ High Performance**: Apache reverse proxy with Go backend
-- **🔧 High Availability**: Monitored production service with systemd
-- **📖 Documentation**: Visit `https://www.slide.recipes/` for interactive docs
-
 ### Usage with VS Code
 
-For quick installation, use the one-click installation buttons below...
-
-[![Install with NPX in VS Code](https://img.shields.io/badge/VS_Code-NPM-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=slide&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22apiKey%22%7D%5D&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22%40modelcontextprotocol%2Fserver-slide%22%5D%2C%22env%22%3A%7B%22SLIDE_API_KEY%22%3A%22%24%7Binput%3Aslide_api_key%7D%22%7D%7D) [![Install with NPX in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-NPM-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=slide&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22apiKey%22%7D%5D&config=%7B%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22%40modelcontextprotocol%2Fserver-slide%22%5D%2C%22env%22%3A%7B%22SLIDE_API_KEY%22%3A%22%24%7Binput%3Aslide_api_key%7D%22%7D%7D&quality=insiders)
-
-[![Install with Docker in VS Code](https://img.shields.io/badge/VS_Code-Docker-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=slide&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22apiKey%22%7D%5D&config=%7B%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22run%22%2C%22-i%22%2C%22--rm%22%2C%22-e%22%2C%22SLIDE_API_KEY%22%2C%22mcp%2Fslide%22%5D%2C%22env%22%3A%7B%22SLIDE_API_KEY%22%3A%22%24%7Binput%3Aslide_api_key%7D%22%7D%7D) [![Install with Docker in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Docker-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=slide&inputs=%5B%7B%22type%22%3A%22promptString%22%2C%22id%22%3A%22apiKey%22%7D%5D&config=%7B%22command%22%3A%22docker%22%2C%22args%22%3A%5B%22run%22%2C%22-i%22%2C%22--rm%22%2C%22-e%22%2C%22SLIDE_API_KEY%22%2C%22mcp%2Fslide%22%5D%2C%22env%22%3A%7B%22SLIDE_API_KEY%22%3A%22%24%7Binput%3Aslide_api_key%7D%22%7D%7D&quality=insiders)
-
-For manual installation, add the following JSON block to your User Settings (JSON) file in VS Code. You can do this by pressing `Ctrl + Shift + P` and typing `Preferences: Open User Settings (JSON)`.
+For VS Code integration, add the following JSON block to your User Settings (JSON) file. You can do this by pressing `Ctrl + Shift + P` and typing `Preferences: Open User Settings (JSON)`.
 
 Optionally, you can add it to a file called `.vscode/mcp.json` in your workspace. This will allow you to share the configuration with others.
 
 > Note that the `mcp` key is not needed in the `.vscode/mcp.json` file.
 
-#### Docker
+#### Go Binary (Recommended)
 
 ```json
 {
@@ -618,15 +507,7 @@ Optionally, you can add it to a file called `.vscode/mcp.json` in your workspace
     ],
     "servers": {
       "slide": {
-        "command": "docker",
-        "args": [
-          "run",
-          "-i",
-          "--rm",
-          "-e",
-          "SLIDE_API_KEY",
-          "mcp/slide"
-        ],
+        "command": "/path/to/slide-mcp-server",
         "env": {
           "SLIDE_API_KEY": "${input:slide_api_key}"
         }
@@ -636,7 +517,7 @@ Optionally, you can add it to a file called `.vscode/mcp.json` in your workspace
 }
 ```
 
-#### NPX
+#### NPX (Alternative)
 
 ```json
 {
