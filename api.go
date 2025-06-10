@@ -1389,11 +1389,13 @@ func listVirtualMachines(args map[string]interface{}) (string, error) {
 		"pagination": result.Pagination,
 		"data":       enhancedVMs,
 		"_metadata": map[string]interface{}{
-			"primary_identifier":    "virt_id",
-			"presentation_guidance": "Virtual machines created from snapshots for testing or disaster recovery.",
-			"workflow_guidance":     "VMs can be started/stopped and accessed via VNC. Great for testing backups before full restore.",
-			"vnc_guidance":          "The easiest way to access a virtual machine is through the _vnc_viewer_url property - this provides a direct browser link to the VM console that requires no additional software or configuration.",
-			"console_access":        "Always use the _vnc_viewer_url for immediate browser-based console access. This is much easier than configuring a separate VNC client.",
+			"primary_identifier":     "virt_id",
+			"presentation_guidance":  "Virtual machines created from snapshots for testing or disaster recovery.",
+			"workflow_guidance":      "VMs can be started/stopped and accessed via VNC. Great for testing backups before full restore.",
+			"vnc_guidance":           "The easiest way to access a virtual machine is through the _vnc_viewer_url property - this provides a direct browser link to the VM console that requires no additional software or configuration.",
+			"console_access":         "Always use the _vnc_viewer_url for immediate browser-based console access. This is much easier than configuring a separate VNC client.",
+			"network_configuration":  "When creating new VMs, always use network_type: 'network-nat-shared' for most use cases. This provides NAT networking with internet access.",
+			"network_type_reference": "Valid network_type values: 'network-nat-shared' (recommended), 'network-nat-isolated', 'bridge', 'network-id'",
 		},
 	}
 
@@ -1536,11 +1538,14 @@ func createVirtualMachine(args map[string]interface{}) (string, error) {
 		"vnc":            result.VNC,
 		"vnc_password":   result.VNCPassword,
 		"_metadata": map[string]interface{}{
-			"primary_identifier":    "virt_id",
-			"presentation_guidance": "When referring to the virtual machine, use the virt_id as the primary identifier. Virtual machine IDs are internal identifiers not commonly used by humans.",
-			"next_steps":            "Now that you've created a virtual machine, you can control it using slide_update_virtual_machine to change its state (running, stopped, paused) or update resources.",
-			"resource_guidance":     "For optimal performance, 8192MB of RAM is recommended for most VMs. You can adjust this as needed using slide_update_virtual_machine.",
-			"console_access":        "The easiest way to access this virtual machine is through the _vnc_viewer_url property - this provides a direct browser link to the VM console that requires no additional software or configuration.",
+			"primary_identifier":     "virt_id",
+			"presentation_guidance":  "When referring to the virtual machine, use the virt_id as the primary identifier. Virtual machine IDs are internal identifiers not commonly used by humans.",
+			"next_steps":             "Now that you've created a virtual machine, you can control it using slide_update_virtual_machine to change its state (running, stopped, paused) or update resources.",
+			"resource_guidance":      "For optimal performance, 8192MB of RAM is recommended for most VMs. You can adjust this as needed using slide_update_virtual_machine.",
+			"console_access":         "The easiest way to access this virtual machine is through the _vnc_viewer_url property - this provides a direct browser link to the VM console that requires no additional software or configuration.",
+			"network_configuration":  "When creating VMs, easiest to use network_type: 'network-nat-shared' for most use cases. This provides NAT networking with internet access.",
+			"network_type_options":   "Valid network_type values: 'network-nat-shared' (recommended default), 'network-nat-isolated' (no internet), 'bridge' (direct LAN access), 'network-id' (connect to specific network)",
+			"network_best_practices": "Always specify network_type explicitly. Use 'network-nat-shared' unless you have specific requirements for isolation or LAN bridging. The network_model should typically be 'virtio' for best performance.",
 		},
 	}
 
