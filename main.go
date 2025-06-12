@@ -202,6 +202,62 @@ func handleToolCall(request MCPRequest) MCPResponse {
 			}
 		}
 
+	case "slide_get_device":
+		data, err := getDevice(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+
+	case "slide_update_device":
+		data, err := updateDevice(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+
+	case "slide_poweroff_device":
+		data, err := powerOffDevice(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+
+	case "slide_reboot_device":
+		data, err := rebootDevice(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+
 	case "slide_list_agents":
 		data, err := listAgents(args)
 		if err != nil {
@@ -734,6 +790,202 @@ func handleToolCall(request MCPRequest) MCPResponse {
 			}
 		}
 
+	case "slide_list_networks":
+		data, err := listNetworks(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+
+	case "slide_get_network":
+		data, err := getNetwork(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+
+	case "slide_create_network":
+		data, err := createNetwork(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+
+	case "slide_update_network":
+		data, err := updateNetwork(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+
+	case "slide_delete_network":
+		data, err := deleteNetwork(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+
+	case "slide_create_network_ipsec_conn":
+		data, err := createNetworkIPSecConn(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+
+	case "slide_update_network_ipsec_conn":
+		data, err := updateNetworkIPSecConn(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+
+	case "slide_delete_network_ipsec_conn":
+		data, err := deleteNetworkIPSecConn(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+
+	case "slide_create_network_port_forward":
+		data, err := createNetworkPortForward(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+
+	case "slide_update_network_port_forward":
+		data, err := updateNetworkPortForward(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+
+	case "slide_delete_network_port_forward":
+		data, err := deleteNetworkPortForward(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+
+	case "slide_create_network_wg_peer":
+		data, err := createNetworkWGPeer(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+
+	case "slide_update_network_wg_peer":
+		data, err := updateNetworkWGPeer(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+
+	case "slide_delete_network_wg_peer":
+		data, err := deleteNetworkWGPeer(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+
 	default:
 		result = ToolResult{
 			Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Unknown tool: %s", name)}},
@@ -794,6 +1046,74 @@ func getAllTools() []ToolInfo {
 						"enum":        []string{"hostname"},
 					},
 				},
+			},
+		},
+		{
+			Name:        "slide_get_device",
+			Description: "Get detailed information about a specific device by ID",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"device_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the device to retrieve",
+					},
+				},
+				"required": []string{"device_id"},
+			},
+		},
+		{
+			Name:        "slide_update_device",
+			Description: "Update a device's properties",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"device_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the device to update",
+					},
+					"display_name": map[string]interface{}{
+						"type":        "string",
+						"description": "New display name for the device",
+					},
+					"hostname": map[string]interface{}{
+						"type":        "string",
+						"description": "New hostname for the device",
+					},
+					"client_id": map[string]interface{}{
+						"type":        "string",
+						"description": "New client ID for the device",
+					},
+				},
+				"required": []string{"device_id"},
+			},
+		},
+		{
+			Name:        "slide_poweroff_device",
+			Description: "Power off a device remotely",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"device_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the device to power off",
+					},
+				},
+				"required": []string{"device_id"},
+			},
+		},
+		{
+			Name:        "slide_reboot_device",
+			Description: "Reboot a device remotely",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"device_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the device to reboot",
+					},
+				},
+				"required": []string{"device_id"},
 			},
 		},
 		{
@@ -1617,6 +1937,417 @@ func getAllTools() []ToolInfo {
 					},
 				},
 				"required": []string{"client_id"},
+			},
+		},
+		{
+			Name:        "slide_list_networks",
+			Description: "List all networks with pagination and filtering options",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"limit": map[string]interface{}{
+						"type":        "number",
+						"description": "Number of results per page (max 50)",
+					},
+					"offset": map[string]interface{}{
+						"type":        "number",
+						"description": "Pagination offset",
+					},
+					"sort_asc": map[string]interface{}{
+						"type":        "boolean",
+						"description": "Sort in ascending order",
+					},
+					"sort_by": map[string]interface{}{
+						"type":        "string",
+						"description": "Sort by field (id)",
+						"enum":        []string{"id"},
+					},
+				},
+			},
+		},
+		{
+			Name:        "slide_get_network",
+			Description: "Get detailed information about a specific network",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"network_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the network to retrieve",
+					},
+				},
+				"required": []string{"network_id"},
+			},
+		},
+		{
+			Name:        "slide_create_network",
+			Description: "Create a new network for virtual machines",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"name": map[string]interface{}{
+						"type":        "string",
+						"description": "Name of the network",
+					},
+					"type": map[string]interface{}{
+						"type":        "string",
+						"description": "Network type",
+						"enum":        []string{"standard", "bridge-lan"},
+					},
+					"bridge_device_id": map[string]interface{}{
+						"type":        "string",
+						"description": "Device ID for bridge networks",
+					},
+					"client_id": map[string]interface{}{
+						"type":        "string",
+						"description": "Client ID for the network",
+					},
+					"comments": map[string]interface{}{
+						"type":        "string",
+						"description": "Comments about the network",
+					},
+					"dhcp": map[string]interface{}{
+						"type":        "boolean",
+						"description": "Enable DHCP server",
+					},
+					"dhcp_range_start": map[string]interface{}{
+						"type":        "string",
+						"description": "DHCP range start address",
+					},
+					"dhcp_range_end": map[string]interface{}{
+						"type":        "string",
+						"description": "DHCP range end address",
+					},
+					"internet": map[string]interface{}{
+						"type":        "boolean",
+						"description": "Allow internet access",
+					},
+					"nameservers": map[string]interface{}{
+						"type":        "array",
+						"description": "DNS servers",
+						"items": map[string]interface{}{
+							"type": "string",
+						},
+					},
+					"router_prefix": map[string]interface{}{
+						"type":        "string",
+						"description": "Network prefix for router",
+					},
+					"wg": map[string]interface{}{
+						"type":        "boolean",
+						"description": "Enable WireGuard VPN",
+					},
+					"wg_prefix": map[string]interface{}{
+						"type":        "string",
+						"description": "WireGuard network prefix",
+					},
+				},
+				"required": []string{"name", "type"},
+			},
+		},
+		{
+			Name:        "slide_update_network",
+			Description: "Update a network's properties",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"network_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the network to update",
+					},
+					"bridge_device_id": map[string]interface{}{
+						"type":        "string",
+						"description": "Device ID for bridge networks",
+					},
+					"client_id": map[string]interface{}{
+						"type":        "string",
+						"description": "Client ID for the network",
+					},
+					"comments": map[string]interface{}{
+						"type":        "string",
+						"description": "Comments about the network",
+					},
+					"dhcp": map[string]interface{}{
+						"type":        "boolean",
+						"description": "Enable DHCP server",
+					},
+					"dhcp_range_start": map[string]interface{}{
+						"type":        "string",
+						"description": "DHCP range start address",
+					},
+					"dhcp_range_end": map[string]interface{}{
+						"type":        "string",
+						"description": "DHCP range end address",
+					},
+					"internet": map[string]interface{}{
+						"type":        "boolean",
+						"description": "Allow internet access",
+					},
+					"name": map[string]interface{}{
+						"type":        "string",
+						"description": "Name of the network",
+					},
+					"nameservers": map[string]interface{}{
+						"type":        "array",
+						"description": "DNS servers",
+						"items": map[string]interface{}{
+							"type": "string",
+						},
+					},
+					"router_prefix": map[string]interface{}{
+						"type":        "string",
+						"description": "Network prefix for router",
+					},
+					"wg": map[string]interface{}{
+						"type":        "boolean",
+						"description": "Enable WireGuard VPN",
+					},
+					"wg_prefix": map[string]interface{}{
+						"type":        "string",
+						"description": "WireGuard network prefix",
+					},
+				},
+				"required": []string{"network_id"},
+			},
+		},
+		{
+			Name:        "slide_delete_network",
+			Description: "Delete a network",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"network_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the network to delete",
+					},
+				},
+				"required": []string{"network_id"},
+			},
+		},
+		{
+			Name:        "slide_create_network_ipsec_conn",
+			Description: "Create an IPSec connection for a network",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"network_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the network",
+					},
+					"name": map[string]interface{}{
+						"type":        "string",
+						"description": "Name of the IPSec connection",
+					},
+					"remote_addrs": map[string]interface{}{
+						"type":        "array",
+						"description": "Remote addresses",
+						"items": map[string]interface{}{
+							"type": "string",
+						},
+					},
+					"remote_networks": map[string]interface{}{
+						"type":        "array",
+						"description": "Remote networks",
+						"items": map[string]interface{}{
+							"type": "string",
+						},
+					},
+				},
+				"required": []string{"network_id", "name", "remote_addrs", "remote_networks"},
+			},
+		},
+		{
+			Name:        "slide_update_network_ipsec_conn",
+			Description: "Update an IPSec connection for a network",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"network_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the network",
+					},
+					"ipsec_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the IPSec connection",
+					},
+					"name": map[string]interface{}{
+						"type":        "string",
+						"description": "Name of the IPSec connection",
+					},
+					"remote_addrs": map[string]interface{}{
+						"type":        "array",
+						"description": "Remote addresses",
+						"items": map[string]interface{}{
+							"type": "string",
+						},
+					},
+					"remote_networks": map[string]interface{}{
+						"type":        "array",
+						"description": "Remote networks",
+						"items": map[string]interface{}{
+							"type": "string",
+						},
+					},
+				},
+				"required": []string{"network_id", "ipsec_id"},
+			},
+		},
+		{
+			Name:        "slide_delete_network_ipsec_conn",
+			Description: "Delete an IPSec connection from a network",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"network_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the network",
+					},
+					"ipsec_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the IPSec connection",
+					},
+				},
+				"required": []string{"network_id", "ipsec_id"},
+			},
+		},
+		{
+			Name:        "slide_create_network_port_forward",
+			Description: "Create a port forward for a network",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"network_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the network",
+					},
+					"proto": map[string]interface{}{
+						"type":        "string",
+						"description": "Protocol (tcp/udp)",
+						"enum":        []string{"tcp", "udp"},
+					},
+					"dest": map[string]interface{}{
+						"type":        "string",
+						"description": "Destination address:port",
+					},
+				},
+				"required": []string{"network_id", "proto", "dest"},
+			},
+		},
+		{
+			Name:        "slide_update_network_port_forward",
+			Description: "Update a port forward for a network",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"network_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the network",
+					},
+					"port_forward_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the port forward",
+					},
+					"proto": map[string]interface{}{
+						"type":        "string",
+						"description": "Protocol (tcp/udp)",
+						"enum":        []string{"tcp", "udp"},
+					},
+					"dest": map[string]interface{}{
+						"type":        "string",
+						"description": "Destination address:port",
+					},
+				},
+				"required": []string{"network_id", "port_forward_id"},
+			},
+		},
+		{
+			Name:        "slide_delete_network_port_forward",
+			Description: "Delete a port forward from a network",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"network_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the network",
+					},
+					"port_forward_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the port forward",
+					},
+				},
+				"required": []string{"network_id", "port_forward_id"},
+			},
+		},
+		{
+			Name:        "slide_create_network_wg_peer",
+			Description: "Create a WireGuard peer for a network VPN",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"network_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the network",
+					},
+					"peer_name": map[string]interface{}{
+						"type":        "string",
+						"description": "Name of the WireGuard peer",
+					},
+					"remote_networks": map[string]interface{}{
+						"type":        "array",
+						"description": "Remote networks accessible through this peer",
+						"items": map[string]interface{}{
+							"type": "string",
+						},
+					},
+				},
+				"required": []string{"network_id", "peer_name"},
+			},
+		},
+		{
+			Name:        "slide_update_network_wg_peer",
+			Description: "Update a WireGuard peer for a network VPN",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"network_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the network",
+					},
+					"wg_peer_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the WireGuard peer",
+					},
+					"peer_name": map[string]interface{}{
+						"type":        "string",
+						"description": "Name of the WireGuard peer",
+					},
+					"remote_networks": map[string]interface{}{
+						"type":        "array",
+						"description": "Remote networks accessible through this peer",
+						"items": map[string]interface{}{
+							"type": "string",
+						},
+					},
+				},
+				"required": []string{"network_id", "wg_peer_id"},
+			},
+		},
+		{
+			Name:        "slide_delete_network_wg_peer",
+			Description: "Delete a WireGuard peer from a network VPN",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"network_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the network",
+					},
+					"wg_peer_id": map[string]interface{}{
+						"type":        "string",
+						"description": "ID of the WireGuard peer",
+					},
+				},
+				"required": []string{"network_id", "wg_peer_id"},
 			},
 		},
 	}
