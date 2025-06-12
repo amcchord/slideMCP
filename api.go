@@ -245,6 +245,7 @@ type Network struct {
 	WGPeers          []NetworkWGPeer      `json:"wg_peers"`
 	WG               bool                 `json:"wg"`
 	WGPrefix         string               `json:"wg_prefix"`
+	WGPublicKey      string               `json:"wg_public_key"`
 	ClientID         *string              `json:"client_id,omitempty"`
 }
 
@@ -284,6 +285,42 @@ func generateVNCViewerURL(virtID, websocketURI, vncPassword string) string {
 	base64Password := base64.StdEncoding.EncodeToString([]byte(vncPassword))
 	return fmt.Sprintf("https://slide.recipes/mcpTools/vncViewer.php?id=%s&ws=%s&password=%s&encoding=base64",
 		virtID, encodedWebsocketURI, base64Password)
+}
+
+// Helper function to generate WireGuard config file
+func generateWireGuardConfig(peer NetworkWGPeer, serverPublicKey string) string {
+	config := fmt.Sprintf(`[Interface]
+PrivateKey = %s
+Address = %s
+
+[Peer]
+PublicKey = %s
+Endpoint = %s
+AllowedIPs = %s
+PersistentKeepalive = 25
+`,
+		peer.WGPrivateKey,
+		peer.WGAddress,
+		serverPublicKey,
+		peer.WGEndpoint,
+		joinNetworks(peer.RemoteNetworks))
+
+	return config
+}
+
+// Helper function to join networks with commas for WireGuard config
+func joinNetworks(networks []string) string {
+	if len(networks) == 0 {
+		return "0.0.0.0/0, ::/0" // Default to all traffic if no specific networks
+	}
+	result := ""
+	for i, network := range networks {
+		if i > 0 {
+			result += ", "
+		}
+		result += network
+	}
+	return result
 }
 
 // API client helper
@@ -1438,6 +1475,7 @@ func listVirtualMachines(args map[string]interface{}) (string, error) {
 			"console_access":         "Always use the _vnc_viewer_url for immediate browser-based console access. This is much easier than configuring a separate VNC client.",
 			"network_configuration":  "When creating new VMs, always use network_type: 'network-nat-shared' for most use cases. This provides NAT networking with internet access.",
 			"network_type_reference": "Valid network_type values: 'network-nat-shared' (recommended), 'network-nat-isolated', 'bridge', 'network-id'",
+			"network_dependencies":   "IMPORTANT: If you need to create a VM with network_type: 'network-id', you MUST create the custom network first using slide_create_network before creating the VM. Built-in network types do not require pre-existing networks.",
 			"deployment_awareness":   "Each VM's device_id indicates where it's running. When referencing VMs to users, be aware that some may be running locally on their devices while others may be running in the cloud, depending on which device_id was used during creation.",
 		},
 	}
@@ -2283,13 +2321,63 @@ func listNetworks(args map[string]interface{}) (string, error) {
 		return "", fmt.Errorf("failed to parse response: %w", err)
 	}
 
+	// Process networks to include WireGuard configs for peers
+	enhancedNetworks := make([]map[string]interface{}, len(result.Data))
+	for i, network := range result.Data {
+		enhancedNetwork := map[string]interface{}{
+			"network_id":         network.NetworkID,
+			"type":               network.Type,
+			"name":               network.Name,
+			"comments":           network.Comments,
+			"bridge_device_id":   network.BridgeDeviceID,
+			"router_prefix":      network.RouterPrefix,
+			"dhcp":               network.DHCP,
+			"dhcp_range_start":   network.DHCPRangeStart,
+			"dhcp_range_end":     network.DHCPRangeEnd,
+			"nameservers":        network.Nameservers,
+			"internet":           network.Internet,
+			"connected_virt_ids": network.ConnectedVirtIDs,
+			"ipsec_conns":        network.IPSecConns,
+			"port_forwards":      network.PortForwards,
+			"wg":                 network.WG,
+			"wg_prefix":          network.WGPrefix,
+			"wg_public_key":      network.WGPublicKey,
+			"client_id":          network.ClientID,
+		}
+
+		// Process WireGuard peers to include config files
+		if len(network.WGPeers) > 0 {
+			enhancedWGPeers := make([]map[string]interface{}, len(network.WGPeers))
+
+			for j, peer := range network.WGPeers {
+				enhancedPeer := map[string]interface{}{
+					"wg_peer_id":        peer.WGPeerID,
+					"peer_name":         peer.PeerName,
+					"wg_public_key":     peer.WGPublicKey,
+					"wg_private_key":    peer.WGPrivateKey,
+					"wg_address":        peer.WGAddress,
+					"wg_endpoint":       peer.WGEndpoint,
+					"remote_networks":   peer.RemoteNetworks,
+					"_wireguard_config": generateWireGuardConfig(peer, network.WGPublicKey),
+				}
+				enhancedWGPeers[j] = enhancedPeer
+			}
+			enhancedNetwork["wg_peers"] = enhancedWGPeers
+		} else {
+			enhancedNetwork["wg_peers"] = network.WGPeers
+		}
+
+		enhancedNetworks[i] = enhancedNetwork
+	}
+
 	enhancedResult := map[string]interface{}{
 		"pagination": result.Pagination,
-		"data":       result.Data,
+		"data":       enhancedNetworks,
 		"_metadata": map[string]interface{}{
 			"primary_identifier":    "name",
 			"presentation_guidance": "Networks enable disaster recovery and isolated networking for virtual machines.",
 			"workflow_guidance":     "Networks can be standard (isolated) or bridge-lan (connected to device LAN). Virtual machines can be connected to networks.",
+			"wireguard_guidance":    "Networks with WireGuard enabled will have WG peers that include ready-to-use configuration files in the _wireguard_config field.",
 		},
 	}
 
@@ -2318,7 +2406,56 @@ func getNetwork(args map[string]interface{}) (string, error) {
 		return "", fmt.Errorf("failed to parse response: %w", err)
 	}
 
-	jsonData, err := json.MarshalIndent(result, "", "  ")
+	// Enhanced result with WireGuard configs for peers
+	enhancedResult := map[string]interface{}{
+		"network_id":         result.NetworkID,
+		"type":               result.Type,
+		"name":               result.Name,
+		"comments":           result.Comments,
+		"bridge_device_id":   result.BridgeDeviceID,
+		"router_prefix":      result.RouterPrefix,
+		"dhcp":               result.DHCP,
+		"dhcp_range_start":   result.DHCPRangeStart,
+		"dhcp_range_end":     result.DHCPRangeEnd,
+		"nameservers":        result.Nameservers,
+		"internet":           result.Internet,
+		"connected_virt_ids": result.ConnectedVirtIDs,
+		"ipsec_conns":        result.IPSecConns,
+		"port_forwards":      result.PortForwards,
+		"wg":                 result.WG,
+		"wg_prefix":          result.WGPrefix,
+		"wg_public_key":      result.WGPublicKey,
+		"client_id":          result.ClientID,
+		"_metadata": map[string]interface{}{
+			"primary_identifier":    "network_id",
+			"presentation_guidance": "Network configuration with associated services and peers.",
+			"wireguard_guidance":    "If this network has WireGuard enabled, WG peers will include ready-to-use configuration files in the _wireguard_config field.",
+		},
+	}
+
+	// Process WireGuard peers to include config files
+	if len(result.WGPeers) > 0 {
+		enhancedWGPeers := make([]map[string]interface{}, len(result.WGPeers))
+
+		for i, peer := range result.WGPeers {
+			enhancedPeer := map[string]interface{}{
+				"wg_peer_id":        peer.WGPeerID,
+				"peer_name":         peer.PeerName,
+				"wg_public_key":     peer.WGPublicKey,
+				"wg_private_key":    peer.WGPrivateKey,
+				"wg_address":        peer.WGAddress,
+				"wg_endpoint":       peer.WGEndpoint,
+				"remote_networks":   peer.RemoteNetworks,
+				"_wireguard_config": generateWireGuardConfig(peer, result.WGPublicKey),
+			}
+			enhancedWGPeers[i] = enhancedPeer
+		}
+		enhancedResult["wg_peers"] = enhancedWGPeers
+	} else {
+		enhancedResult["wg_peers"] = result.WGPeers
+	}
+
+	jsonData, err := json.MarshalIndent(enhancedResult, "", "  ")
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal result: %w", err)
 	}
@@ -2391,7 +2528,57 @@ func createNetwork(args map[string]interface{}) (string, error) {
 		return "", fmt.Errorf("failed to parse response: %w", err)
 	}
 
-	jsonData, err := json.MarshalIndent(result, "", "  ")
+	// Enhanced result with WireGuard configs for peers
+	enhancedResult := map[string]interface{}{
+		"network_id":         result.NetworkID,
+		"type":               result.Type,
+		"name":               result.Name,
+		"comments":           result.Comments,
+		"bridge_device_id":   result.BridgeDeviceID,
+		"router_prefix":      result.RouterPrefix,
+		"dhcp":               result.DHCP,
+		"dhcp_range_start":   result.DHCPRangeStart,
+		"dhcp_range_end":     result.DHCPRangeEnd,
+		"nameservers":        result.Nameservers,
+		"internet":           result.Internet,
+		"connected_virt_ids": result.ConnectedVirtIDs,
+		"ipsec_conns":        result.IPSecConns,
+		"port_forwards":      result.PortForwards,
+		"wg":                 result.WG,
+		"wg_prefix":          result.WGPrefix,
+		"wg_public_key":      result.WGPublicKey,
+		"client_id":          result.ClientID,
+		"_metadata": map[string]interface{}{
+			"primary_identifier":    "network_id",
+			"presentation_guidance": "Network created successfully. You can now connect virtual machines to this network or configure additional services.",
+			"next_steps":            "You can now create virtual machines using this network_id with network_type: 'network-id' and network_source: '" + result.NetworkID + "'",
+			"wireguard_guidance":    "If WireGuard is enabled, you can create WG peers to allow VPN access to this network using slide_create_network_wg_peer.",
+		},
+	}
+
+	// Process WireGuard peers to include config files (if any returned)
+	if len(result.WGPeers) > 0 {
+		enhancedWGPeers := make([]map[string]interface{}, len(result.WGPeers))
+
+		for i, peer := range result.WGPeers {
+			enhancedPeer := map[string]interface{}{
+				"wg_peer_id":        peer.WGPeerID,
+				"peer_name":         peer.PeerName,
+				"wg_public_key":     peer.WGPublicKey,
+				"wg_private_key":    peer.WGPrivateKey,
+				"wg_address":        peer.WGAddress,
+				"wg_endpoint":       peer.WGEndpoint,
+				"remote_networks":   peer.RemoteNetworks,
+				"_wireguard_config": generateWireGuardConfig(peer, result.WGPublicKey),
+			}
+			enhancedWGPeers[i] = enhancedPeer
+		}
+		enhancedResult["wg_peers"] = enhancedWGPeers
+	} else {
+		enhancedResult["wg_peers"] = result.WGPeers
+	}
+
+	jsonData, err := json.MarshalIndent(enhancedResult, "", "  ")
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal result: %w", err)
 	}
@@ -2407,8 +2594,12 @@ func updateNetwork(args map[string]interface{}) (string, error) {
 
 	payload := make(map[string]interface{})
 
-	if name, ok := args["name"]; ok {
-		payload["name"] = name
+	// Add optional parameters
+	if bridgeDeviceID, ok := args["bridge_device_id"]; ok {
+		payload["bridge_device_id"] = bridgeDeviceID
+	}
+	if clientID, ok := args["client_id"]; ok {
+		payload["client_id"] = clientID
 	}
 	if comments, ok := args["comments"]; ok {
 		payload["comments"] = comments
@@ -2424,6 +2615,9 @@ func updateNetwork(args map[string]interface{}) (string, error) {
 	}
 	if internet, ok := args["internet"]; ok {
 		payload["internet"] = internet
+	}
+	if name, ok := args["name"]; ok {
+		payload["name"] = name
 	}
 	if nameservers, ok := args["nameservers"]; ok {
 		payload["nameservers"] = nameservers
@@ -2454,7 +2648,56 @@ func updateNetwork(args map[string]interface{}) (string, error) {
 		return "", fmt.Errorf("failed to parse response: %w", err)
 	}
 
-	jsonData, err := json.MarshalIndent(result, "", "  ")
+	// Enhanced result with WireGuard configs for peers
+	enhancedResult := map[string]interface{}{
+		"network_id":         result.NetworkID,
+		"type":               result.Type,
+		"name":               result.Name,
+		"comments":           result.Comments,
+		"bridge_device_id":   result.BridgeDeviceID,
+		"router_prefix":      result.RouterPrefix,
+		"dhcp":               result.DHCP,
+		"dhcp_range_start":   result.DHCPRangeStart,
+		"dhcp_range_end":     result.DHCPRangeEnd,
+		"nameservers":        result.Nameservers,
+		"internet":           result.Internet,
+		"connected_virt_ids": result.ConnectedVirtIDs,
+		"ipsec_conns":        result.IPSecConns,
+		"port_forwards":      result.PortForwards,
+		"wg":                 result.WG,
+		"wg_prefix":          result.WGPrefix,
+		"wg_public_key":      result.WGPublicKey,
+		"client_id":          result.ClientID,
+		"_metadata": map[string]interface{}{
+			"primary_identifier":    "network_id",
+			"presentation_guidance": "Network updated successfully.",
+			"wireguard_guidance":    "If WireGuard is enabled, existing WG peers will include ready-to-use configuration files in the _wireguard_config field.",
+		},
+	}
+
+	// Process WireGuard peers to include config files (if any returned)
+	if len(result.WGPeers) > 0 {
+		enhancedWGPeers := make([]map[string]interface{}, len(result.WGPeers))
+
+		for i, peer := range result.WGPeers {
+			enhancedPeer := map[string]interface{}{
+				"wg_peer_id":        peer.WGPeerID,
+				"peer_name":         peer.PeerName,
+				"wg_public_key":     peer.WGPublicKey,
+				"wg_private_key":    peer.WGPrivateKey,
+				"wg_address":        peer.WGAddress,
+				"wg_endpoint":       peer.WGEndpoint,
+				"remote_networks":   peer.RemoteNetworks,
+				"_wireguard_config": generateWireGuardConfig(peer, result.WGPublicKey),
+			}
+			enhancedWGPeers[i] = enhancedPeer
+		}
+		enhancedResult["wg_peers"] = enhancedWGPeers
+	} else {
+		enhancedResult["wg_peers"] = result.WGPeers
+	}
+
+	jsonData, err := json.MarshalIndent(enhancedResult, "", "  ")
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal result: %w", err)
 	}
@@ -2784,7 +3027,40 @@ func createNetworkWGPeer(args map[string]interface{}) (string, error) {
 		return "", fmt.Errorf("failed to parse response: %w", err)
 	}
 
-	jsonData, err := json.MarshalIndent(result, "", "  ")
+	// Enhanced result with WireGuard config
+	enhancedResult := map[string]interface{}{
+		"wg_peer_id":      result.WGPeerID,
+		"peer_name":       result.PeerName,
+		"wg_public_key":   result.WGPublicKey,
+		"wg_private_key":  result.WGPrivateKey,
+		"wg_address":      result.WGAddress,
+		"wg_endpoint":     result.WGEndpoint,
+		"remote_networks": result.RemoteNetworks,
+		"_metadata": map[string]interface{}{
+			"primary_identifier":    "wg_peer_id",
+			"presentation_guidance": "WireGuard peer configuration for VPN access to the network.",
+			"config_file_guidance":  "Use the _wireguard_config field to get a ready-to-use WireGuard configuration file. Save this as a .conf file and import it into your WireGuard client.",
+			"usage_instructions":    "1. Save the _wireguard_config as a .conf file, 2. Import into WireGuard client, 3. Connect to access the specified remote networks.",
+		},
+	}
+
+	// Get network details to retrieve server public key
+	networkEndpoint := fmt.Sprintf("/v1/network/%s", networkID)
+	networkData, err := makeAPIRequest("GET", networkEndpoint, nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to get network details: %w", err)
+	}
+
+	var network Network
+	if err := json.Unmarshal(networkData, &network); err != nil {
+		return "", fmt.Errorf("failed to parse network response: %w", err)
+	}
+
+	// Generate WireGuard config with actual server public key
+	wireguardConfig := generateWireGuardConfig(result, network.WGPublicKey)
+	enhancedResult["_wireguard_config"] = wireguardConfig
+
+	jsonData, err := json.MarshalIndent(enhancedResult, "", "  ")
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal result: %w", err)
 	}
@@ -2838,7 +3114,40 @@ func updateNetworkWGPeer(args map[string]interface{}) (string, error) {
 		return "", fmt.Errorf("failed to parse response: %w", err)
 	}
 
-	jsonData, err := json.MarshalIndent(result, "", "  ")
+	// Enhanced result with WireGuard config
+	enhancedResult := map[string]interface{}{
+		"wg_peer_id":      result.WGPeerID,
+		"peer_name":       result.PeerName,
+		"wg_public_key":   result.WGPublicKey,
+		"wg_private_key":  result.WGPrivateKey,
+		"wg_address":      result.WGAddress,
+		"wg_endpoint":     result.WGEndpoint,
+		"remote_networks": result.RemoteNetworks,
+		"_metadata": map[string]interface{}{
+			"primary_identifier":    "wg_peer_id",
+			"presentation_guidance": "Updated WireGuard peer configuration for VPN access to the network.",
+			"config_file_guidance":  "Use the _wireguard_config field to get a ready-to-use WireGuard configuration file. Save this as a .conf file and import it into your WireGuard client.",
+			"usage_instructions":    "1. Save the _wireguard_config as a .conf file, 2. Import into WireGuard client, 3. Connect to access the specified remote networks.",
+		},
+	}
+
+	// Get network details to retrieve server public key
+	networkEndpoint := fmt.Sprintf("/v1/network/%s", networkID)
+	networkData, err := makeAPIRequest("GET", networkEndpoint, nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to get network details: %w", err)
+	}
+
+	var network Network
+	if err := json.Unmarshal(networkData, &network); err != nil {
+		return "", fmt.Errorf("failed to parse network response: %w", err)
+	}
+
+	// Generate WireGuard config with actual server public key
+	wireguardConfig := generateWireGuardConfig(result, network.WGPublicKey)
+	enhancedResult["_wireguard_config"] = wireguardConfig
+
+	jsonData, err := json.MarshalIndent(enhancedResult, "", "  ")
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal result: %w", err)
 	}
