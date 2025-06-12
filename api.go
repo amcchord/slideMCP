@@ -228,34 +228,53 @@ type Client struct {
 }
 
 type Network struct {
-	NetworkID        string   `json:"network_id"`
-	Type             string   `json:"type"`
-	Name             string   `json:"name"`
-	Comments         string   `json:"comments"`
-	BridgeDeviceID   string   `json:"bridge_device_id"`
-	RouterPrefix     string   `json:"router_prefix"`
-	DHCP             bool     `json:"dhcp"`
-	DHCPRangeStart   string   `json:"dhcp_range_start"`
-	DHCPRangeEnd     string   `json:"dhcp_range_end"`
-	Nameservers      string   `json:"nameservers"`
-	Internet         bool     `json:"internet"`
-	ConnectedVirtIDs []string `json:"connected_virt_ids"`
-	ClientID         *string  `json:"client_id,omitempty"`
+	NetworkID        string               `json:"network_id"`
+	Type             string               `json:"type"`
+	Name             string               `json:"name"`
+	Comments         string               `json:"comments"`
+	BridgeDeviceID   string               `json:"bridge_device_id"`
+	RouterPrefix     string               `json:"router_prefix"`
+	DHCP             bool                 `json:"dhcp"`
+	DHCPRangeStart   string               `json:"dhcp_range_start"`
+	DHCPRangeEnd     string               `json:"dhcp_range_end"`
+	Nameservers      []string             `json:"nameservers"`
+	Internet         bool                 `json:"internet"`
+	ConnectedVirtIDs []string             `json:"connected_virt_ids"`
+	IPSecConns       []NetworkIPSecConn   `json:"ipsec_conns"`
+	PortForwards     []NetworkPortForward `json:"port_forwards"`
+	WGPeers          []NetworkWGPeer      `json:"wg_peers"`
+	WG               bool                 `json:"wg"`
+	WGPrefix         string               `json:"wg_prefix"`
+	ClientID         *string              `json:"client_id,omitempty"`
+}
+
+type NetworkIPSecConn struct {
+	IPSecID        string   `json:"ipsec_id"`
+	Name           string   `json:"name"`
+	PSK            string   `json:"psk"`
+	LocalID        string   `json:"local_id"`
+	LocalAddrs     []string `json:"local_addrs"`
+	LocalNetworks  []string `json:"local_networks"`
+	RemoteID       string   `json:"remote_id"`
+	RemoteAddrs    []string `json:"remote_addrs"`
+	RemoteNetworks []string `json:"remote_networks"`
 }
 
 type NetworkPortForward struct {
-	NetworkID string `json:"network_id"`
-	Proto     string `json:"proto"`
-	Port      int    `json:"port"`
-	Dest      string `json:"dest"`
+	PortForwardID string `json:"port_forward_id"`
+	Proto         string `json:"proto"`
+	Port          int    `json:"port"`
+	Dest          string `json:"dest"`
+	Endpoint      string `json:"endpoint"`
 }
 
 type NetworkWGPeer struct {
-	NetworkID      string   `json:"network_id"`
+	WGPeerID       string   `json:"wg_peer_id"`
 	PeerName       string   `json:"peer_name"`
 	WGPublicKey    string   `json:"wg_public_key"`
 	WGPrivateKey   string   `json:"wg_private_key"`
 	WGAddress      string   `json:"wg_address"`
+	WGEndpoint     string   `json:"wg_endpoint"`
 	RemoteNetworks []string `json:"remote_networks"`
 }
 
@@ -1571,6 +1590,7 @@ func createVirtualMachine(args map[string]interface{}) (string, error) {
 			"network_configuration":    "When creating VMs, easiest to use network_type: 'network-nat-shared' for most use cases. This provides NAT networking with internet access.",
 			"network_type_options":     "Valid network_type values: 'network-nat-shared' (recommended default), 'network-nat-isolated' (no internet), 'bridge' (direct LAN access), 'network-id' (connect to specific network)",
 			"network_best_practices":   "Always specify network_type explicitly. Use 'network-nat-shared' unless you have specific requirements for isolation or LAN bridging. The network_model should typically be 'virtio' for best performance.",
+			"network_dependencies":     "IMPORTANT: If using network_type: 'network-id', you MUST create the custom network first using slide_create_network before creating the VM. The network_source field should reference an existing network_id. Built-in network types ('network-nat-shared', 'network-nat-isolated', 'bridge') do not require pre-existing networks.",
 			"deployment_location":      "IMPORTANT: Always inform the user whether this VM was deployed locally or in the cloud. Check if the device_id used matches the original agent's device (local) or is a different device from the snapshot locations (cloud). Users need to know where their VM is running.",
 			"deployment_communication": "When presenting VM creation results to users, clearly state: 'Your virtual machine has been created and will run [locally on your device / in the cloud]' based on the device_id selection.",
 		},
@@ -2349,6 +2369,12 @@ func createNetwork(args map[string]interface{}) (string, error) {
 	if routerPrefix, ok := args["router_prefix"]; ok {
 		payload["router_prefix"] = routerPrefix
 	}
+	if wg, ok := args["wg"]; ok {
+		payload["wg"] = wg
+	}
+	if wgPrefix, ok := args["wg_prefix"]; ok {
+		payload["wg_prefix"] = wgPrefix
+	}
 
 	body, err := json.Marshal(payload)
 	if err != nil {
@@ -2408,6 +2434,9 @@ func updateNetwork(args map[string]interface{}) (string, error) {
 	if wg, ok := args["wg"]; ok {
 		payload["wg"] = wg
 	}
+	if wgPrefix, ok := args["wg_prefix"]; ok {
+		payload["wg_prefix"] = wgPrefix
+	}
 
 	body, err := json.Marshal(payload)
 	if err != nil {
@@ -2448,6 +2477,161 @@ func deleteNetwork(args map[string]interface{}) (string, error) {
 	return "Network deleted successfully", nil
 }
 
+// Network IPsec Connection functions
+func createNetworkIPSecConn(args map[string]interface{}) (string, error) {
+	networkID, ok := args["network_id"].(string)
+	if !ok {
+		return "", fmt.Errorf("network_id is required")
+	}
+	name, ok := args["name"].(string)
+	if !ok {
+		return "", fmt.Errorf("name is required")
+	}
+	remoteAddrs, ok := args["remote_addrs"].([]interface{})
+	if !ok {
+		return "", fmt.Errorf("remote_addrs is required")
+	}
+	remoteNetworks, ok := args["remote_networks"].([]interface{})
+	if !ok {
+		return "", fmt.Errorf("remote_networks is required")
+	}
+
+	// Convert []interface{} to []string
+	remoteAddrStrings := make([]string, len(remoteAddrs))
+	for i, addr := range remoteAddrs {
+		if addrStr, ok := addr.(string); ok {
+			remoteAddrStrings[i] = addrStr
+		} else {
+			return "", fmt.Errorf("remote_addrs must be an array of strings")
+		}
+	}
+
+	remoteNetworkStrings := make([]string, len(remoteNetworks))
+	for i, network := range remoteNetworks {
+		if networkStr, ok := network.(string); ok {
+			remoteNetworkStrings[i] = networkStr
+		} else {
+			return "", fmt.Errorf("remote_networks must be an array of strings")
+		}
+	}
+
+	payload := map[string]interface{}{
+		"name":            name,
+		"remote_addrs":    remoteAddrStrings,
+		"remote_networks": remoteNetworkStrings,
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	endpoint := fmt.Sprintf("/v1/network/%s/ipsec", networkID)
+	data, err := makeAPIRequest("POST", endpoint, body)
+	if err != nil {
+		return "", err
+	}
+
+	var result NetworkIPSecConn
+	if err := json.Unmarshal(data, &result); err != nil {
+		return "", fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	jsonData, err := json.MarshalIndent(result, "", "  ")
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal result: %w", err)
+	}
+
+	return string(jsonData), nil
+}
+
+func updateNetworkIPSecConn(args map[string]interface{}) (string, error) {
+	networkID, ok := args["network_id"].(string)
+	if !ok {
+		return "", fmt.Errorf("network_id is required")
+	}
+	ipsecID, ok := args["ipsec_id"].(string)
+	if !ok {
+		return "", fmt.Errorf("ipsec_id is required")
+	}
+
+	payload := make(map[string]interface{})
+
+	if name, ok := args["name"]; ok {
+		payload["name"] = name
+	}
+	if remoteAddrs, ok := args["remote_addrs"]; ok {
+		if addrs, ok := remoteAddrs.([]interface{}); ok {
+			// Convert []interface{} to []string
+			remoteAddrStrings := make([]string, len(addrs))
+			for i, addr := range addrs {
+				if addrStr, ok := addr.(string); ok {
+					remoteAddrStrings[i] = addrStr
+				} else {
+					return "", fmt.Errorf("remote_addrs must be an array of strings")
+				}
+			}
+			payload["remote_addrs"] = remoteAddrStrings
+		}
+	}
+	if remoteNetworks, ok := args["remote_networks"]; ok {
+		if networks, ok := remoteNetworks.([]interface{}); ok {
+			// Convert []interface{} to []string
+			remoteNetworkStrings := make([]string, len(networks))
+			for i, network := range networks {
+				if networkStr, ok := network.(string); ok {
+					remoteNetworkStrings[i] = networkStr
+				} else {
+					return "", fmt.Errorf("remote_networks must be an array of strings")
+				}
+			}
+			payload["remote_networks"] = remoteNetworkStrings
+		}
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	endpoint := fmt.Sprintf("/v1/network/%s/ipsec/%s", networkID, ipsecID)
+	data, err := makeAPIRequest("PATCH", endpoint, body)
+	if err != nil {
+		return "", err
+	}
+
+	var result NetworkIPSecConn
+	if err := json.Unmarshal(data, &result); err != nil {
+		return "", fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	jsonData, err := json.MarshalIndent(result, "", "  ")
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal result: %w", err)
+	}
+
+	return string(jsonData), nil
+}
+
+func deleteNetworkIPSecConn(args map[string]interface{}) (string, error) {
+	networkID, ok := args["network_id"].(string)
+	if !ok {
+		return "", fmt.Errorf("network_id is required")
+	}
+	ipsecID, ok := args["ipsec_id"].(string)
+	if !ok {
+		return "", fmt.Errorf("ipsec_id is required")
+	}
+
+	endpoint := fmt.Sprintf("/v1/network/%s/ipsec/%s", networkID, ipsecID)
+	_, err := makeAPIRequest("DELETE", endpoint, nil)
+	if err != nil {
+		return "", err
+	}
+
+	return "Network IPsec connection deleted successfully", nil
+}
+
 // Network Port Forward functions
 func createNetworkPortForward(args map[string]interface{}) (string, error) {
 	networkID, ok := args["network_id"].(string)
@@ -2473,8 +2657,51 @@ func createNetworkPortForward(args map[string]interface{}) (string, error) {
 		return "", fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	endpoint := fmt.Sprintf("/v1/network/%s/port-forwards", networkID)
+	endpoint := fmt.Sprintf("/v1/network/%s/port-forward", networkID)
 	data, err := makeAPIRequest("POST", endpoint, body)
+	if err != nil {
+		return "", err
+	}
+
+	var result NetworkPortForward
+	if err := json.Unmarshal(data, &result); err != nil {
+		return "", fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	jsonData, err := json.MarshalIndent(result, "", "  ")
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal result: %w", err)
+	}
+
+	return string(jsonData), nil
+}
+
+func updateNetworkPortForward(args map[string]interface{}) (string, error) {
+	networkID, ok := args["network_id"].(string)
+	if !ok {
+		return "", fmt.Errorf("network_id is required")
+	}
+	portForwardID, ok := args["port_forward_id"].(string)
+	if !ok {
+		return "", fmt.Errorf("port_forward_id is required")
+	}
+
+	payload := make(map[string]interface{})
+
+	if proto, ok := args["proto"]; ok {
+		payload["proto"] = proto
+	}
+	if dest, ok := args["dest"]; ok {
+		payload["dest"] = dest
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	endpoint := fmt.Sprintf("/v1/network/%s/port-forward/%s", networkID, portForwardID)
+	data, err := makeAPIRequest("PATCH", endpoint, body)
 	if err != nil {
 		return "", err
 	}
@@ -2497,27 +2724,13 @@ func deleteNetworkPortForward(args map[string]interface{}) (string, error) {
 	if !ok {
 		return "", fmt.Errorf("network_id is required")
 	}
-	proto, ok := args["proto"].(string)
+	portForwardID, ok := args["port_forward_id"].(string)
 	if !ok {
-		return "", fmt.Errorf("proto is required")
-	}
-	port, ok := args["port"].(float64)
-	if !ok {
-		return "", fmt.Errorf("port is required")
+		return "", fmt.Errorf("port_forward_id is required")
 	}
 
-	payload := map[string]interface{}{
-		"proto": proto,
-		"port":  int(port),
-	}
-
-	body, err := json.Marshal(payload)
-	if err != nil {
-		return "", fmt.Errorf("failed to marshal request: %w", err)
-	}
-
-	endpoint := fmt.Sprintf("/v1/network/%s/port-forwards", networkID)
-	_, err = makeAPIRequest("DELETE", endpoint, body)
+	endpoint := fmt.Sprintf("/v1/network/%s/port-forward/%s", networkID, portForwardID)
+	_, err := makeAPIRequest("DELETE", endpoint, nil)
 	if err != nil {
 		return "", err
 	}
@@ -2535,24 +2748,24 @@ func createNetworkWGPeer(args map[string]interface{}) (string, error) {
 	if !ok {
 		return "", fmt.Errorf("peer_name is required")
 	}
-	remoteNetworks, ok := args["remote_networks"].([]interface{})
-	if !ok {
-		return "", fmt.Errorf("remote_networks is required")
-	}
-
-	// Convert []interface{} to []string
-	remoteNetworkStrings := make([]string, len(remoteNetworks))
-	for i, network := range remoteNetworks {
-		if networkStr, netOk := network.(string); netOk {
-			remoteNetworkStrings[i] = networkStr
-		} else {
-			return "", fmt.Errorf("remote_networks must be an array of strings")
-		}
-	}
 
 	payload := map[string]interface{}{
-		"peer_name":       peerName,
-		"remote_networks": remoteNetworkStrings,
+		"peer_name": peerName,
+	}
+
+	if remoteNetworks, ok := args["remote_networks"]; ok {
+		if networks, ok := remoteNetworks.([]interface{}); ok {
+			// Convert []interface{} to []string
+			remoteNetworkStrings := make([]string, len(networks))
+			for i, network := range networks {
+				if networkStr, ok := network.(string); ok {
+					remoteNetworkStrings[i] = networkStr
+				} else {
+					return "", fmt.Errorf("remote_networks must be an array of strings")
+				}
+			}
+			payload["remote_networks"] = remoteNetworkStrings
+		}
 	}
 
 	body, err := json.Marshal(payload)
@@ -2560,7 +2773,7 @@ func createNetworkWGPeer(args map[string]interface{}) (string, error) {
 		return "", fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	endpoint := fmt.Sprintf("/v1/network/%s/wg-peers", networkID)
+	endpoint := fmt.Sprintf("/v1/network/%s/wg-peer", networkID)
 	data, err := makeAPIRequest("POST", endpoint, body)
 	if err != nil {
 		return "", err
@@ -2584,14 +2797,12 @@ func updateNetworkWGPeer(args map[string]interface{}) (string, error) {
 	if !ok {
 		return "", fmt.Errorf("network_id is required")
 	}
-	wgAddress, ok := args["wg_address"].(string)
+	wgPeerID, ok := args["wg_peer_id"].(string)
 	if !ok {
-		return "", fmt.Errorf("wg_address is required")
+		return "", fmt.Errorf("wg_peer_id is required")
 	}
 
-	payload := map[string]interface{}{
-		"wg_address": wgAddress,
-	}
+	payload := make(map[string]interface{})
 
 	if peerName, ok := args["peer_name"]; ok {
 		payload["peer_name"] = peerName
@@ -2601,7 +2812,7 @@ func updateNetworkWGPeer(args map[string]interface{}) (string, error) {
 			// Convert []interface{} to []string
 			remoteNetworkStrings := make([]string, len(networks))
 			for i, network := range networks {
-				if networkStr, netOk := network.(string); netOk {
+				if networkStr, ok := network.(string); ok {
 					remoteNetworkStrings[i] = networkStr
 				} else {
 					return "", fmt.Errorf("remote_networks must be an array of strings")
@@ -2616,7 +2827,7 @@ func updateNetworkWGPeer(args map[string]interface{}) (string, error) {
 		return "", fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	endpoint := fmt.Sprintf("/v1/network/%s/wg-peers", networkID)
+	endpoint := fmt.Sprintf("/v1/network/%s/wg-peer/%s", networkID, wgPeerID)
 	data, err := makeAPIRequest("PATCH", endpoint, body)
 	if err != nil {
 		return "", err
@@ -2640,22 +2851,13 @@ func deleteNetworkWGPeer(args map[string]interface{}) (string, error) {
 	if !ok {
 		return "", fmt.Errorf("network_id is required")
 	}
-	wgAddress, ok := args["wg_address"].(string)
+	wgPeerID, ok := args["wg_peer_id"].(string)
 	if !ok {
-		return "", fmt.Errorf("wg_address is required")
+		return "", fmt.Errorf("wg_peer_id is required")
 	}
 
-	payload := map[string]interface{}{
-		"wg_address": wgAddress,
-	}
-
-	body, err := json.Marshal(payload)
-	if err != nil {
-		return "", fmt.Errorf("failed to marshal request: %w", err)
-	}
-
-	endpoint := fmt.Sprintf("/v1/network/%s/wg-peers", networkID)
-	_, err = makeAPIRequest("DELETE", endpoint, body)
+	endpoint := fmt.Sprintf("/v1/network/%s/wg-peer/%s", networkID, wgPeerID)
+	_, err := makeAPIRequest("DELETE", endpoint, nil)
 	if err != nil {
 		return "", err
 	}
