@@ -2,23 +2,16 @@
 
 An MCP server implementation that integrates with the Slide API, providing device and agent management capabilities.
 
-## 🚀 Two Ways to Use Slide MCP
-
-### **Option 1: Go Binary (Recommended - Easiest)** ⚡
+## 🚀 Go Binary Implementation ⚡
 - **Single binary**: No dependencies, just download and run
-- **60x faster startup**: ~50ms vs 2-3 seconds
-- **5x less memory**: 10-20MB vs 50-100MB
+- **Fast startup**: ~50ms startup time
+- **Low memory usage**: 10-20MB memory footprint
 - **Cross-platform**: Linux, macOS, Windows binaries
 - **Zero Installation Hassle**: Simple download and configure
 
-### **Option 2: TypeScript/Node.js Version** 📦
-- Original implementation with full feature set
-- Requires Node.js runtime and NPM installation
-- Available via NPX or Docker
-
 ---
 
-For quick setup instructions with Claude Desktop, see the installation sections below.
+For quick setup instructions with Claude Desktop, see the installation section below.
 
 ## Features
 
@@ -359,8 +352,6 @@ Virtual machines allow you to run a snapshot as a virtualized computer on a Slid
 
 ## 🎯 Quick Setup with Claude Desktop
 
-### **Option 1: Go Binary (Recommended)**
-
 #### Download Pre-built Binary
 ```bash
 # For macOS ARM64 (Apple Silicon)
@@ -387,7 +378,7 @@ make build
 # Binary will be in build/slide-mcp-server
 ```
 
-#### Claude Desktop Configuration (Go)
+#### Claude Desktop Configuration
 Add this to your `claude_desktop_config.json`:
 
 ```json
@@ -428,62 +419,6 @@ echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' | ./slide-mcp-
 # Should respond with server info and capabilities
 ```
 
-### **Option 2: TypeScript/Node.js Version**
-
-#### NPX Configuration
-```json
-{
-  "mcpServers": {
-    "slide": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-slide"
-      ],
-      "env": {
-        "SLIDE_API_KEY": "YOUR_API_KEY_HERE"
-      }
-    }
-  }
-}
-```
-
-#### Docker Configuration
-```json
-{
-  "mcpServers": {
-    "slide": {
-      "command": "docker",
-      "args": [
-        "run",
-        "-i",
-        "--rm",
-        "-e",
-        "SLIDE_API_KEY",
-        "mcp/slide"
-      ],
-      "env": {
-        "SLIDE_API_KEY": "YOUR_API_KEY_HERE"
-      }
-    }
-  }
-}
-```
-
-#### 🔧 Troubleshooting
-
-**Getting "spawn node ENOENT" errors?** Find your Node.js path:
-```bash
-# Find Node.js location
-which node
-
-# Common paths:
-# Linux: /usr/bin/node  
-# macOS (Homebrew): /opt/homebrew/bin/node
-# macOS (older): /usr/local/bin/node
-```
-Use the full path in your Claude Desktop configuration instead of just `node`.
-
 ### Usage with VS Code
 
 For VS Code integration, add the following JSON block to your User Settings (JSON) file. You can do this by pressing `Ctrl + Shift + P` and typing `Preferences: Open User Settings (JSON)`.
@@ -491,8 +426,6 @@ For VS Code integration, add the following JSON block to your User Settings (JSO
 Optionally, you can add it to a file called `.vscode/mcp.json` in your workspace. This will allow you to share the configuration with others.
 
 > Note that the `mcp` key is not needed in the `.vscode/mcp.json` file.
-
-#### Go Binary (Recommended)
 
 ```json
 {
@@ -517,51 +450,8 @@ Optionally, you can add it to a file called `.vscode/mcp.json` in your workspace
 }
 ```
 
-#### NPX (Alternative)
-
-```json
-{
-  "mcp": {
-    "inputs": [
-      {
-        "type": "promptString",
-        "id": "slide_api_key",
-        "description": "Slide API Key",
-        "password": true
-      }
-    ],
-    "servers": {
-      "slide": {
-        "command": "npx",
-        "args": ["-y", "@modelcontextprotocol/server-slide"],
-        "env": {
-          "SLIDE_API_KEY": "${input:slide_api_key}"
-        }
-      }
-    }
-  }
-}
-```
-
-## 🚀 Performance Comparison
-
-| Metric | TypeScript + Node.js | Go Binary | Improvement |
-|--------|---------------------|-----------|-------------|
-| **Startup Time** | 2-3 seconds | ~50ms | **60x faster** |
-| **Memory Usage** | 50-100MB | 10-20MB | **5x less** |
-| **Dependencies** | Node.js + packages | None | **Zero deps** |
-| **Distribution** | NPM package | Single binary | **Portable** |
-| **File Size** | Varies with Node.js | ~8MB | **Predictable** |
-
-## 📚 Additional Resources
-
-- **[README-Go.md](README-Go.md)** - Comprehensive Go version documentation
-- **[MIGRATION.md](MIGRATION.md)** - Step-by-step migration guide from TypeScript to Go
-- **[SUMMARY.md](SUMMARY.md)** - Project overview and development details
-
 ## Build
 
-### Go Version
 ```bash
 # Build for current platform
 make build
@@ -573,12 +463,7 @@ make build-all
 make help
 ```
 
-### TypeScript Version
-Docker build:
 
-```bash
-docker build -t mcp/slide:latest -f Dockerfile .
-```
 
 ## License
 

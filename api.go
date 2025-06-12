@@ -882,9 +882,11 @@ func listSnapshots(args map[string]interface{}) (string, error) {
 		"pagination": result.Pagination,
 		"data":       result.Data,
 		"_metadata": map[string]interface{}{
-			"primary_identifier":    "snapshot_id",
-			"presentation_guidance": "Snapshots are point-in-time backups that can be used for restores. Check locations to see where stored.",
-			"workflow_guidance":     "Snapshots can be restored as files, images, or virtual machines. Verify status shows boot/filesystem verification results.",
+			"primary_identifier":              "snapshot_id",
+			"presentation_guidance":           "Snapshots are point-in-time backups that can be used for restores. Check locations to see where stored.",
+			"workflow_guidance":               "Snapshots can be restored as files, images, or virtual machines. Verify status shows boot/filesystem verification results.",
+			"location_guidance":               "Each snapshot has a locations array showing where it's stored. If a location's device_id matches the agent's device_id, it's stored locally on that device. If the device_id is different, it's likely stored in the cloud. This is important for choosing where to deploy virtual machines.",
+			"virtualization_device_selection": "When creating virtual machines from this snapshot, you can choose any device_id from the locations array. If you use the agent's original device_id, the VM will run locally on that device. If you use a different device_id from locations (cloud device), the VM will run in the cloud. Always inform the user whether their VM will be local or cloud-based.",
 		},
 	}
 
@@ -913,7 +915,28 @@ func getSnapshot(args map[string]interface{}) (string, error) {
 		return "", fmt.Errorf("failed to parse response: %w", err)
 	}
 
-	jsonData, err := json.MarshalIndent(result, "", "  ")
+	// Add metadata for better LLM interaction
+	enhancedResult := map[string]interface{}{
+		"snapshot_id":                result.SnapshotID,
+		"agent_id":                   result.AgentID,
+		"locations":                  result.Locations,
+		"backup_started_at":          result.BackupStartedAt,
+		"backup_ended_at":            result.BackupEndedAt,
+		"deleted":                    result.Deleted,
+		"deletions":                  result.Deletions,
+		"verify_boot_status":         result.VerifyBootStatus,
+		"verify_fs_status":           result.VerifyFsStatus,
+		"verify_boot_screenshot_url": result.VerifyBootScreenshotURL,
+		"_metadata": map[string]interface{}{
+			"primary_identifier":              "snapshot_id",
+			"presentation_guidance":           "This snapshot can be restored as files, images, or virtual machines.",
+			"location_guidance":               "The locations array shows where this snapshot is stored. If a location's device_id matches the agent_id's device, it's stored locally. If different, it's likely in the cloud.",
+			"virtualization_device_selection": "When creating VMs from this snapshot, choose device_id from locations. Agent's original device = local VM, different device = cloud VM. Always tell the user if their VM will be local or cloud-based.",
+			"restore_options":                 "This snapshot can be used for file restores, image exports, or virtual machine creation depending on your recovery needs.",
+		},
+	}
+
+	jsonData, err := json.MarshalIndent(enhancedResult, "", "  ")
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal result: %w", err)
 	}
@@ -1396,6 +1419,7 @@ func listVirtualMachines(args map[string]interface{}) (string, error) {
 			"console_access":         "Always use the _vnc_viewer_url for immediate browser-based console access. This is much easier than configuring a separate VNC client.",
 			"network_configuration":  "When creating new VMs, always use network_type: 'network-nat-shared' for most use cases. This provides NAT networking with internet access.",
 			"network_type_reference": "Valid network_type values: 'network-nat-shared' (recommended), 'network-nat-isolated', 'bridge', 'network-id'",
+			"deployment_awareness":   "Each VM's device_id indicates where it's running. When referencing VMs to users, be aware that some may be running locally on their devices while others may be running in the cloud, depending on which device_id was used during creation.",
 		},
 	}
 
@@ -1445,6 +1469,7 @@ func getVirtualMachine(args map[string]interface{}) (string, error) {
 			"primary_identifier":    "virt_id",
 			"presentation_guidance": "When referring to the virtual machine, use the virt_id as the primary identifier. Virtual machine IDs are internal identifiers not commonly used by humans.",
 			"console_access":        "The easiest way to access this virtual machine is through the _vnc_viewer_url property - this provides a direct browser link to the VM console that requires no additional software or configuration.",
+			"deployment_location":   "The device_id field indicates where this VM is running. If this matches the original agent's device_id, it's running locally. If different, it's likely running in the cloud.",
 		},
 	}
 
@@ -1538,14 +1563,16 @@ func createVirtualMachine(args map[string]interface{}) (string, error) {
 		"vnc":            result.VNC,
 		"vnc_password":   result.VNCPassword,
 		"_metadata": map[string]interface{}{
-			"primary_identifier":     "virt_id",
-			"presentation_guidance":  "When referring to the virtual machine, use the virt_id as the primary identifier. Virtual machine IDs are internal identifiers not commonly used by humans.",
-			"next_steps":             "Now that you've created a virtual machine, you can control it using slide_update_virtual_machine to change its state (running, stopped, paused) or update resources.",
-			"resource_guidance":      "For optimal performance, 8192MB of RAM is recommended for most VMs. You can adjust this as needed using slide_update_virtual_machine.",
-			"console_access":         "The easiest way to access this virtual machine is through the _vnc_viewer_url property - this provides a direct browser link to the VM console that requires no additional software or configuration.",
-			"network_configuration":  "When creating VMs, easiest to use network_type: 'network-nat-shared' for most use cases. This provides NAT networking with internet access.",
-			"network_type_options":   "Valid network_type values: 'network-nat-shared' (recommended default), 'network-nat-isolated' (no internet), 'bridge' (direct LAN access), 'network-id' (connect to specific network)",
-			"network_best_practices": "Always specify network_type explicitly. Use 'network-nat-shared' unless you have specific requirements for isolation or LAN bridging. The network_model should typically be 'virtio' for best performance.",
+			"primary_identifier":       "virt_id",
+			"presentation_guidance":    "When referring to the virtual machine, use the virt_id as the primary identifier. Virtual machine IDs are internal identifiers not commonly used by humans.",
+			"next_steps":               "Now that you've created a virtual machine, you can control it using slide_update_virtual_machine to change its state (running, stopped, paused) or update resources.",
+			"resource_guidance":        "For optimal performance, 8192MB of RAM is recommended for most VMs. You can adjust this as needed using slide_update_virtual_machine.",
+			"console_access":           "The easiest way to access this virtual machine is through the _vnc_viewer_url property - this provides a direct browser link to the VM console that requires no additional software or configuration.",
+			"network_configuration":    "When creating VMs, easiest to use network_type: 'network-nat-shared' for most use cases. This provides NAT networking with internet access.",
+			"network_type_options":     "Valid network_type values: 'network-nat-shared' (recommended default), 'network-nat-isolated' (no internet), 'bridge' (direct LAN access), 'network-id' (connect to specific network)",
+			"network_best_practices":   "Always specify network_type explicitly. Use 'network-nat-shared' unless you have specific requirements for isolation or LAN bridging. The network_model should typically be 'virtio' for best performance.",
+			"deployment_location":      "IMPORTANT: Always inform the user whether this VM was deployed locally or in the cloud. Check if the device_id used matches the original agent's device (local) or is a different device from the snapshot locations (cloud). Users need to know where their VM is running.",
+			"deployment_communication": "When presenting VM creation results to users, clearly state: 'Your virtual machine has been created and will run [locally on your device / in the cloud]' based on the device_id selection.",
 		},
 	}
 
@@ -1626,6 +1653,7 @@ func updateVirtualMachine(args map[string]interface{}) (string, error) {
 			"primary_identifier":    "virt_id",
 			"presentation_guidance": "When referring to the virtual machine, use the virt_id as the primary identifier. Virtual machine IDs are internal identifiers not commonly used by humans.",
 			"console_access":        "The easiest way to access this virtual machine is through the _vnc_viewer_url property - this provides a direct browser link to the VM console that requires no additional software or configuration.",
+			"deployment_location":   "The device_id field indicates where this VM is running. If this matches the original agent's device_id, it's running locally. If different, it's likely running in the cloud.",
 		},
 	}
 
