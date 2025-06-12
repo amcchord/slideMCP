@@ -1476,6 +1476,7 @@ func listVirtualMachines(args map[string]interface{}) (string, error) {
 			"network_configuration":  "When creating new VMs, always use network_type: 'network-nat-shared' for most use cases. This provides NAT networking with internet access.",
 			"network_type_reference": "Valid network_type values: 'network-nat-shared' (recommended), 'network-nat-isolated', 'bridge', 'network-id'",
 			"network_dependencies":   "IMPORTANT: If you need to create a VM with network_type: 'network-id', you MUST create the custom network first using slide_create_network before creating the VM. Built-in network types do not require pre-existing networks.",
+			"network_clarification":  "IMPORTANT: If networks allready exist ask the user for clarification if they want the VM to be connected to the network. They don't specify at creation time okay to just go with network-nat-shared",
 			"deployment_awareness":   "Each VM's device_id indicates where it's running. When referencing VMs to users, be aware that some may be running locally on their devices while others may be running in the cloud, depending on which device_id was used during creation.",
 		},
 	}
@@ -1629,6 +1630,7 @@ func createVirtualMachine(args map[string]interface{}) (string, error) {
 			"network_type_options":     "Valid network_type values: 'network-nat-shared' (recommended default), 'network-nat-isolated' (no internet), 'bridge' (direct LAN access), 'network-id' (connect to specific network)",
 			"network_best_practices":   "Always specify network_type explicitly. Use 'network-nat-shared' unless you have specific requirements for isolation or LAN bridging. The network_model should typically be 'virtio' for best performance.",
 			"network_dependencies":     "IMPORTANT: If using network_type: 'network-id', you MUST create the custom network first using slide_create_network before creating the VM. The network_source field should reference an existing network_id. Built-in network types ('network-nat-shared', 'network-nat-isolated', 'bridge') do not require pre-existing networks.",
+			"network_clarification":    "IMPORTANT: If the user hasn't specified their networking requirements clearly, ask for clarification about whether they need internet access, LAN connectivity, or custom network isolation before choosing network_type. Don't assume their networking needs.",
 			"deployment_location":      "IMPORTANT: Always inform the user whether this VM was deployed locally or in the cloud. Check if the device_id used matches the original agent's device (local) or is a different device from the snapshot locations (cloud). Users need to know where their VM is running.",
 			"deployment_communication": "When presenting VM creation results to users, clearly state: 'Your virtual machine has been created and will run [locally on your device / in the cloud]' based on the device_id selection.",
 		},
@@ -2374,10 +2376,12 @@ func listNetworks(args map[string]interface{}) (string, error) {
 		"pagination": result.Pagination,
 		"data":       enhancedNetworks,
 		"_metadata": map[string]interface{}{
-			"primary_identifier":    "name",
-			"presentation_guidance": "Networks enable disaster recovery and isolated networking for virtual machines.",
-			"workflow_guidance":     "Networks can be standard (isolated) or bridge-lan (connected to device LAN). Virtual machines can be connected to networks.",
-			"wireguard_guidance":    "Networks with WireGuard enabled will have WG peers that include ready-to-use configuration files in the _wireguard_config field.",
+			"primary_identifier":     "name",
+			"presentation_guidance":  "Networks enable disaster recovery and isolated networking for virtual machines.",
+			"workflow_guidance":      "Networks can be standard (isolated) or bridge-lan (connected to device LAN). Virtual machines can be connected to networks.",
+			"wireguard_guidance":     "Networks with WireGuard enabled will have WG peers that include ready-to-use configuration files in the _wireguard_config field.",
+			"creation_guidance":      "When creating new networks with slide_create_network, ask users for clarification about configuration details rather than guessing. Key areas that often need clarification: network type (standard vs bridge-lan), bridge device selection, IP address ranges, DHCP configuration, internet access requirements, and WireGuard VPN needs.",
+			"clarification_guidance": "IMPORTANT: Network configuration errors can cause serious connectivity issues. Always ask users to specify their requirements clearly before creating networks. Don't assume default values for critical settings like network type, IP addressing, or bridge device selection.",
 		},
 	}
 
@@ -2549,10 +2553,11 @@ func createNetwork(args map[string]interface{}) (string, error) {
 		"wg_public_key":      result.WGPublicKey,
 		"client_id":          result.ClientID,
 		"_metadata": map[string]interface{}{
-			"primary_identifier":    "network_id",
-			"presentation_guidance": "Network created successfully. You can now connect virtual machines to this network or configure additional services.",
-			"next_steps":            "You can now create virtual machines using this network_id with network_type: 'network-id' and network_source: '" + result.NetworkID + "'",
-			"wireguard_guidance":    "If WireGuard is enabled, you can create WG peers to allow VPN access to this network using slide_create_network_wg_peer.",
+			"primary_identifier":     "network_id",
+			"presentation_guidance":  "Network created successfully. You can now connect virtual machines to this network or configure additional services.",
+			"next_steps":             "You can now create virtual machines using this network_id with network_type: 'network-id' and network_source: '" + result.NetworkID + "'",
+			"wireguard_guidance":     "If WireGuard is enabled, you can create WG peers to allow VPN access to this network using slide_create_network_wg_peer.",
+			"clarification_guidance": "IMPORTANT: When creating networks, if you are unsure about any configuration details (network type, bridge device selection, DHCP settings, IP addressing, WireGuard configuration, etc.), it is always better to ask the user for clarification rather than guessing. Network configuration mistakes can cause connectivity issues that are difficult to troubleshoot.",
 		},
 	}
 
