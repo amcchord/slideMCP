@@ -1981,7 +1981,7 @@ func getAllTools() []ToolInfo {
 		},
 		{
 			Name:        "slide_create_network",
-			Description: "Create a new network for virtual machines",
+			Description: "Create a new network for virtual machines. Important: The network's client_id must match the client_id of the VMs that will be placed on this network. Otherwise it will not work.",
 			InputSchema: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
@@ -2000,7 +2000,7 @@ func getAllTools() []ToolInfo {
 					},
 					"client_id": map[string]interface{}{
 						"type":        "string",
-						"description": "Client ID for the network",
+						"description": "Client ID for the network - should match the client_id of VMs that will use this network",
 					},
 					"comments": map[string]interface{}{
 						"type":        "string",
@@ -2031,7 +2031,7 @@ func getAllTools() []ToolInfo {
 					},
 					"router_prefix": map[string]interface{}{
 						"type":        "string",
-						"description": "Network prefix for router",
+						"description": "The router_prefix is the IP address of the router that will be used to connect to the network. It should NOT be the same as the network address (the first IP in the subnet). For example, use '192.168.1.1/24' not '192.168.1.0/24'.",
 					},
 					"wg": map[string]interface{}{
 						"type":        "boolean",
@@ -2039,7 +2039,7 @@ func getAllTools() []ToolInfo {
 					},
 					"wg_prefix": map[string]interface{}{
 						"type":        "string",
-						"description": "WireGuard network prefix",
+						"description": "WireGuard network prefix which must not overlap with any other network's prefix",
 					},
 				},
 				"required": []string{"name", "type"},

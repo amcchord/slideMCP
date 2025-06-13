@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -288,7 +289,7 @@ func generateVNCViewerURL(virtID, websocketURI, vncPassword string) string {
 }
 
 // Helper function to generate WireGuard config file
-func generateWireGuardConfig(peer NetworkWGPeer, serverPublicKey string) string {
+func generateWireGuardConfig(peer NetworkWGPeer, serverPublicKey, networkPrefix string) string {
 	config := fmt.Sprintf(`[Interface]
 PrivateKey = %s
 Address = %s
@@ -303,15 +304,18 @@ PersistentKeepalive = 25
 		peer.WGAddress,
 		serverPublicKey,
 		peer.WGEndpoint,
-		joinNetworks(peer.RemoteNetworks))
+		joinNetworks(peer.RemoteNetworks, networkPrefix))
 
 	return config
 }
 
 // Helper function to join networks with commas for WireGuard config
-func joinNetworks(networks []string) string {
+func joinNetworks(networks []string, defaultNetwork string) string {
 	if len(networks) == 0 {
-		return "0.0.0.0/0, ::/0" // Default to all traffic if no specific networks
+		if defaultNetwork != "" {
+			return defaultNetwork // Default to the network scope if no specific networks
+		}
+		return "0.0.0.0/0, ::/0" // Fallback to all traffic if no network prefix available
 	}
 	result := ""
 	for i, network := range networks {
@@ -2361,7 +2365,7 @@ func listNetworks(args map[string]interface{}) (string, error) {
 					"wg_address":        peer.WGAddress,
 					"wg_endpoint":       peer.WGEndpoint,
 					"remote_networks":   peer.RemoteNetworks,
-					"_wireguard_config": generateWireGuardConfig(peer, network.WGPublicKey),
+					"_wireguard_config": generateWireGuardConfig(peer, network.WGPublicKey, network.WGPrefix),
 				}
 				enhancedWGPeers[j] = enhancedPeer
 			}
@@ -2452,7 +2456,7 @@ func getNetwork(args map[string]interface{}) (string, error) {
 				"wg_address":        peer.WGAddress,
 				"wg_endpoint":       peer.WGEndpoint,
 				"remote_networks":   peer.RemoteNetworks,
-				"_wireguard_config": generateWireGuardConfig(peer, result.WGPublicKey),
+				"_wireguard_config": generateWireGuardConfig(peer, result.WGPublicKey, result.WGPrefix),
 			}
 			enhancedWGPeers[i] = enhancedPeer
 		}
@@ -2510,12 +2514,35 @@ func createNetwork(args map[string]interface{}) (string, error) {
 		payload["nameservers"] = nameservers
 	}
 	if routerPrefix, ok := args["router_prefix"]; ok {
+		if prefixStr, ok := routerPrefix.(string); ok {
+			// Ensure router_prefix includes CIDR notation
+			if prefixStr != "" && !strings.Contains(prefixStr, "/") {
+				return "", fmt.Errorf("router_prefix is expecting CIDR notation for the routers IP address (e.g., '192.168.1.1/24')")
+			}
+			// Validate that router_prefix is not the network address
+			if prefixStr != "" && strings.Contains(prefixStr, "/") {
+				parts := strings.Split(prefixStr, "/")
+				if len(parts) == 2 {
+					ip := parts[0]
+					// Check if the IP ends with .0, which would indicate a network address
+					if strings.HasSuffix(ip, ".0") {
+						return "", fmt.Errorf("router_prefix cannot be the network address (e.g., use '192.168.1.1/24' not '192.168.1.0/24')")
+					}
+				}
+			}
+		}
 		payload["router_prefix"] = routerPrefix
 	}
 	if wg, ok := args["wg"]; ok {
 		payload["wg"] = wg
 	}
 	if wgPrefix, ok := args["wg_prefix"]; ok {
+		if prefixStr, ok := wgPrefix.(string); ok {
+			// Ensure wg_prefix includes CIDR notation
+			if prefixStr != "" && !strings.Contains(prefixStr, "/") {
+				return "", fmt.Errorf("wg_prefix is expecting CIDR notation for the WireGuard IP address (e.g., '10.0.0.1/24')")
+			}
+		}
 		payload["wg_prefix"] = wgPrefix
 	}
 
@@ -2558,6 +2585,7 @@ func createNetwork(args map[string]interface{}) (string, error) {
 			"primary_identifier":     "network_id",
 			"presentation_guidance":  "Network created successfully. You can now connect virtual machines to this network or configure additional services.",
 			"next_steps":             "You can now create virtual machines using this network_id with network_type: 'network-id' and network_source: '" + result.NetworkID + "'",
+			"router_prefix_guidance": "The router_prefix is the IP address of the router that will be used to connect to the network. It should NOT be the same as the network address (the first IP in the subnet). For example, use '192.168.1.1/24' not '192.168.1.0/24'.",
 			"wireguard_guidance":     "If WireGuard is enabled, you can create WG peers to allow VPN access to this network using slide_create_network_wg_peer.",
 			"client_id_constraint":   "CRITICAL: This network can only be used with VMs and agents that have the same client_id. If this network has client_id '" + fmt.Sprintf("%v", result.ClientID) + "', then any VMs using network_type: 'network-id' with this network MUST also have the same client_id. Empty string client_id can only work with other empty string client_ids.",
 			"clarification_guidance": "IMPORTANT: When creating networks, if you are unsure about any configuration details (network type, bridge device selection, DHCP settings, IP addressing, WireGuard configuration, etc.), it is always better to ask the user for clarification rather than guessing. Network configuration mistakes can cause connectivity issues that are difficult to troubleshoot.",
@@ -2577,7 +2605,7 @@ func createNetwork(args map[string]interface{}) (string, error) {
 				"wg_address":        peer.WGAddress,
 				"wg_endpoint":       peer.WGEndpoint,
 				"remote_networks":   peer.RemoteNetworks,
-				"_wireguard_config": generateWireGuardConfig(peer, result.WGPublicKey),
+				"_wireguard_config": generateWireGuardConfig(peer, result.WGPublicKey, result.WGPrefix),
 			}
 			enhancedWGPeers[i] = enhancedPeer
 		}
@@ -2631,12 +2659,35 @@ func updateNetwork(args map[string]interface{}) (string, error) {
 		payload["nameservers"] = nameservers
 	}
 	if routerPrefix, ok := args["router_prefix"]; ok {
+		if prefixStr, ok := routerPrefix.(string); ok {
+			// Ensure router_prefix includes CIDR notation
+			if prefixStr != "" && !strings.Contains(prefixStr, "/") {
+				return "", fmt.Errorf("router_prefix must include subnet mask (e.g., '192.168.1.1/24')")
+			}
+			// Validate that router_prefix is not the network address
+			if prefixStr != "" && strings.Contains(prefixStr, "/") {
+				parts := strings.Split(prefixStr, "/")
+				if len(parts) == 2 {
+					ip := parts[0]
+					// Check if the IP ends with .0, which would indicate a network address
+					if strings.HasSuffix(ip, ".0") {
+						return "", fmt.Errorf("router_prefix cannot be the network address (e.g., use '192.168.1.1/24' not '192.168.1.0/24')")
+					}
+				}
+			}
+		}
 		payload["router_prefix"] = routerPrefix
 	}
 	if wg, ok := args["wg"]; ok {
 		payload["wg"] = wg
 	}
 	if wgPrefix, ok := args["wg_prefix"]; ok {
+		if prefixStr, ok := wgPrefix.(string); ok {
+			// Ensure wg_prefix includes CIDR notation
+			if prefixStr != "" && !strings.Contains(prefixStr, "/") {
+				return "", fmt.Errorf("wg_prefix must include subnet mask (e.g., '10.0.0.1/24')")
+			}
+		}
 		payload["wg_prefix"] = wgPrefix
 	}
 
@@ -2696,7 +2747,7 @@ func updateNetwork(args map[string]interface{}) (string, error) {
 				"wg_address":        peer.WGAddress,
 				"wg_endpoint":       peer.WGEndpoint,
 				"remote_networks":   peer.RemoteNetworks,
-				"_wireguard_config": generateWireGuardConfig(peer, result.WGPublicKey),
+				"_wireguard_config": generateWireGuardConfig(peer, result.WGPublicKey, result.WGPrefix),
 			}
 			enhancedWGPeers[i] = enhancedPeer
 		}
@@ -3065,7 +3116,7 @@ func createNetworkWGPeer(args map[string]interface{}) (string, error) {
 	}
 
 	// Generate WireGuard config with actual server public key
-	wireguardConfig := generateWireGuardConfig(result, network.WGPublicKey)
+	wireguardConfig := generateWireGuardConfig(result, network.WGPublicKey, network.WGPrefix)
 	enhancedResult["_wireguard_config"] = wireguardConfig
 
 	jsonData, err := json.MarshalIndent(enhancedResult, "", "  ")
@@ -3152,7 +3203,7 @@ func updateNetworkWGPeer(args map[string]interface{}) (string, error) {
 	}
 
 	// Generate WireGuard config with actual server public key
-	wireguardConfig := generateWireGuardConfig(result, network.WGPublicKey)
+	wireguardConfig := generateWireGuardConfig(result, network.WGPublicKey, network.WGPrefix)
 	enhancedResult["_wireguard_config"] = wireguardConfig
 
 	jsonData, err := json.MarshalIndent(enhancedResult, "", "  ")
