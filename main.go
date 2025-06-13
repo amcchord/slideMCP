@@ -2031,7 +2031,7 @@ func getAllTools() []ToolInfo {
 					},
 					"router_prefix": map[string]interface{}{
 						"type":        "string",
-						"description": "The router_prefix is the IP address of the router that will be used to connect to the network. It should NOT be the same as the network address (the first IP in the subnet). For example, use '192.168.1.1/24' not '192.168.1.0/24'.",
+						"description": "The router_prefix is the IP address of the router that will be used to connect to the network. It should NOT be the same as the network address (the first IP in the subnet). For example, use '192.168.1.1/24' not '192.168.1.0/24'. When creating standard networks the router_prefix must be in private IP space (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16).",
 					},
 					"wg": map[string]interface{}{
 						"type":        "boolean",
