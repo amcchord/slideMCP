@@ -73,23 +73,27 @@ All tools support pagination (`limit`, `offset`) and sorting options where appli
 #### Download Pre-built Binary (v1.14)
 ```bash
 # For macOS ARM64 (Apple Silicon)
-curl -L -o slide-mcp-server https://github.com/yourusername/slide-mcp-server/releases/latest/download/slide-mcp-server-v1.14-darwin-arm64.tar.gz
+curl -L -o slide-mcp-server-v1.14-darwin-arm64.tar.gz https://github.com/yourusername/slide-mcp-server/releases/latest/download/slide-mcp-server-v1.14-darwin-arm64.tar.gz
 tar -xzf slide-mcp-server-v1.14-darwin-arm64.tar.gz
-chmod +x slide-mcp-server-darwin-arm64
+mv slide-mcp-server-darwin-arm64 slide-mcp-server
+chmod +x slide-mcp-server
 
 # For macOS AMD64 
-curl -L -o slide-mcp-server https://github.com/yourusername/slide-mcp-server/releases/latest/download/slide-mcp-server-v1.14-darwin-amd64.tar.gz
+curl -L -o slide-mcp-server-v1.14-darwin-amd64.tar.gz https://github.com/yourusername/slide-mcp-server/releases/latest/download/slide-mcp-server-v1.14-darwin-amd64.tar.gz
 tar -xzf slide-mcp-server-v1.14-darwin-amd64.tar.gz
-chmod +x slide-mcp-server-darwin-amd64
+mv slide-mcp-server-darwin-amd64 slide-mcp-server
+chmod +x slide-mcp-server
 
 # For Linux AMD64
-curl -L -o slide-mcp-server https://github.com/yourusername/slide-mcp-server/releases/latest/download/slide-mcp-server-v1.14-linux-amd64.tar.gz
+curl -L -o slide-mcp-server-v1.14-linux-amd64.tar.gz https://github.com/yourusername/slide-mcp-server/releases/latest/download/slide-mcp-server-v1.14-linux-amd64.tar.gz
 tar -xzf slide-mcp-server-v1.14-linux-amd64.tar.gz
-chmod +x slide-mcp-server-linux-amd64
+mv slide-mcp-server-linux-amd64 slide-mcp-server
+chmod +x slide-mcp-server
 
 # For Windows AMD64
-curl -L -o slide-mcp-server.zip https://github.com/yourusername/slide-mcp-server/releases/latest/download/slide-mcp-server-v1.14-windows-amd64.zip
-unzip slide-mcp-server.zip
+curl -L -o slide-mcp-server-v1.14-windows-amd64.zip https://github.com/yourusername/slide-mcp-server/releases/latest/download/slide-mcp-server-v1.14-windows-amd64.zip
+unzip slide-mcp-server-v1.14-windows-amd64.zip
+mv slide-mcp-server-windows-amd64.exe slide-mcp-server.exe
 ```
 
 #### Build from Source
