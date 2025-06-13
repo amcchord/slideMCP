@@ -1304,7 +1304,7 @@ func getAllTools() []ToolInfo {
 					},
 					"snapshot_location": map[string]interface{}{
 						"type":        "string",
-						"description": "Filter by snapshot location",
+						"description": "Filter by snapshot location. 'exists_local' means the snapshot is on the local device. 'exists_cloud' means the snapshot is on the cloud. 'exists_deleted' means the snapshot was deleted. 'exists_deleted_retention' means the snapshot was deleted by the retention policy. 'exists_deleted_manual' means the snapshot was deleted by a user. 'exists_deleted_other' means the snapshot is deleted for an unknown reason.",
 						"enum":        []string{"exists_local", "exists_cloud", "exists_deleted", "exists_deleted_retention", "exists_deleted_manual", "exists_deleted_other"},
 					},
 					"sort_asc": map[string]interface{}{
@@ -1433,7 +1433,7 @@ func getAllTools() []ToolInfo {
 		},
 		{
 			Name:        "slide_list_image_exports",
-			Description: "List all image exports with pagination and filtering options",
+			Description: "List all image export restores with pagination and filtering options",
 			InputSchema: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
