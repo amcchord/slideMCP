@@ -1,6 +1,6 @@
 # Slide MCP Server
 
-An MCP server implementation that integrates with the Slide API, providing device and agent management capabilities.
+An MCP server implementation that integrates with the Slide API, providing comprehensive device and infrastructure management capabilities.
 
 ## 🚀 Go Binary Implementation ⚡
 - **Single binary**: No dependencies, just download and run
@@ -15,332 +15,50 @@ For quick setup instructions with Claude Desktop, see the installation section b
 
 ## Features
 
-- **Device Management**: List all devices with pagination and filtering options
-- **Agent Management**: List, create, pair, and update agents
-- **Backup Management**: List, retrieve, and initiate backups
-- **Snapshot Management**: List and retrieve snapshots with detailed information
-- **Detailed Information**: Get comprehensive details about each device and agent including status, storage, and network information
-- **User Management**: List all users and retrieve detailed user information
-- **Alert Management**: List, retrieve, and resolve system alerts 
-- **Account Management**: List accounts, view account details, and update alert email settings
-- **Client Management**: List, create, update, and delete clients
-- **Flexible Filtering**: Filter devices and agents by client ID, device ID, and other parameters
-- **Pagination Support**: Control results per page with offset and limit parameters
+- **Device Management**: List, update, and control devices with power operations
+- **Agent Management**: Create, pair, and manage backup agents
+- **Backup & Snapshot Management**: Initiate backups and manage snapshots
+- **File Restore**: Browse and restore files from snapshots
+- **Image Export**: Export snapshots as disk images (VHD, VHDX, Raw)
+- **Virtual Machines**: Create and manage VMs from snapshots with browser-based console access
+- **Network Management**: Create and manage isolated networks with VPN connections
+- **User & Alert Management**: Monitor system alerts and manage users
+- **Account & Client Management**: Organize resources by client accounts
+- **Flexible Filtering & Pagination**: Control results with advanced filtering options
 
-## Tools
+## Available Tools
 
-### Device Tools
+### Core Management
+- **Devices**: `list`, `get`, `update`, `poweroff`, `reboot`
+- **Agents**: `list`, `get`, `create`, `pair`, `update`
+- **Backups**: `list`, `get`, `start`
+- **Snapshots**: `list`, `get`
 
-- **slide_list_devices**
-  - List all devices with pagination and filtering
-  - Inputs:
-    - `limit` (number, optional): Results per page (max 50)
-    - `offset` (number, optional): Pagination offset
-    - `client_id` (string, optional): Filter by client ID
-    - `sort_asc` (boolean, optional): Sort in ascending order
+### Data Recovery & Export
+- **File Restores**: `list`, `get`, `create`, `delete`, `browse`
+- **Image Exports**: `list`, `get`, `create`, `delete`, `browse`
+  - Supports VHD, VHDX (dynamic/fixed), and Raw formats
+  - Optional boot modifications (e.g., passwordless admin user)
 
-### Agent Tools
+### Virtual Machines
+- **Virtual Machines**: `list`, `get`, `create`, `update`, `delete`
+  - Browser-based VNC console access
+  - Configurable CPU (1-16 cores) and RAM (1-12GB)
+  - Multiple network modes and disk bus types
 
-- **slide_list_agents**
-  - List all agents with pagination and filtering
-  - Inputs:
-    - `limit` (number, optional): Results per page (max 50)
-    - `offset` (number, optional): Pagination offset
-    - `device_id` (string, optional): Filter by device ID
-    - `client_id` (string, optional): Filter by client ID
-    - `sort_asc` (boolean, optional): Sort in ascending order
-    - `sort_by` (string, optional): Sort by field (id, hostname, name)
+### Network Infrastructure
+- **Networks**: `list`, `get`, `create`, `update`, `delete`
+- **IPSec Connections**: `create`, `update`, `delete`
+- **Port Forwarding**: `create`, `update`, `delete`
+- **WireGuard Peers**: `create`, `update`, `delete`
 
-- **slide_get_agent**
-  - Get detailed information about a specific agent
-  - Inputs:
-    - `agent_id` (string, required): ID of the agent to retrieve
+### Administration
+- **Users**: `list`, `get`
+- **Alerts**: `list`, `get`, `update` (resolve)
+- **Accounts**: `list`, `get`, `update` (alert emails)
+- **Clients**: `list`, `get`, `create`, `update`, `delete`
 
-- **slide_create_agent**
-  - Create an agent for auto-pair installation
-  - Inputs:
-    - `display_name` (string, required): Display name for the agent
-    - `device_id` (string, required): ID of the device to associate with the agent
-
-- **slide_pair_agent**
-  - Pair an agent with a device using a pair code
-  - Inputs:
-    - `pair_code` (string, required): Pair code generated during agent creation
-    - `device_id` (string, required): ID of the device to pair with
-
-- **slide_update_agent**
-  - Update an agent's properties
-  - Inputs:
-    - `agent_id` (string, required): ID of the agent to update
-    - `display_name` (string, required): New display name for the agent
-
-### Backup Tools
-
-- **slide_list_backups**
-  - List all backups with pagination and filtering
-  - Inputs:
-    - `limit` (number, optional): Results per page (max 50)
-    - `offset` (number, optional): Pagination offset
-    - `agent_id` (string, optional): Filter by agent ID
-    - `device_id` (string, optional): Filter by device ID
-    - `snapshot_id` (string, optional): Filter by snapshot ID
-    - `sort_asc` (boolean, optional): Sort in ascending order
-    - `sort_by` (string, optional): Sort by field (id, start_time)
-
-- **slide_get_backup**
-  - Get detailed information about a specific backup
-  - Inputs:
-    - `backup_id` (string, required): ID of the backup to retrieve
-
-- **slide_start_backup**
-  - Start a backup for a specific agent
-  - Inputs:
-    - `agent_id` (string, required): ID of the agent to backup
-
-### Snapshot Tools
-
-- **slide_list_snapshots**
-  - List all snapshots with pagination and filtering
-  - Inputs:
-    - `limit` (number, optional): Results per page (max 50)
-    - `offset` (number, optional): Pagination offset
-    - `agent_id` (string, optional): Filter by agent ID
-    - `snapshot_location` (string, optional): Filter by snapshot location (exists_local, exists_cloud, exists_deleted, etc.)
-    - `sort_asc` (boolean, optional): Sort in ascending order
-    - `sort_by` (string, optional): Sort by field (backup_start_time, backup_end_time, created)
-
-- **slide_get_snapshot**
-  - Get detailed information about a specific snapshot
-  - Inputs:
-    - `snapshot_id` (string, required): ID of the snapshot to retrieve
-
-### File Restore Tools
-
-File restores provide access to files within a snapshot. The typical workflow is:
-1. Create a file restore from a snapshot using `slide_create_file_restore`
-2. Browse the restored files using `slide_browse_file_restore`
-3. When finished, delete the file restore using `slide_delete_file_restore`
-
-- **slide_list_file_restores**
-  - List all file restores with pagination and filtering
-  - Inputs:
-    - `limit` (number, optional): Results per page (max 50)
-    - `offset` (number, optional): Pagination offset
-    - `sort_asc` (boolean, optional): Sort in ascending order
-    - `sort_by` (string, optional): Sort by field (id)
-
-- **slide_get_file_restore**
-  - Get detailed information about a specific file restore
-  - Inputs:
-    - `file_restore_id` (string, required): ID of the file restore to retrieve
-
-- **slide_create_file_restore**
-  - Create a file restore from a snapshot
-  - Inputs:
-    - `snapshot_id` (string, required): ID of the snapshot to restore from
-    - `device_id` (string, required): ID of the device to restore to
-  - Note: You must create a file restore before you can browse its contents
-
-- **slide_delete_file_restore**
-  - Delete a file restore
-  - Inputs:
-    - `file_restore_id` (string, required): ID of the file restore to delete
-
-- **slide_browse_file_restore**
-  - Browse the contents of a file restore
-  - Inputs:
-    - `file_restore_id` (string, required): ID of the file restore to browse
-    - `path` (string, required): Path to browse (e.g., 'C' for root of C drive)
-    - `limit` (number, optional): Results per page (max 50)
-    - `offset` (number, optional): Pagination offset
-  - Note: Requires a file restore to be created first using `slide_create_file_restore`
-
-### Image Export Tools
-
-Image exports allow you to export snapshots as disk images for use outside of Slide. The typical workflow is:
-1. Create an image export from a snapshot using `slide_create_image_export`
-2. Browse the available disk images using `slide_browse_image_export`
-3. When finished, delete the image export using `slide_delete_image_export`
-
-- **slide_list_image_exports**
-  - List all image exports with pagination and filtering
-  - Inputs:
-    - `limit` (number, optional): Results per page (max 50)
-    - `offset` (number, optional): Pagination offset
-    - `sort_asc` (boolean, optional): Sort in ascending order
-    - `sort_by` (string, optional): Sort by field (id)
-
-- **slide_get_image_export**
-  - Get detailed information about a specific image export
-  - Inputs:
-    - `image_export_id` (string, required): ID of the image export to retrieve
-
-- **slide_create_image_export**
-  - Create an image export from a snapshot
-  - Inputs:
-    - `snapshot_id` (string, required): ID of the snapshot to export from
-    - `device_id` (string, required): ID of the device to export to
-    - `image_type` (string, required): Image type to export (vhdx, vhdx-dynamic, vhd, raw)
-    - `boot_mods` (array of strings, optional): Optional boot modifications to apply (e.g., 'passwordless_admin_user')
-  - Note: You must create an image export before you can browse its contents
-
-- **slide_delete_image_export**
-  - Delete an image export
-  - Inputs:
-    - `image_export_id` (string, required): ID of the image export to delete
-
-- **slide_browse_image_export**
-  - Browse the contents of an image export (the disk images available for download)
-  - Inputs:
-    - `image_export_id` (string, required): ID of the image export to browse
-    - `limit` (number, optional): Results per page (max 50)
-    - `offset` (number, optional): Pagination offset
-  - Note: Requires an image export to be created first using `slide_create_image_export`
-
-### Virtual Machine Tools
-
-Virtual machines allow you to run a snapshot as a virtualized computer on a Slide device. The typical workflow is:
-1. Create a virtual machine from a snapshot using `slide_create_virtual_machine`
-2. Control the VM using `slide_update_virtual_machine` to start, stop, or modify resources
-3. Access the VM using the `vnc_viewer_url` provided in the response metadata (a direct link to a browser-based VNC console)
-4. When finished, delete the virtual machine using `slide_delete_virtual_machine`
-
-- **slide_list_virtual_machines**
-  - List all virtual machines with pagination and filtering
-  - Inputs:
-    - `limit` (number, optional): Results per page (max 50)
-    - `offset` (number, optional): Pagination offset
-    - `sort_asc` (boolean, optional): Sort in ascending order
-    - `sort_by` (string, optional): Sort by field (created)
-  - Note: Each virtual machine in the response includes a `_vnc_viewer_url` property for direct browser-based console access
-
-- **slide_get_virtual_machine**
-  - Get detailed information about a specific virtual machine
-  - Inputs:
-    - `virt_id` (string, required): ID of the virtual machine to retrieve
-  - Note: The response includes a `vnc_viewer_url` in the metadata for easy browser-based access to the VM console
-
-- **slide_create_virtual_machine**
-  - Create a virtual machine from a snapshot
-  - Inputs:
-    - `snapshot_id` (string, required): ID of the snapshot to restore from
-    - `device_id` (string, required): ID of the device to restore to
-    - `cpu_count` (number, optional): Number of CPU cores (1-16)
-    - `memory_in_mb` (number, optional): Amount of memory in MB (1024-12288)
-    - `disk_bus` (string, optional): Disk bus type (sata or virtio)
-    - `network_model` (string, optional): Network adapter model (hypervisor_default, e1000, rtl8139)
-    - `network_type` (string, optional): Network type (network, network-isolated, bridge, network-id)
-    - `network_source` (string, optional): Network ID when network_type is network-id
-    - `boot_mods` (array of strings, optional): Optional boot modifications to apply (e.g., 'passwordless_admin_user')
-  - Note: For most virtual machines, 8192MB of RAM is recommended for optimal performance
-  - Note: The response includes a `vnc_viewer_url` in the metadata for easy browser-based access to the VM console
-
-- **slide_update_virtual_machine**
-  - Update a virtual machine's properties
-  - Inputs:
-    - `virt_id` (string, required): ID of the virtual machine to update
-    - `state` (string, optional): New state of the VM (running, stopped, paused)
-    - `expires_at` (string, optional): Expiration time in ISO 8601 format (e.g., 2024-08-23T01:25:08Z)
-    - `memory_in_mb` (number, optional): New amount of memory in MB (1024-12288)
-    - `cpu_count` (number, optional): New number of CPU cores (1-16)
-
-- **slide_delete_virtual_machine**
-  - Delete a virtual machine
-  - Inputs:
-    - `virt_id` (string, required): ID of the virtual machine to delete
-
-### User Tools
-
-- **slide_list_users**
-  - List all users with pagination and filtering
-  - Inputs:
-    - `limit` (number, optional): Results per page (max 50)
-    - `offset` (number, optional): Pagination offset
-    - `sort_asc` (boolean, optional): Sort in ascending order
-    - `sort_by` (string, optional): Sort by field (id)
-
-- **slide_get_user**
-  - Get detailed information about a specific user
-  - Inputs:
-    - `user_id` (string, required): ID of the user to retrieve
-
-### Alert Tools
-
-- **slide_list_alerts**
-  - List all alerts with pagination and filtering
-  - Inputs:
-    - `limit` (number, optional): Results per page (max 50)
-    - `offset` (number, optional): Pagination offset
-    - `device_id` (string, optional): Filter by device ID
-    - `agent_id` (string, optional): Filter by agent ID
-    - `resolved` (boolean, optional): Filter by resolved status
-    - `sort_asc` (boolean, optional): Sort in ascending order
-    - `sort_by` (string, optional): Sort by field (created)
-
-- **slide_get_alert**
-  - Get detailed information about a specific alert
-  - Inputs:
-    - `alert_id` (string, required): ID of the alert to retrieve
-
-- **slide_update_alert**
-  - Update an alert's properties (primarily used to resolve alerts)
-  - Inputs:
-    - `alert_id` (string, required): ID of the alert to update
-    - `resolved` (boolean, required): Set to true to resolve the alert
-
-### Account Tools
-
-- **slide_list_accounts**
-  - List all accounts with pagination and filtering
-  - Inputs:
-    - `limit` (number, optional): Results per page (max 50)
-    - `offset` (number, optional): Pagination offset
-    - `sort_asc` (boolean, optional): Sort in ascending order
-    - `sort_by` (string, optional): Sort by field (name)
-
-- **slide_get_account**
-  - Get detailed information about a specific account
-  - Inputs:
-    - `account_id` (string, required): ID of the account to retrieve
-
-- **slide_update_account**
-  - Update an account's properties (primarily alert emails)
-  - Inputs:
-    - `account_id` (string, required): ID of the account to update
-    - `alert_emails` (array of strings, required): List of email addresses to send alert emails to
-
-### Client Tools
-
-- **slide_list_clients**
-  - List all clients with pagination and filtering
-  - Inputs:
-    - `limit` (number, optional): Results per page (max 50)
-    - `offset` (number, optional): Pagination offset
-    - `sort_asc` (boolean, optional): Sort in ascending order
-    - `sort_by` (string, optional): Sort by field (id)
-
-- **slide_get_client**
-  - Get detailed information about a specific client
-  - Inputs:
-    - `client_id` (string, required): ID of the client to retrieve
-
-- **slide_create_client**
-  - Create a new client
-  - Inputs:
-    - `name` (string, required): Name of the client
-    - `comments` (string, optional): Comments about the client
-
-- **slide_update_client**
-  - Update a client's properties
-  - Inputs:
-    - `client_id` (string, required): ID of the client to update
-    - `name` (string, optional): New name for the client
-    - `comments` (string, optional): New comments about the client
-
-- **slide_delete_client**
-  - Delete a client
-  - Inputs:
-    - `client_id` (string, required): ID of the client to delete
+All tools support pagination (`limit`, `offset`) and sorting options where applicable.
 
 ## 📦 Installation & Configuration
 
@@ -352,28 +70,32 @@ Virtual machines allow you to run a snapshot as a virtualized computer on a Slid
 
 ## 🎯 Quick Setup with Claude Desktop
 
-#### Download Pre-built Binary
+#### Download Pre-built Binary (v1.14)
 ```bash
 # For macOS ARM64 (Apple Silicon)
-curl -L -o slide-mcp-server https://github.com/yourusername/slide-mcp-go/releases/latest/download/slide-mcp-server-darwin-arm64
-chmod +x slide-mcp-server
+curl -L -o slide-mcp-server https://github.com/yourusername/slide-mcp-server/releases/latest/download/slide-mcp-server-v1.14-darwin-arm64.tar.gz
+tar -xzf slide-mcp-server-v1.14-darwin-arm64.tar.gz
+chmod +x slide-mcp-server-darwin-arm64
 
 # For macOS AMD64 
-curl -L -o slide-mcp-server https://github.com/yourusername/slide-mcp-go/releases/latest/download/slide-mcp-server-darwin-amd64
-chmod +x slide-mcp-server
+curl -L -o slide-mcp-server https://github.com/yourusername/slide-mcp-server/releases/latest/download/slide-mcp-server-v1.14-darwin-amd64.tar.gz
+tar -xzf slide-mcp-server-v1.14-darwin-amd64.tar.gz
+chmod +x slide-mcp-server-darwin-amd64
 
 # For Linux AMD64
-curl -L -o slide-mcp-server https://github.com/yourusername/slide-mcp-go/releases/latest/download/slide-mcp-server-linux-amd64
-chmod +x slide-mcp-server
+curl -L -o slide-mcp-server https://github.com/yourusername/slide-mcp-server/releases/latest/download/slide-mcp-server-v1.14-linux-amd64.tar.gz
+tar -xzf slide-mcp-server-v1.14-linux-amd64.tar.gz
+chmod +x slide-mcp-server-linux-amd64
 
 # For Windows AMD64
-curl -L -o slide-mcp-server.exe https://github.com/yourusername/slide-mcp-go/releases/latest/download/slide-mcp-server-windows-amd64.exe
+curl -L -o slide-mcp-server.zip https://github.com/yourusername/slide-mcp-server/releases/latest/download/slide-mcp-server-v1.14-windows-amd64.zip
+unzip slide-mcp-server.zip
 ```
 
 #### Build from Source
 ```bash
-git clone https://github.com/yourusername/slide-mcp-go.git
-cd slide-mcp-go
+git clone https://github.com/yourusername/slide-mcp-server.git
+cd slide-mcp-server
 make build
 # Binary will be in build/slide-mcp-server
 ```
@@ -459,11 +181,12 @@ make build
 # Build for all platforms
 make build-all
 
+# Create release packages
+make release
+
 # View available commands
 make help
 ```
-
-
 
 ## License
 
