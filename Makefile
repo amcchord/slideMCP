@@ -116,6 +116,7 @@ test:
 .PHONY: clean
 clean:
 	rm -rf $(BUILD_DIR)
+	cd Installer && make clean
 
 # Run the server locally
 .PHONY: run
@@ -126,6 +127,20 @@ run:
 .PHONY: install
 install: build
 	sudo cp $(BUILD_DIR)/$(BINARY_NAME) /usr/local/bin/
+
+# Build installer for current platform
+.PHONY: build-installer
+build-installer:
+	cd Installer && make build
+
+# Build installer for all platforms
+.PHONY: build-installer-all
+build-installer-all:
+	cd Installer && make build-all
+
+# Build everything (server + installer)
+.PHONY: build-complete
+build-complete: build-all build-installer-all
 
 # Create release packages
 .PHONY: release
@@ -151,19 +166,22 @@ release-signed: build-all-signed notarize-macos
 .PHONY: help
 help:
 	@echo "Available commands:"
-	@echo "  build           - Build for current platform"
-	@echo "  build-all       - Build for all supported platforms"
-	@echo "  build-all-signed - Build for all platforms with macOS code signing"
-	@echo "  sign-macos      - Sign a specific macOS binary"
-	@echo "  notarize-macos  - Notarize macOS binaries with Apple"
-	@echo "  deps            - Install/update dependencies"
-	@echo "  test            - Run tests"
-	@echo "  clean           - Remove build artifacts"
-	@echo "  run             - Run the server locally"
-	@echo "  install         - Install to system PATH"
-	@echo "  release         - Create release packages"
-	@echo "  release-signed  - Create signed release packages"
-	@echo "  help            - Show this help"
+	@echo "  build              - Build server for current platform"
+	@echo "  build-all          - Build server for all supported platforms"
+	@echo "  build-all-signed   - Build server for all platforms with macOS code signing"
+	@echo "  build-installer    - Build installer for current platform"
+	@echo "  build-installer-all - Build installer for all platforms"
+	@echo "  build-complete     - Build both server and installer for all platforms"
+	@echo "  sign-macos         - Sign a specific macOS binary"
+	@echo "  notarize-macos     - Notarize macOS binaries with Apple"
+	@echo "  deps               - Install/update dependencies"
+	@echo "  test               - Run tests"
+	@echo "  clean              - Remove all build artifacts"
+	@echo "  run                - Run the server locally"
+	@echo "  install            - Install to system PATH"
+	@echo "  release            - Create release packages"
+	@echo "  release-signed     - Create signed release packages"
+	@echo "  help               - Show this help"
 	@echo ""
 	@echo "Code Signing Usage:"
 	@echo "  make build-all-signed DEVELOPER_ID='Developer ID Application: Your Name (TEAMID)'"

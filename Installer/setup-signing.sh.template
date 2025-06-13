@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# Setup script for using the main project's code signing configuration
+# This extracts the signing setup from the parent project
+#
+# IMPORTANT: Copy this file to setup-signing.sh and add your real credentials
+# The real setup-signing.sh file is excluded from git for security
+
+echo "Setting up code signing environment from main project..."
+
+# Extract Developer ID from main project
+export DEVELOPER_ID_APPLICATION="Developer ID Application: Austin McChord (7PTN7E8EDS)"
+export TEAM_ID="7PTN7E8EDS"
+
+# TODO: Replace with your real Apple ID credentials
+# Copy this file to setup-signing.sh and update these values:
+export APPLE_ID="your-apple-id@example.com"
+export APPLE_PASSWORD="your-app-specific-password"
+
+echo "✅ Code signing environment configured:"
+echo "   DEVELOPER_ID_APPLICATION: $DEVELOPER_ID_APPLICATION"
+echo "   TEAM_ID: $TEAM_ID"
+echo "   APPLE_ID: $APPLE_ID"
+echo ""
+
+if [[ "$APPLE_ID" == "your-apple-id@example.com" ]]; then
+    echo "⚠️  WARNING: Using template credentials!"
+    echo "   Copy this file to setup-signing.sh and update with real credentials"
+    echo "   Apps will be signed but NOT notarized"
+else
+    echo "🎉 Real credentials detected - full notarization enabled!"
+fi
+
+echo ""
+echo "🚀 Now you can run:"
+echo "   ./build-all-platforms.sh --current-only --sign-macos"
+echo "   make build-all-platforms-signed" 

@@ -70,35 +70,59 @@ All tools support pagination (`limit`, `offset`) and sorting options where appli
 
 ## 🎯 Quick Setup with Claude Desktop
 
+### 🖥️ GUI Installer (Recommended)
+
+For the easiest installation experience, use our cross-platform GUI installer:
+
+1. **Download the installer** for your platform:
+   - **macOS ARM64 (Apple Silicon)**: `slide-mcp-installer-darwin-arm64`
+   - **macOS AMD64**: `slide-mcp-installer-darwin-amd64` 
+   - **Linux AMD64**: `slide-mcp-installer-linux-amd64`
+   - **Windows AMD64**: `slide-mcp-installer-windows-amd64.exe`
+
+2. **Run the installer**: Double-click or run from terminal
+3. **Enter your API key**: Input your Slide API key when prompted
+4. **Install**: Click "Install Slide MCP Server"
+5. **Restart Claude Desktop**: The installer will configure everything automatically
+
+The GUI installer will:
+- ✅ Check if Claude Desktop is installed
+- ✅ Download the latest slide-mcp-server binary
+- ✅ Install it to the correct location
+- ✅ Update your Claude Desktop configuration
+- ✅ Provide easy uninstall option
+
+### Manual Installation
+
 #### Download Pre-built Binary (v1.14)
 ```bash
 # For macOS ARM64 (Apple Silicon)
-curl -L -o slide-mcp-server-v1.14-darwin-arm64.tar.gz https://github.com/yourusername/slide-mcp-server/releases/latest/download/slide-mcp-server-v1.14-darwin-arm64.tar.gz
+curl -L -o slide-mcp-server-v1.14-darwin-arm64.tar.gz https://github.com/austinmcchord/slide-mcp-server/releases/latest/download/slide-mcp-server-v1.14-darwin-arm64.tar.gz
 tar -xzf slide-mcp-server-v1.14-darwin-arm64.tar.gz
 mv slide-mcp-server-darwin-arm64 slide-mcp-server
 chmod +x slide-mcp-server
 
 # For macOS AMD64 
-curl -L -o slide-mcp-server-v1.14-darwin-amd64.tar.gz https://github.com/yourusername/slide-mcp-server/releases/latest/download/slide-mcp-server-v1.14-darwin-amd64.tar.gz
+curl -L -o slide-mcp-server-v1.14-darwin-amd64.tar.gz https://github.com/austinmcchord/slide-mcp-server/releases/latest/download/slide-mcp-server-v1.14-darwin-amd64.tar.gz
 tar -xzf slide-mcp-server-v1.14-darwin-amd64.tar.gz
 mv slide-mcp-server-darwin-amd64 slide-mcp-server
 chmod +x slide-mcp-server
 
 # For Linux AMD64
-curl -L -o slide-mcp-server-v1.14-linux-amd64.tar.gz https://github.com/yourusername/slide-mcp-server/releases/latest/download/slide-mcp-server-v1.14-linux-amd64.tar.gz
+curl -L -o slide-mcp-server-v1.14-linux-amd64.tar.gz https://github.com/austinmcchord/slide-mcp-server/releases/latest/download/slide-mcp-server-v1.14-linux-amd64.tar.gz
 tar -xzf slide-mcp-server-v1.14-linux-amd64.tar.gz
 mv slide-mcp-server-linux-amd64 slide-mcp-server
 chmod +x slide-mcp-server
 
 # For Windows AMD64
-curl -L -o slide-mcp-server-v1.14-windows-amd64.zip https://github.com/yourusername/slide-mcp-server/releases/latest/download/slide-mcp-server-v1.14-windows-amd64.zip
+curl -L -o slide-mcp-server-v1.14-windows-amd64.zip https://github.com/austinmcchord/slide-mcp-server/releases/latest/download/slide-mcp-server-v1.14-windows-amd64.zip
 unzip slide-mcp-server-v1.14-windows-amd64.zip
 mv slide-mcp-server-windows-amd64.exe slide-mcp-server.exe
 ```
 
 #### Build from Source
 ```bash
-git clone https://github.com/yourusername/slide-mcp-server.git
+git clone https://github.com/austinmcchord/slide-mcp-server.git
 cd slide-mcp-server
 make build
 # Binary will be in build/slide-mcp-server

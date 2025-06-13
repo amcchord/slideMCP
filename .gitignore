@@ -33,4 +33,19 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
-*.swo 
+*.swo
+
+# Code signing credentials and secrets
+Installer/setup-signing.sh
+**/setup-signing.sh
+*.p12
+*.mobileprovision
+
+# Build and release artifacts
+Installer/build/
+Installer/releases/
+*.app
+*.dmg
+*.pkg
+*.zip
+*.tar.gz 
