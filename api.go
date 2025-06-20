@@ -13,9 +13,10 @@ import (
 	"time"
 )
 
-const APIBaseURL = "https://api.slide.tech"
-
 var (
+	// APIBaseURL is the base URL for Slide API requests
+	// Default value can be overridden via command line flag
+	APIBaseURL = "https://api.slide.tech"
 	httpClient = &http.Client{
 		Timeout: 30 * time.Second,
 	}
