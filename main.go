@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -52,10 +53,29 @@ func main() {
 		log.Fatal("Error: SLIDE_API_KEY environment variable not set")
 	}
 
+	// Parse command line flags
+	httpMode := flag.Bool("http", false, "Run in HTTP server mode")
+	httpPort := flag.Int("port", 8080, "HTTP server port (when in HTTP mode)")
+	apiBaseURL := flag.String("api-url", APIBaseURL, "Override the default Slide API base URL")
+	flag.Parse()
+
+	// Set API base URL if provided via flag
+	if *apiBaseURL != APIBaseURL {
+		APIBaseURL = *apiBaseURL
+		log.Printf("Using custom API URL: %s", APIBaseURL)
+	}
+
 	log.Println("Slide MCP Server starting...")
 
-	// Start MCP server
-	startMCPServer()
+	if *httpMode {
+		// Start in HTTP mode
+		log.Printf("Running in HTTP mode on port %d", *httpPort)
+		StartHTTPServer(*httpPort)
+	} else {
+		// Start in standard stdin/stdout mode
+		log.Println("Running in standard mode (stdin/stdout)")
+		startMCPServer()
+	}
 }
 
 func startMCPServer() {
@@ -1001,6 +1021,24 @@ func handleToolCall(request MCPRequest) MCPResponse {
 }
 
 func sendError(id interface{}, code int, message string, data interface{}) MCPResponse {
+	// Enhanced error logging
+	logEntry := fmt.Sprintf("ERROR: MCP error response - Code: %d, Message: %s", code, message)
+
+	if id != nil {
+		logEntry += fmt.Sprintf(", Request ID: %v", id)
+	}
+
+	if data != nil {
+		dataJSON, err := json.Marshal(data)
+		if err == nil {
+			logEntry += fmt.Sprintf(", Details: %s", string(dataJSON))
+		} else {
+			logEntry += fmt.Sprintf(", Details: [failed to marshal: %v]", err)
+		}
+	}
+
+	log.Println(logEntry)
+
 	errorObj := map[string]interface{}{
 		"code":    code,
 		"message": message,

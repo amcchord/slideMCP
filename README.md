@@ -8,10 +8,13 @@ An MCP server implementation that integrates with the Slide API, providing compr
 - **Low memory usage**: 10-20MB memory footprint
 - **Cross-platform**: Linux, macOS, Windows binaries
 - **Zero Installation Hassle**: Simple download and configure
+- **HTTP Server Mode**: Optional REST API with session management and SSE support
 
 ---
 
 For quick setup instructions with Claude Desktop, see the installation section below.
+
+For HTTP server mode documentation, see [HTTP_SERVER.md](HTTP_SERVER.md).
 
 ## Features
 
@@ -76,7 +79,7 @@ For the easiest installation experience, use our cross-platform GUI installer:
 
 1. **Download the installer** for your platform:
    - **macOS ARM64 (Apple Silicon)**: `slide-mcp-installer-darwin-arm64`
-   - **macOS AMD64**: `slide-mcp-installer-darwin-amd64` 
+   - **macOS AMD64**: `slide-mcp-installer-darwin-amd64`
    - **Linux AMD64**: `slide-mcp-installer-linux-amd64`
    - **Windows AMD64**: `slide-mcp-installer-windows-amd64.exe`
 
@@ -102,7 +105,7 @@ tar -xzf slide-mcp-server-v1.14-darwin-arm64.tar.gz
 mv slide-mcp-server-darwin-arm64 slide-mcp-server
 chmod +x slide-mcp-server
 
-# For macOS AMD64 
+# For macOS AMD64
 curl -L -o slide-mcp-server-v1.14-darwin-amd64.tar.gz https://github.com/austinmcchord/slide-mcp-server/releases/latest/download/slide-mcp-server-v1.14-darwin-amd64.tar.gz
 tar -xzf slide-mcp-server-v1.14-darwin-amd64.tar.gz
 mv slide-mcp-server-darwin-amd64 slide-mcp-server
@@ -167,6 +170,21 @@ export SLIDE_API_KEY="your-api-key-here"
 echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' | ./slide-mcp-server
 
 # Should respond with server info and capabilities
+```
+
+#### Command-Line Options
+```bash
+# Run in HTTP server mode
+slide-mcp-server -http
+
+# Specify custom port for HTTP mode
+slide-mcp-server -http -port 3000
+
+# Override the default API endpoint
+slide-mcp-server -api-url="https://custom-api.example.com"
+
+# Combine multiple options
+slide-mcp-server -http -port 3000 -api-url="https://custom-api.example.com"
 ```
 
 ### Usage with VS Code
