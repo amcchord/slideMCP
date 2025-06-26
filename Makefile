@@ -1,7 +1,7 @@
 # Slide MCP Server Makefile
 
 BINARY_NAME=slide-mcp-server
-VERSION=v1.14
+VERSION=v1.15
 BUILD_DIR=build
 
 # Code signing variables (set these via environment or command line)
