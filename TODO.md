@@ -124,7 +124,12 @@ Consolidating 52+ individual tools into 8 meta-tools organized by API segments t
 - [x] Clean up unused code in `main.go`
 - [x] Separate VMs into their own meta-tool
 - [x] Bump version to 1.2.0
+- [x] Bump version to 1.2.1
 - [ ] Update README if needed
+
+## Version History
+- **1.2.1**: Added client name enrichment system - automatically includes `client_name` alongside `client_id` in all API responses for improved LLM reporting readability
+- **1.2.0**: Consolidated 52+ individual tools into 10 organized meta-tools
 
 ## Notes
 - Each meta-tool will accept an `operation` parameter to determine which specific API function to call

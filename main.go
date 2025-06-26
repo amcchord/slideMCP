@@ -42,7 +42,7 @@ type ToolContent struct {
 // Configuration
 const (
 	ServerName = "slide-mcp-server"
-	Version    = "1.2.0"
+	Version    = "1.2.1"
 )
 
 func main() {
@@ -390,7 +390,7 @@ func getAllTools() []ToolInfo {
 		// Special tools
 		{
 			Name:        "list_all_clients_devices_and_agents",
-			Description: "Get a complete hierarchical view of all clients, their devices, and the agents on those devices. This combines multiple API calls into a single comprehensive response that's easier for LLMs to understand and work with.",
+			Description: "Get a complete hierarchical view of all clients, their devices, and the agents on those devices. Use this tool when answers questions about how many agents, devices, or clients",
 			InputSchema: map[string]interface{}{
 				"type":       "object",
 				"properties": map[string]interface{}{},

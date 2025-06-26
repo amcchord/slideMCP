@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -20,6 +21,16 @@ var (
 		Timeout: 30 * time.Second,
 	}
 	apiKey string
+
+	// Client cache to avoid redundant API calls
+	clientCache = struct {
+		sync.RWMutex
+		clients    map[string]Client
+		lastUpdate time.Time
+	}{
+		clients: make(map[string]Client),
+	}
+	clientCacheExpiry = 5 * time.Minute // Cache clients for 5 minutes
 )
 
 // Data structures
@@ -327,6 +338,101 @@ func joinNetworks(networks []string, defaultNetwork string) string {
 	return result
 }
 
+// Client cache helper functions
+func refreshClientCache() error {
+	clientCache.Lock()
+	defer clientCache.Unlock()
+
+	// Check if cache is still fresh
+	if time.Since(clientCache.lastUpdate) < clientCacheExpiry {
+		return nil
+	}
+
+	// Fetch all clients from API
+	data, err := makeAPIRequest("GET", "/v1/client?limit=200", nil)
+	if err != nil {
+		return fmt.Errorf("failed to fetch clients for cache: %w", err)
+	}
+
+	var result PaginatedResponse[Client]
+	if err := json.Unmarshal(data, &result); err != nil {
+		return fmt.Errorf("failed to parse clients response: %w", err)
+	}
+
+	// Update cache
+	clientCache.clients = make(map[string]Client)
+	for _, client := range result.Data {
+		clientCache.clients[client.ClientID] = client
+	}
+	clientCache.lastUpdate = time.Now()
+
+	return nil
+}
+
+func getClientName(clientID string) string {
+	if clientID == "" {
+		return ""
+	}
+
+	// Try to refresh cache if needed
+	if err := refreshClientCache(); err != nil {
+		// If cache refresh fails, return empty string to avoid breaking the response
+		return ""
+	}
+
+	clientCache.RLock()
+	defer clientCache.RUnlock()
+
+	if client, exists := clientCache.clients[clientID]; exists {
+		return client.Name
+	}
+
+	return ""
+}
+
+func enrichWithClientName(data interface{}) interface{} {
+	switch v := data.(type) {
+	case map[string]interface{}:
+		// Create a new map to avoid modifying the original
+		enriched := make(map[string]interface{})
+		for key, value := range v {
+			enriched[key] = enrichWithClientName(value)
+		}
+
+		// Add client_name if client_id exists
+		if clientID, exists := enriched["client_id"]; exists {
+			if clientIDStr, ok := clientID.(string); ok && clientIDStr != "" {
+				enriched["client_name"] = getClientName(clientIDStr)
+			}
+		}
+
+		return enriched
+
+	case []interface{}:
+		// Process each item in the array
+		enriched := make([]interface{}, len(v))
+		for i, item := range v {
+			enriched[i] = enrichWithClientName(item)
+		}
+		return enriched
+
+	default:
+		// For structs and other types, convert to JSON and back to get map[string]interface{}
+		jsonData, err := json.Marshal(data)
+		if err != nil {
+			return v // If marshaling fails, return original data
+		}
+
+		var interfaceData interface{}
+		if err := json.Unmarshal(jsonData, &interfaceData); err != nil {
+			return v // If unmarshaling fails, return original data
+		}
+
+		// Now recursively enrich the converted data
+		return enrichWithClientName(interfaceData)
+	}
+}
+
 // API client helper
 func makeAPIRequest(method, endpoint string, body []byte) ([]byte, error) {
 	url := APIBaseURL + endpoint
@@ -413,10 +519,10 @@ func listDevices(args map[string]interface{}) (string, error) {
 		return "", fmt.Errorf("failed to parse response: %w", err)
 	}
 
-	// Add metadata for better LLM interaction
+	// Add metadata for better LLM interaction and enrich with client names
 	enhancedResult := map[string]interface{}{
 		"pagination": result.Pagination,
-		"data":       result.Data,
+		"data":       enrichWithClientName(result.Data),
 		"_metadata": map[string]interface{}{
 			"primary_identifier":    "hostname",
 			"presentation_guidance": "When referring to devices, use the hostname as the primary identifier. Device IDs are internal identifiers not commonly used by humans.",
@@ -449,7 +555,10 @@ func getDevice(args map[string]interface{}) (string, error) {
 		return "", fmt.Errorf("failed to parse response: %w", err)
 	}
 
-	jsonData, err := json.MarshalIndent(result, "", "  ")
+	// Enrich with client name
+	enriched := enrichWithClientName(result)
+
+	jsonData, err := json.MarshalIndent(enriched, "", "  ")
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal result: %w", err)
 	}
@@ -491,7 +600,10 @@ func updateDevice(args map[string]interface{}) (string, error) {
 		return "", fmt.Errorf("failed to parse response: %w", err)
 	}
 
-	jsonData, err := json.MarshalIndent(result, "", "  ")
+	// Enrich with client name
+	enriched := enrichWithClientName(result)
+
+	jsonData, err := json.MarshalIndent(enriched, "", "  ")
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal result: %w", err)
 	}
@@ -516,7 +628,10 @@ func powerOffDevice(args map[string]interface{}) (string, error) {
 		return "", fmt.Errorf("failed to parse response: %w", err)
 	}
 
-	jsonData, err := json.MarshalIndent(result, "", "  ")
+	// Enrich with client name
+	enriched := enrichWithClientName(result)
+
+	jsonData, err := json.MarshalIndent(enriched, "", "  ")
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal result: %w", err)
 	}
@@ -541,7 +656,10 @@ func rebootDevice(args map[string]interface{}) (string, error) {
 		return "", fmt.Errorf("failed to parse response: %w", err)
 	}
 
-	jsonData, err := json.MarshalIndent(result, "", "  ")
+	// Enrich with client name
+	enriched := enrichWithClientName(result)
+
+	jsonData, err := json.MarshalIndent(enriched, "", "  ")
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal result: %w", err)
 	}
@@ -598,10 +716,10 @@ func listAgents(args map[string]interface{}) (string, error) {
 		return "", fmt.Errorf("failed to parse response: %w", err)
 	}
 
-	// Add metadata for better LLM interaction
+	// Add metadata for better LLM interaction and enrich with client names
 	enhancedResult := map[string]interface{}{
 		"pagination": result.Pagination,
-		"data":       result.Data,
+		"data":       enrichWithClientName(result.Data),
 		"_metadata": map[string]interface{}{
 			"primary_identifier":    "display_name",
 			"presentation_guidance": "When referring to agents, use the display name as the primary identifier. If display name is blank, use hostname instead. Agent IDs are internal identifiers not commonly used by humans.",
@@ -635,7 +753,10 @@ func getAgent(args map[string]interface{}) (string, error) {
 		return "", fmt.Errorf("failed to parse response: %w", err)
 	}
 
-	jsonData, err := json.MarshalIndent(result, "", "  ")
+	// Enrich with client name
+	enriched := enrichWithClientName(result)
+
+	jsonData, err := json.MarshalIndent(enriched, "", "  ")
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal result: %w", err)
 	}
@@ -709,7 +830,10 @@ func pairAgent(args map[string]interface{}) (string, error) {
 		return "", fmt.Errorf("failed to parse response: %w", err)
 	}
 
-	jsonData, err := json.MarshalIndent(result, "", "  ")
+	// Enrich with client name
+	enriched := enrichWithClientName(result)
+
+	jsonData, err := json.MarshalIndent(enriched, "", "  ")
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal result: %w", err)
 	}
@@ -746,7 +870,10 @@ func updateAgent(args map[string]interface{}) (string, error) {
 		return "", fmt.Errorf("failed to parse response: %w", err)
 	}
 
-	jsonData, err := json.MarshalIndent(result, "", "  ")
+	// Enrich with client name
+	enriched := enrichWithClientName(result)
+
+	jsonData, err := json.MarshalIndent(enriched, "", "  ")
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal result: %w", err)
 	}
@@ -2379,7 +2506,7 @@ func listNetworks(args map[string]interface{}) (string, error) {
 
 	enhancedResult := map[string]interface{}{
 		"pagination": result.Pagination,
-		"data":       enhancedNetworks,
+		"data":       enrichWithClientName(enhancedNetworks),
 		"_metadata": map[string]interface{}{
 			"primary_identifier":     "name",
 			"presentation_guidance":  "Networks enable disaster recovery and isolated networking for virtual machines.",
@@ -2465,7 +2592,10 @@ func getNetwork(args map[string]interface{}) (string, error) {
 		enhancedResult["wg_peers"] = result.WGPeers
 	}
 
-	jsonData, err := json.MarshalIndent(enhancedResult, "", "  ")
+	// Enrich with client name
+	enrichedWithClient := enrichWithClientName(enhancedResult)
+
+	jsonData, err := json.MarshalIndent(enrichedWithClient, "", "  ")
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal result: %w", err)
 	}
@@ -2614,7 +2744,10 @@ func createNetwork(args map[string]interface{}) (string, error) {
 		enhancedResult["wg_peers"] = result.WGPeers
 	}
 
-	jsonData, err := json.MarshalIndent(enhancedResult, "", "  ")
+	// Enrich with client name
+	enrichedWithClient := enrichWithClientName(enhancedResult)
+
+	jsonData, err := json.MarshalIndent(enrichedWithClient, "", "  ")
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal result: %w", err)
 	}
@@ -2756,7 +2889,10 @@ func updateNetwork(args map[string]interface{}) (string, error) {
 		enhancedResult["wg_peers"] = result.WGPeers
 	}
 
-	jsonData, err := json.MarshalIndent(enhancedResult, "", "  ")
+	// Enrich with client name
+	enrichedWithClient := enrichWithClientName(enhancedResult)
+
+	jsonData, err := json.MarshalIndent(enrichedWithClient, "", "  ")
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal result: %w", err)
 	}
