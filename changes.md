@@ -1,8 +1,8 @@
-# MCP Server Refactor: Meta-Tools Implementation
+# MCP Server Refactor: Meta-Tools Implementation (v1.2.0)
 
 ## Overview
 
-This refactor consolidates 52+ individual MCP tools into 9 meta-tools organized by API functionality. This change reduces complexity for LLMs by providing fewer, more focused tools that group related operations together.
+This refactor consolidates 52+ individual MCP tools into 10 meta-tools organized by API functionality. This change reduces complexity for LLMs by providing fewer, more focused tools that group related operations together.
 
 ## What Changed
 

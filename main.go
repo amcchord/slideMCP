@@ -42,7 +42,7 @@ type ToolContent struct {
 // Configuration
 const (
 	ServerName = "slide-mcp-server"
-	Version    = "0.1.0"
+	Version    = "1.2.0"
 )
 
 func main() {

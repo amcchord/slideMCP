@@ -123,6 +123,7 @@ Consolidating 52+ individual tools into 8 meta-tools organized by API segments t
 - [x] Add usage examples for each meta-tool
 - [x] Clean up unused code in `main.go`
 - [x] Separate VMs into their own meta-tool
+- [x] Bump version to 1.2.0
 - [ ] Update README if needed
 
 ## Notes
