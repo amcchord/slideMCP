@@ -10,7 +10,7 @@ This release addresses critical issues from v1.15 and provides enhanced stabilit
 - **Build Process**: Enhanced build script reliability and error handling
 
 ### Code Signing & Security
-- **macOS Code Signing**: All macOS binaries are signed with Developer ID for improved security and compatibility
+- **macOS Code Signing & Notarization**: All macOS binaries are signed with Developer ID and fully notarized by Apple for maximum security and compatibility
 - **Cross-Platform Support**: Binaries built for all major platforms with optimized performance
 - **SHA256 Checksums**: Complete checksum verification for all release binaries
 
@@ -41,9 +41,10 @@ The revolutionary meta-tools system introduced in earlier versions continues to 
 - **Windows**: x64 and ARM64 architectures
 
 ### Security Features
-- macOS binaries are code-signed with Developer ID
+- macOS binaries are code-signed with Developer ID and fully notarized by Apple
 - All binaries include SHA256 checksums for integrity verification
 - Runtime hardening enabled for macOS builds
+- No security prompts required for macOS users
 
 ### Binary Sizes
 - Linux x64: ~6.2MB
@@ -75,7 +76,7 @@ The revolutionary meta-tools system introduced in earlier versions continues to 
    ```
 
 ### Platform-Specific Notes
-- **macOS**: Signed binaries should run without additional security prompts
+- **macOS**: Signed and notarized binaries run without any security prompts
 - **Linux**: May require execute permissions: `chmod +x slide-mcp-server-*`
 - **Windows**: Run from command prompt or PowerShell
 
