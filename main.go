@@ -986,6 +986,20 @@ func handleToolCall(request MCPRequest) MCPResponse {
 			}
 		}
 
+	case "list_all_clients_devices_and_agents":
+		data, err := listAllClientsDevicesAndAgents(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+
 	default:
 		result = ToolResult{
 			Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Unknown tool: %s", name)}},
@@ -2348,6 +2362,14 @@ func getAllTools() []ToolInfo {
 					},
 				},
 				"required": []string{"network_id", "wg_peer_id"},
+			},
+		},
+		{
+			Name:        "list_all_clients_devices_and_agents",
+			Description: "Get a complete hierarchical view of all clients, their devices, and the agents on those devices. This combines multiple API calls into a single comprehensive response that's easier for LLMs to understand and work with.",
+			InputSchema: map[string]interface{}{
+				"type":       "object",
+				"properties": map[string]interface{}{},
 			},
 		},
 	}
