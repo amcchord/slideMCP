@@ -416,6 +416,10 @@ func enrichWithClientName(data interface{}) interface{} {
 		}
 		return enriched
 
+	case string, int, int64, float64, bool, nil:
+		// For primitive types, return as-is (no enrichment needed)
+		return v
+
 	default:
 		// For structs and other types, convert to JSON and back to get map[string]interface{}
 		jsonData, err := json.Marshal(data)
@@ -426,6 +430,12 @@ func enrichWithClientName(data interface{}) interface{} {
 		var interfaceData interface{}
 		if err := json.Unmarshal(jsonData, &interfaceData); err != nil {
 			return v // If unmarshaling fails, return original data
+		}
+
+		// Check if the converted data is the same as original to prevent infinite recursion
+		// This happens when the data is already a primitive type
+		if interfaceData == data {
+			return v
 		}
 
 		// Now recursively enrich the converted data
