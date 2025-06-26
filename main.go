@@ -188,8 +188,9 @@ func handleToolCall(request MCPRequest) MCPResponse {
 	var result ToolResult
 
 	switch name {
-	case "slide_list_devices":
-		data, err := listDevices(args)
+	// Meta-tools
+	case "slide_agents":
+		data, err := handleAgentsTool(args)
 		if err != nil {
 			result = ToolResult{
 				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
@@ -202,8 +203,8 @@ func handleToolCall(request MCPRequest) MCPResponse {
 			}
 		}
 
-	case "slide_get_device":
-		data, err := getDevice(args)
+	case "slide_backups":
+		data, err := handleBackupsTool(args)
 		if err != nil {
 			result = ToolResult{
 				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
@@ -216,8 +217,8 @@ func handleToolCall(request MCPRequest) MCPResponse {
 			}
 		}
 
-	case "slide_update_device":
-		data, err := updateDevice(args)
+	case "slide_snapshots":
+		data, err := handleSnapshotsTool(args)
 		if err != nil {
 			result = ToolResult{
 				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
@@ -230,8 +231,8 @@ func handleToolCall(request MCPRequest) MCPResponse {
 			}
 		}
 
-	case "slide_poweroff_device":
-		data, err := powerOffDevice(args)
+	case "slide_restores":
+		data, err := handleRestoresTool(args)
 		if err != nil {
 			result = ToolResult{
 				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
@@ -244,8 +245,8 @@ func handleToolCall(request MCPRequest) MCPResponse {
 			}
 		}
 
-	case "slide_reboot_device":
-		data, err := rebootDevice(args)
+	case "slide_networks":
+		data, err := handleNetworksTool(args)
 		if err != nil {
 			result = ToolResult{
 				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
@@ -258,8 +259,8 @@ func handleToolCall(request MCPRequest) MCPResponse {
 			}
 		}
 
-	case "slide_list_agents":
-		data, err := listAgents(args)
+	case "slide_users":
+		data, err := handleUsersTool(args)
 		if err != nil {
 			result = ToolResult{
 				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
@@ -272,8 +273,8 @@ func handleToolCall(request MCPRequest) MCPResponse {
 			}
 		}
 
-	case "slide_get_agent":
-		data, err := getAgent(args)
+	case "slide_alerts":
+		data, err := handleAlertsTool(args)
 		if err != nil {
 			result = ToolResult{
 				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
@@ -286,8 +287,8 @@ func handleToolCall(request MCPRequest) MCPResponse {
 			}
 		}
 
-	case "slide_create_agent":
-		data, err := createAgent(args)
+	case "slide_accounts":
+		data, err := handleAccountsTool(args)
 		if err != nil {
 			result = ToolResult{
 				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
@@ -300,8 +301,8 @@ func handleToolCall(request MCPRequest) MCPResponse {
 			}
 		}
 
-	case "slide_pair_agent":
-		data, err := pairAgent(args)
+	case "slide_devices":
+		data, err := handleDevicesTool(args)
 		if err != nil {
 			result = ToolResult{
 				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
@@ -314,8 +315,8 @@ func handleToolCall(request MCPRequest) MCPResponse {
 			}
 		}
 
-	case "slide_update_agent":
-		data, err := updateAgent(args)
+	case "slide_vms":
+		data, err := handleVMsTool(args)
 		if err != nil {
 			result = ToolResult{
 				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
@@ -328,664 +329,7 @@ func handleToolCall(request MCPRequest) MCPResponse {
 			}
 		}
 
-	case "slide_list_backups":
-		data, err := listBackups(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_get_backup":
-		data, err := getBackup(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_start_backup":
-		data, err := startBackup(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_list_snapshots":
-		data, err := listSnapshots(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_get_snapshot":
-		data, err := getSnapshot(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_list_file_restores":
-		data, err := listFileRestores(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_get_file_restore":
-		data, err := getFileRestore(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_create_file_restore":
-		data, err := createFileRestore(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_delete_file_restore":
-		data, err := deleteFileRestore(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_browse_file_restore":
-		data, err := browseFileRestore(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_list_image_exports":
-		data, err := listImageExports(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_get_image_export":
-		data, err := getImageExport(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_create_image_export":
-		data, err := createImageExport(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_delete_image_export":
-		data, err := deleteImageExport(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_browse_image_export":
-		data, err := browseImageExport(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_list_virtual_machines":
-		data, err := listVirtualMachines(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_get_virtual_machine":
-		data, err := getVirtualMachine(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_create_virtual_machine":
-		data, err := createVirtualMachine(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_update_virtual_machine":
-		data, err := updateVirtualMachine(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_delete_virtual_machine":
-		data, err := deleteVirtualMachine(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_list_users":
-		data, err := listUsers(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_get_user":
-		data, err := getUser(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_list_alerts":
-		data, err := listAlerts(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_get_alert":
-		data, err := getAlert(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_update_alert":
-		data, err := updateAlert(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_list_accounts":
-		data, err := listAccounts(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_get_account":
-		data, err := getAccount(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_update_account":
-		data, err := updateAccount(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_list_clients":
-		data, err := listClients(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_get_client":
-		data, err := getClient(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_create_client":
-		data, err := createClient(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_update_client":
-		data, err := updateClient(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_delete_client":
-		data, err := deleteClient(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_list_networks":
-		data, err := listNetworks(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_get_network":
-		data, err := getNetwork(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_create_network":
-		data, err := createNetwork(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_update_network":
-		data, err := updateNetwork(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_delete_network":
-		data, err := deleteNetwork(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_create_network_ipsec_conn":
-		data, err := createNetworkIPSecConn(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_update_network_ipsec_conn":
-		data, err := updateNetworkIPSecConn(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_delete_network_ipsec_conn":
-		data, err := deleteNetworkIPSecConn(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_create_network_port_forward":
-		data, err := createNetworkPortForward(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_update_network_port_forward":
-		data, err := updateNetworkPortForward(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_delete_network_port_forward":
-		data, err := deleteNetworkPortForward(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_create_network_wg_peer":
-		data, err := createNetworkWGPeer(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_update_network_wg_peer":
-		data, err := updateNetworkWGPeer(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_delete_network_wg_peer":
-		data, err := deleteNetworkWGPeer(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
+	// Special tools (keep as-is)
 	case "list_all_clients_devices_and_agents":
 		data, err := listAllClientsDevicesAndAgents(args)
 		if err != nil {
@@ -1031,6 +375,31 @@ func sendError(id interface{}, code int, message string, data interface{}) MCPRe
 }
 
 func getAllTools() []ToolInfo {
+	return []ToolInfo{
+		// Meta-tools
+		getAgentsToolInfo(),
+		getBackupsToolInfo(),
+		getSnapshotsToolInfo(),
+		getRestoresToolInfo(),
+		getNetworksToolInfo(),
+		getUsersToolInfo(),
+		getAlertsToolInfo(),
+		getAccountsToolInfo(),
+		getDevicesToolInfo(),
+		getVMsToolInfo(),
+		// Special tools
+		{
+			Name:        "list_all_clients_devices_and_agents",
+			Description: "Get a complete hierarchical view of all clients, their devices, and the agents on those devices. This combines multiple API calls into a single comprehensive response that's easier for LLMs to understand and work with.",
+			InputSchema: map[string]interface{}{
+				"type":       "object",
+				"properties": map[string]interface{}{},
+			},
+		},
+	}
+}
+
+func getOldAllTools() []ToolInfo {
 	return []ToolInfo{
 		{
 			Name:        "slide_list_devices",
