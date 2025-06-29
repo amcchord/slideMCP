@@ -1,7 +1,7 @@
 # Slide MCP Server Makefile
 
 BINARY_NAME=slide-mcp-server
-VERSION=v1.17
+VERSION=v1.17.3
 BUILD_DIR=build
 
 # Code signing variables (set these via environment or command line)
@@ -76,7 +76,8 @@ sign-macos:
 		"$(BINARY)"
 	@echo "Verifying signature for $(BINARY)"
 	codesign --verify --verbose=2 "$(BINARY)"
-	spctl --assess --type execute --verbose=2 "$(BINARY)"
+	@echo "Note: spctl assessment may fail for unnotarized binaries"
+	-spctl --assess --type execute --verbose=2 "$(BINARY)"
 
 # Notarize macOS binaries (requires Apple Developer account)
 .PHONY: notarize-macos
@@ -98,8 +99,9 @@ notarize-macos:
 		--keychain-profile "$(KEYCHAIN_PROFILE)" \
 		--wait
 	@echo "Stapling notarization..."
-	xcrun stapler staple $(BUILD_DIR)/$(BINARY_NAME)-darwin-amd64
-	xcrun stapler staple $(BUILD_DIR)/$(BINARY_NAME)-darwin-arm64
+	@echo "Note: Stapling may fail for some binary types, but notarization is still valid"
+	-xcrun stapler staple $(BUILD_DIR)/$(BINARY_NAME)-darwin-amd64
+	-xcrun stapler staple $(BUILD_DIR)/$(BINARY_NAME)-darwin-arm64
 
 # Install dependencies
 .PHONY: deps
