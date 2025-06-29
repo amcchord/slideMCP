@@ -153,14 +153,20 @@ Consolidating 52+ individual tools into 8 meta-tools organized by API segments t
   - [x] Define tool permission categories (reporting, restores, full-safe, full)
     - **reporting**: Only read operations (list, get) - no modifications allowed
     - **restores**: Reporting + VM/restore/network management - no agent/snapshot deletion
-    - **full-safe**: Everything except deleting agents and snapshots
-    - **full**: All operations available (default)
+    - **full-safe**: Everything except deleting agents and snapshots (default)
+    - **full**: All operations available
   - [x] Add `--tools` CLI flag support  
   - [x] Add `SLIDE_TOOLS` environment variable support
   - [x] Implement tool filtering in getAllTools()
   - [x] Implement execution filtering in handleToolCall()
   - [x] Set default to "full" for backward compatibility
   - [x] Update version constant to 1.2.4 for this enhancement
+
+- [x] **Task 5**: Change default tools mode to full-safe for improved security
+  - [x] Update default from ToolsFull to ToolsFullSafe
+  - [x] Update version to 1.2.5
+  - [x] Update all documentation to reflect new default
+  - [x] Add support for list_deleted operation in permission system
 
 ### Phase 7: CLI Testing & Documentation
 - [x] Test CLI flag functionality
@@ -171,6 +177,7 @@ Consolidating 52+ individual tools into 8 meta-tools organized by API segments t
 - [x] Test tools filtering functionality
 
 ## Version History
+- **1.2.5**: Changed default tools mode from "full" to "full-safe" for improved security
 - **1.2.4**: Added tools filtering system for granular permission control (reporting, restores, full-safe, full)
 - **1.2.3**: Added configurable base URL support via --base-url flag and SLIDE_BASE_URL environment variable
 - **1.2.2**: Added CLI enhancements - API key via command line and --version flag
@@ -221,14 +228,14 @@ export SLIDE_BASE_URL=https://env.api.example.com
 ```bash
 # Display version and exit
 ./slide-mcp-server --version
-# Output: slide-mcp-server version 1.2.4
+# Output: slide-mcp-server version 1.2.5
 ```
 
 **Tools Filtering Configuration (v1.2.4+):**
 ```bash
-# Full access mode (default)
+# Full-safe access mode (default - everything except deleting agents and snapshots)
 ./slide-mcp-server --api-key YOUR_API_KEY
-./slide-mcp-server --api-key YOUR_API_KEY --tools full
+./slide-mcp-server --api-key YOUR_API_KEY --tools full-safe
 
 # Reporting mode - only read operations (list, get, browse)
 ./slide-mcp-server --api-key YOUR_API_KEY --tools reporting
@@ -236,8 +243,8 @@ export SLIDE_BASE_URL=https://env.api.example.com
 # Restores mode - reporting + VM/restore/network management
 ./slide-mcp-server --api-key YOUR_API_KEY --tools restores
 
-# Full-safe mode - everything except deleting agents and snapshots
-./slide-mcp-server --api-key YOUR_API_KEY --tools full-safe
+# Full access mode - complete access including dangerous operations
+./slide-mcp-server --api-key YOUR_API_KEY --tools full
 
 # Using environment variable
 export SLIDE_TOOLS=reporting
@@ -267,13 +274,13 @@ export SLIDE_TOOLS=reporting
   - ❌ Agent deletion
   - ❌ Snapshot deletion
 
-- **full-safe**: Everything except dangerous operations
+- **full-safe**: Everything except dangerous operations (default)
   - ✅ All operations from restores mode
   - ✅ Agent creation, pairing, and updates
   - ❌ Agent deletion
   - ❌ Snapshot deletion
 
-- **full**: Complete access (default)
+- **full**: Complete access
   - ✅ All operations available
   - ✅ Agent deletion
   - ✅ Snapshot deletion
@@ -282,5 +289,5 @@ export SLIDE_TOOLS=reporting
 - If no API key is provided via CLI or environment, the server will exit with an error message
 - The error message explains both methods for providing the API key
 - Base URL is optional - defaults to https://api.slide.tech if not specified
-- Tools mode is optional - defaults to "full" if not specified
+- Tools mode is optional - defaults to "full-safe" if not specified
 - Invalid tools mode will cause the server to exit with an error listing valid options 

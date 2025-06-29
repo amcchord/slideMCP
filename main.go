@@ -43,7 +43,7 @@ type ToolContent struct {
 // Configuration
 const (
 	ServerName = "slide-mcp-server"
-	Version    = "1.2.4"
+	Version    = "1.2.5"
 )
 
 // Tools filtering modes
@@ -54,7 +54,7 @@ const (
 	ToolsFull      = "full"
 )
 
-var toolsMode string = ToolsFull // Default to full access
+var toolsMode string = ToolsFullSafe // Default to full-safe access
 
 // Helper functions for tools filtering
 func isToolAllowed(toolName string) bool {
@@ -129,7 +129,7 @@ func isDangerousTool(toolName string) bool {
 
 func isReadOperation(operation string) bool {
 	readOps := []string{
-		"list", "get", "browse",
+		"list", "get", "browse", "list_deleted",
 		// Restores tool read operations
 		"list_files", "get_file", "browse_file", "list_images", "get_image", "browse_image",
 		// Accounts tool read operations
@@ -201,7 +201,7 @@ func main() {
 	} else if envTools := os.Getenv("SLIDE_TOOLS"); envTools != "" {
 		toolsMode = envTools
 	}
-	// If neither is provided, toolsMode keeps its default value (full)
+	// If neither is provided, toolsMode keeps its default value (full-safe)
 
 	// Validate tools mode
 	switch toolsMode {
