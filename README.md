@@ -235,6 +235,128 @@ echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' | ./slide-mcp-
 # Should respond with server info and capabilities
 ```
 
+## 🔧 CLI Arguments & Configuration
+
+The Slide MCP Server supports several command-line arguments for flexible configuration:
+
+### Command Line Arguments
+
+```bash
+# Basic usage with API key
+./slide-mcp-server --api-key YOUR_API_KEY
+
+# All available flags
+./slide-mcp-server [OPTIONS]
+```
+
+| Flag | Description | Environment Variable | Default |
+|------|-------------|---------------------|---------|
+| `--api-key` | Slide API key for authentication | `SLIDE_API_KEY` | Required |
+| `--base-url` | Base URL for Slide API endpoint | `SLIDE_BASE_URL` | `https://api.slide.tech` |
+| `--tools` | Permission mode for tool access | `SLIDE_TOOLS` | `full-safe` |
+| `--version` | Show version information and exit | - | - |
+
+**Priority**: CLI flags take precedence over environment variables.
+
+### Examples
+
+```bash
+# Using CLI flags
+./slide-mcp-server --api-key sk_test_123 --base-url https://custom.api.endpoint --tools reporting
+
+# Using environment variables
+export SLIDE_API_KEY="sk_test_123"
+export SLIDE_BASE_URL="https://custom.api.endpoint" 
+export SLIDE_TOOLS="reporting"
+./slide-mcp-server
+
+# Mixed usage (CLI overrides environment)
+export SLIDE_TOOLS="full"
+./slide-mcp-server --api-key sk_test_123 --tools reporting  # Uses reporting mode
+
+# Show version
+./slide-mcp-server --version
+# Output: slide-mcp-server version 1.2.5
+```
+
+## 🔒 Permission Modes
+
+The server includes a sophisticated permission system with four distinct access levels:
+
+### Permission Levels
+
+#### `reporting` - Read-Only Access
+**Use Case**: Monitoring, reporting, and dashboard integrations
+- ✅ **Allowed**: All read operations (`list`, `get`, `browse`)
+- ❌ **Blocked**: All create, update, delete operations
+- ❌ **Blocked**: Power control operations
+
+```bash
+./slide-mcp-server --api-key YOUR_KEY --tools reporting
+```
+
+#### `restores` - Data Recovery & VM Management  
+**Use Case**: IT support teams performing data recovery and VM management
+- ✅ **Allowed**: All reporting operations
+- ✅ **Allowed**: VM management (create, update, delete)
+- ✅ **Allowed**: File restore operations
+- ✅ **Allowed**: Image export operations  
+- ✅ **Allowed**: Network management
+- ✅ **Allowed**: Device management and power control
+- ✅ **Allowed**: Account/client management
+- ✅ **Allowed**: Backup management and alert resolution
+- ❌ **Blocked**: Agent deletion
+- ❌ **Blocked**: Snapshot deletion
+
+```bash
+./slide-mcp-server --api-key YOUR_KEY --tools restores
+```
+
+#### `full-safe` - Comprehensive Access (Default)
+**Use Case**: General administration with safety guardrails
+- ✅ **Allowed**: All operations except dangerous ones
+- ❌ **Blocked**: Agent deletion (prevents accidental backup disruption)
+- ❌ **Blocked**: Snapshot deletion (prevents data loss)
+
+```bash
+./slide-mcp-server --api-key YOUR_KEY --tools full-safe
+# OR simply (default mode)
+./slide-mcp-server --api-key YOUR_KEY
+```
+
+#### `full` - Complete Access
+**Use Case**: Advanced administrators who need unrestricted access
+- ✅ **Allowed**: All operations including dangerous ones
+- ⚠️ **Warning**: Includes agent and snapshot deletion
+
+```bash
+./slide-mcp-server --api-key YOUR_KEY --tools full
+```
+
+### Permission Matrix
+
+| Operation Category | `reporting` | `restores` | `full-safe` | `full` |
+|--------------------|-------------|------------|-------------|--------|
+| List/Get/Browse | ✅ | ✅ | ✅ | ✅ |
+| Device Power Control | ❌ | ✅ | ✅ | ✅ |
+| VM Management | ❌ | ✅ | ✅ | ✅ |
+| Network Management | ❌ | ✅ | ✅ | ✅ |
+| File Restores | ❌ | ✅ | ✅ | ✅ |
+| Image Exports | ❌ | ✅ | ✅ | ✅ |
+| Backup Jobs | ❌ | ✅ | ✅ | ✅ |
+| Account Management | ❌ | ✅ | ✅ | ✅ |
+| Alert Resolution | ❌ | ✅ | ✅ | ✅ |
+| Agent Creation/Updates | ❌ | ✅ | ✅ | ✅ |
+| Agent Deletion | ❌ | ❌ | ❌ | ✅ |
+| Snapshot Deletion | ❌ | ❌ | ❌ | ✅ |
+
+### Security Recommendations
+
+- **Production Monitoring**: Use `reporting` mode for read-only dashboards and monitoring systems
+- **Support Teams**: Use `restores` mode for IT support staff performing data recovery
+- **General Administration**: Use `full-safe` mode (default) for most administrative tasks
+- **Advanced Users Only**: Use `full` mode only when agent or snapshot deletion is specifically required
+
 ### Usage with VS Code
 
 For VS Code integration, add the following JSON block to your User Settings (JSON) file. You can do this by pressing `Ctrl + Shift + P` and typing `Preferences: Open User Settings (JSON)`.
