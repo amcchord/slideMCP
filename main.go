@@ -155,16 +155,14 @@ func isRestoreManagementOperation(toolName, operation string) bool {
 			operation == "create_ipsec" || operation == "update_ipsec" || operation == "delete_ipsec" ||
 			operation == "create_port_forward" || operation == "update_port_forward" || operation == "delete_port_forward" ||
 			operation == "create_wg_peer" || operation == "update_wg_peer" || operation == "delete_wg_peer"
-	case "slide_accounts":
-		return operation == "update_account" || operation == "create_client" || operation == "update_client" || operation == "delete_client"
 	case "slide_devices":
-		return operation == "update" || operation == "poweroff" || operation == "reboot"
+		// Removed device power control (poweroff, reboot) from restores mode
+		return operation == "update"
 	case "slide_agents":
 		return operation == "create" || operation == "pair" || operation == "update"
 	case "slide_backups":
 		return operation == "start"
-	case "slide_alerts":
-		return operation == "update"
+		// Removed account management and alert resolution from restores mode
 	}
 	return false
 }
@@ -175,6 +173,10 @@ func isDangerousOperation(toolName, operation string) bool {
 		return true
 	}
 	if toolName == "slide_snapshots" && operation == "delete" {
+		return true
+	}
+	// Block device power control operations in full-safe mode
+	if toolName == "slide_devices" && (operation == "poweroff" || operation == "reboot") {
 		return true
 	}
 	return false

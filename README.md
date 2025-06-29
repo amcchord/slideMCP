@@ -302,9 +302,12 @@ The server includes a sophisticated permission system with four distinct access 
 - ✅ **Allowed**: File restore operations
 - ✅ **Allowed**: Image export operations  
 - ✅ **Allowed**: Network management
-- ✅ **Allowed**: Device management and power control
-- ✅ **Allowed**: Account/client management
-- ✅ **Allowed**: Backup management and alert resolution
+- ✅ **Allowed**: Device management (updates only)
+- ✅ **Allowed**: Agent management (create, pair, update)
+- ✅ **Allowed**: Backup management
+- ❌ **Blocked**: Device power control (poweroff, reboot)
+- ❌ **Blocked**: Account/client management
+- ❌ **Blocked**: Alert resolution
 - ❌ **Blocked**: Agent deletion
 - ❌ **Blocked**: Snapshot deletion
 
@@ -317,6 +320,7 @@ The server includes a sophisticated permission system with four distinct access 
 - ✅ **Allowed**: All operations except dangerous ones
 - ❌ **Blocked**: Agent deletion (prevents accidental backup disruption)
 - ❌ **Blocked**: Snapshot deletion (prevents data loss)
+- ❌ **Blocked**: Device power control (prevents accidental shutdowns)
 
 ```bash
 ./slide-mcp-server --api-key YOUR_KEY --tools full-safe
@@ -338,14 +342,14 @@ The server includes a sophisticated permission system with four distinct access 
 | Operation Category | `reporting` | `restores` | `full-safe` | `full` |
 |--------------------|-------------|------------|-------------|--------|
 | List/Get/Browse | ✅ | ✅ | ✅ | ✅ |
-| Device Power Control | ❌ | ✅ | ✅ | ✅ |
+| Device Power Control | ❌ | ❌ | ❌ | ✅ |
 | VM Management | ❌ | ✅ | ✅ | ✅ |
 | Network Management | ❌ | ✅ | ✅ | ✅ |
 | File Restores | ❌ | ✅ | ✅ | ✅ |
 | Image Exports | ❌ | ✅ | ✅ | ✅ |
 | Backup Jobs | ❌ | ✅ | ✅ | ✅ |
-| Account Management | ❌ | ✅ | ✅ | ✅ |
-| Alert Resolution | ❌ | ✅ | ✅ | ✅ |
+| Account Management | ❌ | ❌ | ✅ | ✅ |
+| Alert Resolution | ❌ | ❌ | ✅ | ✅ |
 | Agent Creation/Updates | ❌ | ✅ | ✅ | ✅ |
 | Agent Deletion | ❌ | ❌ | ❌ | ✅ |
 | Snapshot Deletion | ❌ | ❌ | ❌ | ✅ |
