@@ -11,6 +11,11 @@ func handleNetworksTool(args map[string]interface{}) (string, error) {
 		return "", fmt.Errorf("operation parameter is required")
 	}
 
+	// Check if operation is allowed in current tools mode
+	if !isOperationAllowed("slide_networks", operation) {
+		return "", fmt.Errorf("operation '%s' not available for slide_networks in '%s' mode", operation, toolsMode)
+	}
+
 	switch operation {
 	// Basic network operations
 	case "list":

@@ -11,6 +11,11 @@ func handleAgentsTool(args map[string]interface{}) (string, error) {
 		return "", fmt.Errorf("operation parameter is required")
 	}
 
+	// Check if operation is allowed in current tools mode
+	if !isOperationAllowed("slide_agents", operation) {
+		return "", fmt.Errorf("operation '%s' not available for slide_agents in '%s' mode", operation, toolsMode)
+	}
+
 	switch operation {
 	case "list":
 		return listAgents(args)

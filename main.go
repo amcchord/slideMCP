@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -42,14 +43,193 @@ type ToolContent struct {
 // Configuration
 const (
 	ServerName = "slide-mcp-server"
-	Version    = "1.2.2"
+	Version    = "1.2.4"
 )
 
+// Tools filtering modes
+const (
+	ToolsReporting = "reporting"
+	ToolsRestores  = "restores"
+	ToolsFullSafe  = "full-safe"
+	ToolsFull      = "full"
+)
+
+var toolsMode string = ToolsFull // Default to full access
+
+// Helper functions for tools filtering
+func isToolAllowed(toolName string) bool {
+	switch toolsMode {
+	case ToolsReporting:
+		// Only allow read-only tools
+		return isReadOnlyTool(toolName)
+	case ToolsRestores:
+		// Allow reporting tools + restore/VM/network management
+		return isReadOnlyTool(toolName) || isRestoreManagementTool(toolName)
+	case ToolsFullSafe:
+		// Allow everything except dangerous operations
+		return !isDangerousTool(toolName)
+	case ToolsFull:
+		// Allow all tools
+		return true
+	default:
+		return false
+	}
+}
+
+func isOperationAllowed(toolName, operation string) bool {
+	switch toolsMode {
+	case ToolsReporting:
+		// Only allow read operations
+		return isReadOperation(operation)
+	case ToolsRestores:
+		// Allow read operations + specific management operations
+		return isReadOperation(operation) || isRestoreManagementOperation(toolName, operation)
+	case ToolsFullSafe:
+		// Allow everything except dangerous operations
+		return !isDangerousOperation(toolName, operation)
+	case ToolsFull:
+		// Allow all operations
+		return true
+	default:
+		return false
+	}
+}
+
+func isReadOnlyTool(toolName string) bool {
+	readOnlyTools := []string{
+		"slide_agents", "slide_backups", "slide_snapshots", "slide_users",
+		"slide_alerts", "slide_accounts", "slide_devices", "slide_networks",
+		"slide_vms", "slide_restores", "list_all_clients_devices_and_agents",
+	}
+	for _, tool := range readOnlyTools {
+		if tool == toolName {
+			return true
+		}
+	}
+	return false
+}
+
+func isRestoreManagementTool(toolName string) bool {
+	restoreTools := []string{
+		"slide_vms", "slide_restores", "slide_networks",
+	}
+	for _, tool := range restoreTools {
+		if tool == toolName {
+			return true
+		}
+	}
+	return false
+}
+
+func isDangerousTool(toolName string) bool {
+	// No tools are completely dangerous in full-safe mode
+	// Danger is at the operation level
+	return false
+}
+
+func isReadOperation(operation string) bool {
+	readOps := []string{
+		"list", "get", "browse",
+		// Restores tool read operations
+		"list_files", "get_file", "browse_file", "list_images", "get_image", "browse_image",
+		// Accounts tool read operations
+		"list_accounts", "get_account", "list_clients", "get_client",
+	}
+	for _, op := range readOps {
+		if op == operation {
+			return true
+		}
+	}
+	return false
+}
+
+func isRestoreManagementOperation(toolName, operation string) bool {
+	switch toolName {
+	case "slide_vms":
+		return operation == "create" || operation == "update" || operation == "delete"
+	case "slide_restores":
+		return operation == "create_file" || operation == "delete_file" || operation == "browse_file" ||
+			operation == "create_image" || operation == "delete_image" || operation == "browse_image"
+	case "slide_networks":
+		return operation == "create" || operation == "update" || operation == "delete" ||
+			operation == "create_ipsec" || operation == "update_ipsec" || operation == "delete_ipsec" ||
+			operation == "create_port_forward" || operation == "update_port_forward" || operation == "delete_port_forward" ||
+			operation == "create_wg_peer" || operation == "update_wg_peer" || operation == "delete_wg_peer"
+	case "slide_accounts":
+		return operation == "update_account" || operation == "create_client" || operation == "update_client" || operation == "delete_client"
+	case "slide_devices":
+		return operation == "update" || operation == "poweroff" || operation == "reboot"
+	case "slide_agents":
+		return operation == "create" || operation == "pair" || operation == "update"
+	case "slide_backups":
+		return operation == "start"
+	case "slide_alerts":
+		return operation == "update"
+	}
+	return false
+}
+
+func isDangerousOperation(toolName, operation string) bool {
+	// Define dangerous operations that are blocked in full-safe mode
+	if toolName == "slide_agents" && operation == "delete" {
+		return true
+	}
+	if toolName == "slide_snapshots" && operation == "delete" {
+		return true
+	}
+	return false
+}
+
 func main() {
-	// Get API key from environment
-	apiKey = os.Getenv("SLIDE_API_KEY")
+	// Parse command line flags
+	var cliAPIKey = flag.String("api-key", "", "API key for Slide service (overrides SLIDE_API_KEY environment variable)")
+	var cliBaseURL = flag.String("base-url", "", "Base URL for Slide API (overrides SLIDE_BASE_URL environment variable)")
+	var cliTools = flag.String("tools", "", "Tools mode: reporting, restores, full-safe, full (overrides SLIDE_TOOLS environment variable)")
+	var showVersion = flag.Bool("version", false, "Show version information and exit")
+	flag.Parse()
+
+	// Handle version flag
+	if *showVersion {
+		fmt.Printf("%s version %s\n", ServerName, Version)
+		os.Exit(0)
+	}
+
+	// Get tools mode from CLI flag or environment variable
+	// CLI flag takes precedence over environment variable
+	if *cliTools != "" {
+		toolsMode = *cliTools
+	} else if envTools := os.Getenv("SLIDE_TOOLS"); envTools != "" {
+		toolsMode = envTools
+	}
+	// If neither is provided, toolsMode keeps its default value (full)
+
+	// Validate tools mode
+	switch toolsMode {
+	case ToolsReporting, ToolsRestores, ToolsFullSafe, ToolsFull:
+		// Valid mode
+	default:
+		log.Fatalf("Error: Invalid tools mode '%s'. Valid options: reporting, restores, full-safe, full", toolsMode)
+	}
+
+	// Get base URL from CLI flag or environment variable
+	// CLI flag takes precedence over environment variable
+	if *cliBaseURL != "" {
+		APIBaseURL = *cliBaseURL
+	} else if envBaseURL := os.Getenv("SLIDE_BASE_URL"); envBaseURL != "" {
+		APIBaseURL = envBaseURL
+	}
+	// If neither is provided, APIBaseURL keeps its default value
+
+	// Get API key from CLI flag or environment variable
+	// CLI flag takes precedence over environment variable
+	if *cliAPIKey != "" {
+		apiKey = *cliAPIKey
+	} else {
+		apiKey = os.Getenv("SLIDE_API_KEY")
+	}
+
 	if apiKey == "" {
-		log.Fatal("Error: SLIDE_API_KEY environment variable not set")
+		log.Fatal("Error: API key not provided. Use --api-key flag or set SLIDE_API_KEY environment variable")
 	}
 
 	log.Println("Slide MCP Server starting...")
@@ -178,6 +358,11 @@ func handleToolCall(request MCPRequest) MCPResponse {
 	name, ok := params["name"].(string)
 	if !ok {
 		return sendError(request.ID, -32602, "Tool name required", nil)
+	}
+
+	// Check if tool is allowed in current tools mode
+	if !isToolAllowed(name) {
+		return sendError(request.ID, -32601, fmt.Sprintf("Tool '%s' not available in '%s' mode", name, toolsMode), nil)
 	}
 
 	args, ok := params["arguments"].(map[string]interface{})
@@ -375,7 +560,7 @@ func sendError(id interface{}, code int, message string, data interface{}) MCPRe
 }
 
 func getAllTools() []ToolInfo {
-	return []ToolInfo{
+	allTools := []ToolInfo{
 		// Meta-tools
 		getAgentsToolInfo(),
 		getBackupsToolInfo(),
@@ -397,6 +582,20 @@ func getAllTools() []ToolInfo {
 			},
 		},
 	}
+
+	// Filter tools based on current tools mode
+	var filteredTools []ToolInfo
+	for _, tool := range allTools {
+		if isToolAllowed(tool.Name) {
+			// For reporting mode, update tool descriptions to indicate read-only access
+			if toolsMode == ToolsReporting {
+				tool.Description = tool.Description + " (Read-only mode: only list/get operations available)"
+			}
+			filteredTools = append(filteredTools, tool)
+		}
+	}
+
+	return filteredTools
 }
 
 func getOldAllTools() []ToolInfo {

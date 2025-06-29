@@ -127,7 +127,53 @@ Consolidating 52+ individual tools into 8 meta-tools organized by API segments t
 - [x] Bump version to 1.2.1
 - [ ] Update README if needed
 
+## CLI Enhancement Tasks
+
+### Phase 6: Command Line Interface Improvements
+- [x] **Task 1**: Add CLI argument parsing for API key
+  - [x] Import `flag` package
+  - [x] Add `--api-key` flag support
+  - [x] Update API key initialization logic to check both CLI and environment
+  - [x] Prioritize CLI flag over environment variable if both provided
+  
+- [x] **Task 2**: Add version flag support
+  - [x] Add `--version` flag
+  - [x] Print version information and exit when flag is used
+  - [x] Update version constant to 1.2.2 for these CLI improvements
+
+- [x] **Task 3**: Add configurable base URL support
+  - [x] Change APIBaseURL from constant to variable in api.go
+  - [x] Add `--base-url` CLI flag support
+  - [x] Add `SLIDE_BASE_URL` environment variable support
+  - [x] Set default to "https://api.slide.tech" for backward compatibility
+  - [x] Prioritize CLI flag over environment variable
+  - [x] Update version constant to 1.2.3 for this enhancement
+
+- [x] **Task 4**: Add tools filtering/permission system
+  - [x] Define tool permission categories (reporting, restores, full-safe, full)
+    - **reporting**: Only read operations (list, get) - no modifications allowed
+    - **restores**: Reporting + VM/restore/network management - no agent/snapshot deletion
+    - **full-safe**: Everything except deleting agents and snapshots
+    - **full**: All operations available (default)
+  - [x] Add `--tools` CLI flag support  
+  - [x] Add `SLIDE_TOOLS` environment variable support
+  - [x] Implement tool filtering in getAllTools()
+  - [x] Implement execution filtering in handleToolCall()
+  - [x] Set default to "full" for backward compatibility
+  - [x] Update version constant to 1.2.4 for this enhancement
+
+### Phase 7: CLI Testing & Documentation
+- [x] Test CLI flag functionality
+- [x] Test version flag
+- [x] Update help text/usage information
+- [x] Document new CLI options
+- [x] Test base URL configuration functionality
+- [x] Test tools filtering functionality
+
 ## Version History
+- **1.2.4**: Added tools filtering system for granular permission control (reporting, restores, full-safe, full)
+- **1.2.3**: Added configurable base URL support via --base-url flag and SLIDE_BASE_URL environment variable
+- **1.2.2**: Added CLI enhancements - API key via command line and --version flag
 - **1.2.1**: Added client name enrichment system - automatically includes `client_name` alongside `client_id` in all API responses for improved LLM reporting readability
 - **1.2.0**: Consolidated 52+ individual tools into 10 organized meta-tools
 
@@ -135,4 +181,106 @@ Consolidating 52+ individual tools into 8 meta-tools organized by API segments t
 - Each meta-tool will accept an `operation` parameter to determine which specific API function to call
 - Maintain backward compatibility during transition
 - Preserve all existing functionality and error handling
-- Use consistent patterns across all meta-tools 
+- Use consistent patterns across all meta-tools
+
+## CLI Usage
+
+### New Command Line Options (v1.2.2+)
+
+**API Key Configuration:**
+```bash
+# Using CLI flag (takes precedence)
+./slide-mcp-server --api-key YOUR_API_KEY
+
+# Using environment variable (backward compatible)
+export SLIDE_API_KEY=YOUR_API_KEY
+./slide-mcp-server
+
+# CLI flag overrides environment variable
+export SLIDE_API_KEY=env_key
+./slide-mcp-server --api-key cli_key  # Uses cli_key
+```
+
+**Base URL Configuration (v1.2.3+):**
+```bash
+# Using CLI flag (takes precedence)
+./slide-mcp-server --api-key YOUR_API_KEY --base-url https://custom.api.example.com
+
+# Using environment variable
+export SLIDE_BASE_URL=https://custom.api.example.com
+./slide-mcp-server --api-key YOUR_API_KEY
+
+# CLI flag overrides environment variable
+export SLIDE_BASE_URL=https://env.api.example.com
+./slide-mcp-server --api-key YOUR_API_KEY --base-url https://cli.api.example.com  # Uses cli.api.example.com
+
+# Default if neither is provided: https://api.slide.tech
+```
+
+**Version Information:**
+```bash
+# Display version and exit
+./slide-mcp-server --version
+# Output: slide-mcp-server version 1.2.4
+```
+
+**Tools Filtering Configuration (v1.2.4+):**
+```bash
+# Full access mode (default)
+./slide-mcp-server --api-key YOUR_API_KEY
+./slide-mcp-server --api-key YOUR_API_KEY --tools full
+
+# Reporting mode - only read operations (list, get, browse)
+./slide-mcp-server --api-key YOUR_API_KEY --tools reporting
+
+# Restores mode - reporting + VM/restore/network management
+./slide-mcp-server --api-key YOUR_API_KEY --tools restores
+
+# Full-safe mode - everything except deleting agents and snapshots
+./slide-mcp-server --api-key YOUR_API_KEY --tools full-safe
+
+# Using environment variable
+export SLIDE_TOOLS=reporting
+./slide-mcp-server --api-key YOUR_API_KEY
+
+# CLI flag overrides environment variable
+export SLIDE_TOOLS=reporting
+./slide-mcp-server --api-key YOUR_API_KEY --tools restores  # Uses restores mode
+```
+
+**Tools Filtering Permission Levels:**
+
+- **reporting**: Read-only access
+  - ✅ All list/get/browse operations
+  - ❌ No create/update/delete operations
+  - ❌ No power control operations
+
+- **restores**: Data recovery and VM management
+  - ✅ All reporting operations
+  - ✅ VM operations (create, update, delete)
+  - ✅ File restore operations (create, delete, browse)
+  - ✅ Image export operations (create, delete, browse)
+  - ✅ Network management (create, update, delete)
+  - ✅ Account/client management
+  - ✅ Device management and power control
+  - ✅ Backup management and alerts
+  - ❌ Agent deletion
+  - ❌ Snapshot deletion
+
+- **full-safe**: Everything except dangerous operations
+  - ✅ All operations from restores mode
+  - ✅ Agent creation, pairing, and updates
+  - ❌ Agent deletion
+  - ❌ Snapshot deletion
+
+- **full**: Complete access (default)
+  - ✅ All operations available
+  - ✅ Agent deletion
+  - ✅ Snapshot deletion
+
+**Error Handling:**
+- If no API key is provided via CLI or environment, the server will exit with an error message
+- The error message explains both methods for providing the API key
+- Base URL is optional - defaults to https://api.slide.tech if not specified
+- Tools mode is optional - defaults to "full" if not specified
+- Invalid tools mode will cause the server to exit with an error listing valid options 

@@ -11,6 +11,11 @@ func handleBackupsTool(args map[string]interface{}) (string, error) {
 		return "", fmt.Errorf("operation parameter is required")
 	}
 
+	// Check if operation is allowed in current tools mode
+	if !isOperationAllowed("slide_backups", operation) {
+		return "", fmt.Errorf("operation '%s' not available for slide_backups in '%s' mode", operation, toolsMode)
+	}
+
 	switch operation {
 	case "list":
 		return listBackups(args)

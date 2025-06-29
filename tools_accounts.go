@@ -11,6 +11,11 @@ func handleAccountsTool(args map[string]interface{}) (string, error) {
 		return "", fmt.Errorf("operation parameter is required")
 	}
 
+	// Check if operation is allowed in current tools mode
+	if !isOperationAllowed("slide_accounts", operation) {
+		return "", fmt.Errorf("operation '%s' not available for slide_accounts in '%s' mode", operation, toolsMode)
+	}
+
 	switch operation {
 	// Account operations
 	case "list_accounts":
