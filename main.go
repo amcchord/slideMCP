@@ -188,6 +188,7 @@ func main() {
 	var cliBaseURL = flag.String("base-url", "", "Base URL for Slide API (overrides SLIDE_BASE_URL environment variable)")
 	var cliTools = flag.String("tools", "", "Tools mode: reporting, restores, full-safe, full (overrides SLIDE_TOOLS environment variable)")
 	var showVersion = flag.Bool("version", false, "Show version information and exit")
+	var exitAfterFirst = flag.Bool("exit-after-first", false, "Exit after processing the first request instead of running continuously")
 	flag.Parse()
 
 	// Handle version flag
@@ -237,11 +238,12 @@ func main() {
 	log.Println("Slide MCP Server starting...")
 
 	// Start MCP server
-	startMCPServer()
+	startMCPServer(*exitAfterFirst)
 }
 
-func startMCPServer() {
+func startMCPServer(exitAfterFirst bool) {
 	scanner := bufio.NewScanner(os.Stdin)
+	requestCount := 0
 
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -288,6 +290,13 @@ func startMCPServer() {
 		}
 
 		fmt.Println(string(responseJSON))
+
+		// Increment request count and check if we should exit
+		requestCount++
+		if exitAfterFirst && requestCount >= 1 {
+			log.Println("Exiting after processing first request as requested")
+			break
+		}
 	}
 
 	if err := scanner.Err(); err != nil {
