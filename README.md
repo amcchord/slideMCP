@@ -1,6 +1,6 @@
 # Slide MCP Server
 
-An MCP server implementation that integrates with the Slide API, providing comprehensive device and infrastructure management capabilities.
+An MCP server implementation that integrates with the Slide API, providing comprehensive device and infrastructure management capabilities through a streamlined meta-tools architecture.
 
 ## 🚀 Go Binary Implementation ⚡
 - **Single binary**: No dependencies, just download and run
@@ -8,57 +8,117 @@ An MCP server implementation that integrates with the Slide API, providing compr
 - **Low memory usage**: 10-20MB memory footprint
 - **Cross-platform**: Linux, macOS, Windows binaries
 - **Zero Installation Hassle**: Simple download and configure
+- **Streamlined Interface**: 10 meta-tools instead of 52+ individual tools for better LLM interaction
 
 ---
 
 For quick setup instructions with Claude Desktop, see the installation section below.
 
-## Features
+## 🎯 Major Architecture Improvement
 
-- **Device Management**: List, update, and control devices with power operations
-- **Agent Management**: Create, pair, and manage backup agents
-- **Backup & Snapshot Management**: Initiate backups and manage snapshots
-- **File Restore**: Browse and restore files from snapshots
-- **Image Export**: Export snapshots as disk images (VHD, VHDX, Raw)
-- **Virtual Machines**: Create and manage VMs from snapshots with browser-based console access
-- **Network Management**: Create and manage isolated networks with VPN connections
-- **User & Alert Management**: Monitor system alerts and manage users
-- **Account & Client Management**: Organize resources by client accounts
-- **Flexible Filtering & Pagination**: Control results with advanced filtering options
+**Meta-Tools Design**: This MCP server uses an innovative meta-tools architecture that consolidates 52+ individual API operations into just **10 focused meta-tools**. This design significantly reduces complexity for LLMs while maintaining full functionality.
 
-## Available Tools
+Each meta-tool accepts an `operation` parameter that specifies the action to perform, along with the relevant parameters for that operation.
 
-### Core Management
-- **Devices**: `list`, `get`, `update`, `poweroff`, `reboot`
-- **Agents**: `list`, `get`, `create`, `pair`, `update`
-- **Backups**: `list`, `get`, `start`
-- **Snapshots**: `list`, `get`
+### Example Usage Pattern
+```json
+{
+  "name": "slide_devices",
+  "arguments": {
+    "operation": "list",
+    "limit": 10,
+    "client_id": "client-123"
+  }
+}
+```
 
-### Data Recovery & Export
-- **File Restores**: `list`, `get`, `create`, `delete`, `browse`
-- **Image Exports**: `list`, `get`, `create`, `delete`, `browse`
-  - Supports VHD, VHDX (dynamic/fixed), and Raw formats
-  - Optional boot modifications (e.g., passwordless admin user)
+## Available Meta-Tools
 
-### Virtual Machines
-- **Virtual Machines**: `list`, `get`, `create`, `update`, `delete`
-  - Browser-based VNC console access
-  - Configurable CPU (1-16 cores) and RAM (1-12GB)
-  - Multiple network modes and disk bus types
+### 🔧 Core Infrastructure
+1. **`slide_devices`** - Physical device management
+   - Operations: `list`, `get`, `update`, `poweroff`, `reboot`
+   - Power control, hostname/display name updates, client assignment
 
-### Network Infrastructure
-- **Networks**: `list`, `get`, `create`, `update`, `delete`
-- **IPSec Connections**: `create`, `update`, `delete`
-- **Port Forwarding**: `create`, `update`, `delete`
-- **WireGuard Peers**: `create`, `update`, `delete`
+2. **`slide_agents`** - Backup agent management  
+   - Operations: `list`, `get`, `create`, `pair`, `update`
+   - Agent creation, pairing with devices, display name management
 
-### Administration
-- **Users**: `list`, `get`
-- **Alerts**: `list`, `get`, `update` (resolve)
-- **Accounts**: `list`, `get`, `update` (alert emails)
-- **Clients**: `list`, `get`, `create`, `update`, `delete`
+3. **`slide_networks`** - Network infrastructure
+   - Operations: `list`, `get`, `create`, `update`, `delete`
+   - Network creation with DHCP, VPN support, client isolation
+   - **IPSec**: `create_ipsec`, `update_ipsec`, `delete_ipsec`
+   - **Port Forwarding**: `create_port_forward`, `update_port_forward`, `delete_port_forward`  
+   - **WireGuard VPN**: `create_wg_peer`, `update_wg_peer`, `delete_wg_peer`
 
-All tools support pagination (`limit`, `offset`) and sorting options where applicable.
+### 💾 Data Management
+4. **`slide_backups`** - Backup operations
+   - Operations: `list`, `get`, `start`
+   - Initiate and monitor backup jobs
+
+5. **`slide_snapshots`** - Snapshot management
+   - Operations: `list`, `get`
+   - Browse and access point-in-time snapshots with advanced filtering
+
+6. **`slide_restores`** - File & image restoration
+   - **File Restores**: `list_files`, `get_file`, `create_file`, `delete_file`, `browse_file`
+   - **Image Exports**: `list_images`, `get_image`, `create_image`, `delete_image`, `browse_image`
+   - Support for VHD, VHDX (dynamic/fixed), and Raw disk formats
+   - Optional boot modifications (passwordless admin user)
+
+### ☁️ Virtual Infrastructure  
+7. **`slide_vms`** - Virtual machine management
+   - Operations: `list`, `get`, `create`, `update`, `delete`
+   - Browser-based VNC console access
+   - Configurable CPU (1-16 cores) and RAM (1-12GB)
+   - Multiple network modes and disk bus types
+
+### 👥 Administration
+8. **`slide_users`** - User management
+   - Operations: `list`, `get`
+   - User account information and permissions
+
+9. **`slide_alerts`** - Alert monitoring
+   - Operations: `list`, `get`, `update` (resolve)
+   - System alert management and resolution
+
+10. **`slide_accounts`** - Account & client organization
+    - **Accounts**: `list_accounts`, `get_account`, `update_account` (alert emails)
+    - **Clients**: `list_clients`, `get_client`, `create_client`, `update_client`, `delete_client`
+    - Organize resources by client, manage alert notifications
+
+### 🔍 Special Tools
+- **`list_all_clients_devices_and_agents`** - Hierarchical overview
+  - Get complete view of all clients, their devices, and agents in one call
+  - Perfect for answering questions about infrastructure scale and organization
+
+## Key Features
+
+### 🔐 Infrastructure Management
+- **Device Control**: Remote power operations, hostname management, client assignment
+- **Agent Deployment**: Automated pairing, display name management  
+- **Network Isolation**: Client-specific networks with VPN access
+- **Advanced Networking**: IPSec tunnels, port forwarding, WireGuard peers
+
+### 💽 Data Protection & Recovery
+- **Automated Backups**: Agent-based backup initiation and monitoring
+- **Point-in-Time Recovery**: Snapshot browsing with location filtering
+- **Flexible Restores**: File-level and full disk image exports
+- **Multiple Formats**: VHD, VHDX (dynamic/fixed), Raw disk images
+- **Boot Modifications**: Optional passwordless admin account creation
+
+### ☁️ Virtualization
+- **VM Creation**: Create VMs from any snapshot
+- **Resource Control**: Configurable CPU/RAM allocation  
+- **Network Integration**: Connect VMs to isolated networks
+- **Console Access**: Browser-based VNC for direct VM interaction
+
+### 📊 Monitoring & Organization
+- **Alert Management**: Centralized alert monitoring and resolution
+- **Client Organization**: Group resources by client for better management
+- **User Management**: Account access and permissions
+- **Comprehensive Filtering**: Advanced pagination and sorting across all resources
+
+All meta-tools support pagination (`limit`, `offset`) and sorting options where applicable.
 
 ## 📦 Installation & Configuration
 
@@ -94,30 +154,36 @@ The GUI installer will:
 
 ### Manual Installation
 
-#### Download Pre-built Binary (v1.14)
+#### Download Pre-built Binary (v1.17.3)
 ```bash
 # For macOS ARM64 (Apple Silicon)
-curl -L -o slide-mcp-server-v1.14-darwin-arm64.tar.gz https://github.com/austinmcchord/slide-mcp-server/releases/latest/download/slide-mcp-server-v1.14-darwin-arm64.tar.gz
-tar -xzf slide-mcp-server-v1.14-darwin-arm64.tar.gz
-mv slide-mcp-server-darwin-arm64 slide-mcp-server
-chmod +x slide-mcp-server
+curl -L -o slide-mcp-server-v1.17.3-macos-arm64.tar.gz https://github.com/austinmcchord/slide-mcp-server/releases/latest/download/slide-mcp-server-v1.17.3-macos-arm64.tar.gz
+tar -xzf slide-mcp-server-v1.17.3-macos-arm64.tar.gz
+chmod +x slide-mcp-server-v1.17.3-macos-arm64
+mv slide-mcp-server-v1.17.3-macos-arm64 slide-mcp-server
 
 # For macOS AMD64 
-curl -L -o slide-mcp-server-v1.14-darwin-amd64.tar.gz https://github.com/austinmcchord/slide-mcp-server/releases/latest/download/slide-mcp-server-v1.14-darwin-amd64.tar.gz
-tar -xzf slide-mcp-server-v1.14-darwin-amd64.tar.gz
-mv slide-mcp-server-darwin-amd64 slide-mcp-server
-chmod +x slide-mcp-server
+curl -L -o slide-mcp-server-v1.17.3-macos-x64.tar.gz https://github.com/austinmcchord/slide-mcp-server/releases/latest/download/slide-mcp-server-v1.17.3-macos-x64.tar.gz
+tar -xzf slide-mcp-server-v1.17.3-macos-x64.tar.gz
+chmod +x slide-mcp-server-v1.17.3-macos-x64
+mv slide-mcp-server-v1.17.3-macos-x64 slide-mcp-server
 
 # For Linux AMD64
-curl -L -o slide-mcp-server-v1.14-linux-amd64.tar.gz https://github.com/austinmcchord/slide-mcp-server/releases/latest/download/slide-mcp-server-v1.14-linux-amd64.tar.gz
-tar -xzf slide-mcp-server-v1.14-linux-amd64.tar.gz
-mv slide-mcp-server-linux-amd64 slide-mcp-server
-chmod +x slide-mcp-server
+curl -L -o slide-mcp-server-v1.17.3-linux-x64.tar.gz https://github.com/austinmcchord/slide-mcp-server/releases/latest/download/slide-mcp-server-v1.17.3-linux-x64.tar.gz
+tar -xzf slide-mcp-server-v1.17.3-linux-x64.tar.gz
+chmod +x slide-mcp-server-v1.17.3-linux-x64
+mv slide-mcp-server-v1.17.3-linux-x64 slide-mcp-server
+
+# For Linux ARM64
+curl -L -o slide-mcp-server-v1.17.3-linux-arm64.tar.gz https://github.com/austinmcchord/slide-mcp-server/releases/latest/download/slide-mcp-server-v1.17.3-linux-arm64.tar.gz
+tar -xzf slide-mcp-server-v1.17.3-linux-arm64.tar.gz
+chmod +x slide-mcp-server-v1.17.3-linux-arm64
+mv slide-mcp-server-v1.17.3-linux-arm64 slide-mcp-server
 
 # For Windows AMD64
-curl -L -o slide-mcp-server-v1.14-windows-amd64.zip https://github.com/austinmcchord/slide-mcp-server/releases/latest/download/slide-mcp-server-v1.14-windows-amd64.zip
-unzip slide-mcp-server-v1.14-windows-amd64.zip
-mv slide-mcp-server-windows-amd64.exe slide-mcp-server.exe
+curl -L -o slide-mcp-server-v1.17.3-windows-x64.zip https://github.com/austinmcchord/slide-mcp-server/releases/latest/download/slide-mcp-server-v1.17.3-windows-x64.zip
+unzip slide-mcp-server-v1.17.3-windows-x64.zip
+mv slide-mcp-server-v1.17.3-windows-x64.exe slide-mcp-server.exe
 ```
 
 #### Build from Source
@@ -200,6 +266,80 @@ Optionally, you can add it to a file called `.vscode/mcp.json` in your workspace
 }
 ```
 
+## 💡 Usage Examples
+
+### List All Devices
+```json
+{
+  "name": "slide_devices",
+  "arguments": {
+    "operation": "list",
+    "limit": 20,
+    "client_id": "client-123"
+  }
+}
+```
+
+### Create a Network with VPN
+```json
+{
+  "name": "slide_networks",
+  "arguments": {
+    "operation": "create",
+    "name": "Development Network",
+    "type": "standard",
+    "router_prefix": "192.168.100.1/24",
+    "dhcp": true,
+    "dhcp_range_start": "192.168.100.10",
+    "dhcp_range_end": "192.168.100.200",
+    "wg": true,
+    "wg_prefix": "10.100.0.0/24",
+    "client_id": "client-123"
+  }
+}
+```
+
+### Create VM from Snapshot
+```json
+{
+  "name": "slide_vms",
+  "arguments": {
+    "operation": "create",
+    "snapshot_id": "snapshot-456",
+    "device_id": "device-789",
+    "cpu_count": 4,
+    "memory_in_mb": 8192,
+    "network_type": "network-id",
+    "network_source": "network-123"
+  }
+}
+```
+
+### Start Backup Job
+```json
+{
+  "name": "slide_backups",
+  "arguments": {
+    "operation": "start",
+    "agent_id": "agent-456"
+  }
+}
+```
+
+### Export Snapshot as VHD Image
+```json
+{
+  "name": "slide_restores",
+  "arguments": {
+    "operation": "create_image",
+    "snapshot_id": "snapshot-789",
+    "device_id": "device-123",
+    "image_type": "vhd-dynamic",
+    "boot_remove_passwords": true
+  }
+}
+```
+
 ## Build
 
 ```bash
@@ -215,6 +355,20 @@ make release
 # View available commands
 make help
 ```
+
+## Architecture Benefits
+
+### For LLMs
+- **Reduced Complexity**: 10 meta-tools vs 52+ individual tools
+- **Logical Grouping**: Related operations organized together
+- **Consistent Interface**: All meta-tools follow the same operation pattern
+- **Better Context**: Less tool switching, more focused conversations
+
+### For Developers  
+- **Maintainable**: Each meta-tool in its own file
+- **Extensible**: Easy to add new operations to existing categories
+- **Backward Compatible**: All original functionality preserved
+- **Schema Validation**: Conditional parameter validation per operation
 
 ## License
 

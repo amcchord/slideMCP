@@ -41,6 +41,13 @@ Installer/setup-signing.sh
 *.p12
 *.mobileprovision
 
+# Release credentials and secrets
+**/release-credentials.*
+**/apple-credentials.*
+**/release-env.sh
+**/*credentials*
+**/*secrets*
+
 # Build and release artifacts
 Installer/build/
 Installer/releases/

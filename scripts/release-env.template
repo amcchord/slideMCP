@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# Template for setting up release environment variables
+# Copy this file to release-env.sh and fill in your actual credentials
+# DO NOT commit the actual release-env.sh file to version control!
+
+# Apple ID for notarization (your Apple Developer account email)
+export APPLE_ID='your-apple-id@example.com'
+
+# App-specific password for notarization
+# Generate this at https://appleid.apple.com/account/manage > Sign-In and Security > App-Specific Passwords
+export APP_SPECIFIC_PASSWORD='xxxx-xxxx-xxxx-xxxx'
+
+# Optional: Set a custom GitHub repo if different from origin
+# export GITHUB_REPO='your-username/your-repo'
+
+echo "Environment variables set for release script"
+echo "Apple ID: $APPLE_ID"
+echo "App-specific password: [HIDDEN]"
+
+# Usage:
+# 1. Copy this file: cp scripts/release-env.template scripts/release-env.sh
+# 2. Edit release-env.sh with your actual credentials
+# 3. Source it: source scripts/release-env.sh
+# 4. Run the release: ./scripts/automated-release.sh 
