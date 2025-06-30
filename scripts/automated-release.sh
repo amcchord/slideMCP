@@ -264,12 +264,14 @@ create_release_packages() {
     
     if [ -f "$BINARY_NAME-darwin-amd64" ]; then
         tar -czf "$BINARY_NAME-$NEW_VERSION-macos-x64.tar.gz" "$BINARY_NAME-darwin-amd64"
-        log_success "Created macOS x64 package"
+        tar -czf "$BINARY_NAME-$NEW_VERSION-darwin-amd64.tar.gz" "$BINARY_NAME-darwin-amd64"
+        log_success "Created macOS x64 packages (macos and darwin)"
     fi
     
     if [ -f "$BINARY_NAME-darwin-arm64" ]; then
         tar -czf "$BINARY_NAME-$NEW_VERSION-macos-arm64.tar.gz" "$BINARY_NAME-darwin-arm64"
-        log_success "Created macOS ARM64 package"
+        tar -czf "$BINARY_NAME-$NEW_VERSION-darwin-arm64.tar.gz" "$BINARY_NAME-darwin-arm64"
+        log_success "Created macOS ARM64 packages (macos and darwin)"
     fi
     
     # Create .zip for Windows
@@ -338,9 +340,11 @@ Download the appropriate binary for your platform:
 
 - **Linux x64**: slide-mcp-server-$NEW_VERSION-linux-x64.tar.gz
 - **Linux ARM64**: slide-mcp-server-$NEW_VERSION-linux-arm64.tar.gz  
-- **macOS x64**: slide-mcp-server-$NEW_VERSION-macos-x64.tar.gz
-- **macOS ARM64**: slide-mcp-server-$NEW_VERSION-macos-arm64.tar.gz
+- **macOS x64**: slide-mcp-server-$NEW_VERSION-macos-x64.tar.gz (or darwin-amd64.tar.gz)
+- **macOS ARM64**: slide-mcp-server-$NEW_VERSION-macos-arm64.tar.gz (or darwin-arm64.tar.gz)
 - **Windows x64**: slide-mcp-server-$NEW_VERSION-windows-x64.zip
+
+Note: Both macos and darwin named packages are provided for macOS. They contain identical binaries - use whichever naming convention you prefer.
 
 ## Verification
 
@@ -371,7 +375,7 @@ create_release_directory() {
     local release_dir="$PROJECT_DIR/release/$NEW_VERSION"
     mkdir -p "$release_dir"
     
-    # Copy release artifacts
+    # Copy release artifacts (all .tar.gz and .zip files)
     cp "$BUILD_DIR"/*.tar.gz "$release_dir/" 2>/dev/null || true
     cp "$BUILD_DIR"/*.zip "$release_dir/" 2>/dev/null || true
     cp "$BUILD_DIR/checksums.sha256" "$release_dir/" 2>/dev/null || true
@@ -418,6 +422,14 @@ create_github_release() {
     
     if [ -f "$BUILD_DIR/$BINARY_NAME-$NEW_VERSION-macos-arm64.tar.gz" ]; then
         assets+=("$BUILD_DIR/$BINARY_NAME-$NEW_VERSION-macos-arm64.tar.gz")
+    fi
+    
+    if [ -f "$BUILD_DIR/$BINARY_NAME-$NEW_VERSION-darwin-amd64.tar.gz" ]; then
+        assets+=("$BUILD_DIR/$BINARY_NAME-$NEW_VERSION-darwin-amd64.tar.gz")
+    fi
+    
+    if [ -f "$BUILD_DIR/$BINARY_NAME-$NEW_VERSION-darwin-arm64.tar.gz" ]; then
+        assets+=("$BUILD_DIR/$BINARY_NAME-$NEW_VERSION-darwin-arm64.tar.gz")
     fi
     
     if [ -f "$BUILD_DIR/$BINARY_NAME-$NEW_VERSION-windows-x64.zip" ]; then
