@@ -11,6 +11,14 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
+# Run build-and-sign first
+if ! ./build-and-sign.sh; then
+    echo "Error: build-and-sign.sh failed"
+    exit 1
+fi
+
+
+
 # Get the darwin-arm64 version from build directory
 if [ ! -f "../build/slide-mcp-server-darwin-arm64" ]; then
     echo "Error: ../build/slide-mcp-server-darwin-arm64 not found"

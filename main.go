@@ -99,7 +99,7 @@ func isReadOnlyTool(toolName string) bool {
 	readOnlyTools := []string{
 		"slide_agents", "slide_backups", "slide_snapshots", "slide_users",
 		"slide_alerts", "slide_accounts", "slide_devices", "slide_networks",
-		"slide_vms", "slide_restores", "list_all_clients_devices_and_agents",
+		"slide_vms", "slide_restores", "slide_reports", "list_all_clients_devices_and_agents",
 	}
 	for _, tool := range readOnlyTools {
 		if tool == toolName {
@@ -134,6 +134,8 @@ func isReadOperation(operation string) bool {
 		"list_files", "get_file", "browse_file", "list_images", "get_image", "browse_image",
 		// Accounts tool read operations
 		"list_accounts", "get_account", "list_clients", "get_client",
+		// Reports tool read operations
+		"get_runbook_template",
 	}
 	for _, op := range readOps {
 		if op == operation {
@@ -525,6 +527,20 @@ func handleToolCall(request MCPRequest) MCPResponse {
 			}
 		}
 
+	case "slide_reports":
+		data, err := handleReportsTool(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+
 	// Special tools (keep as-is)
 	case "list_all_clients_devices_and_agents":
 		data, err := listAllClientsDevicesAndAgents(args)
@@ -583,6 +599,7 @@ func getAllTools() []ToolInfo {
 		getAccountsToolInfo(),
 		getDevicesToolInfo(),
 		getVMsToolInfo(),
+		getReportsToolInfo(),
 		// Special tools
 		{
 			Name:        "list_all_clients_devices_and_agents",
