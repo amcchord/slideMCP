@@ -99,7 +99,7 @@ func isReadOnlyTool(toolName string) bool {
 	readOnlyTools := []string{
 		"slide_agents", "slide_backups", "slide_snapshots", "slide_users",
 		"slide_alerts", "slide_accounts", "slide_devices", "slide_networks",
-		"slide_vms", "slide_restores", "slide_reports", "list_all_clients_devices_and_agents",
+		"slide_vms", "slide_restores", "slide_presentation", "list_all_clients_devices_and_agents",
 	}
 	for _, tool := range readOnlyTools {
 		if tool == toolName {
@@ -527,8 +527,8 @@ func handleToolCall(request MCPRequest) MCPResponse {
 			}
 		}
 
-	case "slide_reports":
-		data, err := handleReportsTool(args)
+	case "slide_presentation":
+		data, err := handlePresentationTool(args)
 		if err != nil {
 			result = ToolResult{
 				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
@@ -599,7 +599,7 @@ func getAllTools() []ToolInfo {
 		getAccountsToolInfo(),
 		getDevicesToolInfo(),
 		getVMsToolInfo(),
-		getReportsToolInfo(),
+		getPresentationToolInfo(),
 		// Special tools
 		{
 			Name:        "list_all_clients_devices_and_agents",
