@@ -164,7 +164,7 @@ Consolidating 52+ individual tools into 8 meta-tools organized by API segments t
 
 - [x] **Task 5**: Change default tools mode to full-safe for improved security
   - [x] Update default from ToolsFull to ToolsFullSafe
-  - [x] Update version to 1.2.5
+  - [x] Update version to 2.0.1
   - [x] Update all documentation to reflect new default
   - [x] Add support for list_deleted operation in permission system
 
@@ -177,6 +177,7 @@ Consolidating 52+ individual tools into 8 meta-tools organized by API segments t
 - [x] Test tools filtering functionality
 
 ## Version History
+- **2.0.1**: Added granular tool disabling feature - disable specific tools via --disabled-tools flag or SLIDE_DISABLED_TOOLS environment variable for fine-grained access control
 - **1.2.5**: Changed default tools mode from "full" to "full-safe" for improved security
 - **1.2.4**: Added tools filtering system for granular permission control (reporting, restores, full-safe, full)
 - **1.2.3**: Added configurable base URL support via --base-url flag and SLIDE_BASE_URL environment variable
@@ -228,7 +229,7 @@ export SLIDE_BASE_URL=https://env.api.example.com
 ```bash
 # Display version and exit
 ./slide-mcp-server --version
-# Output: slide-mcp-server version 1.2.5
+# Output: slide-mcp-server version 2.0.1
 ```
 
 **Tools Filtering Configuration (v1.2.4+):**

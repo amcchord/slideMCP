@@ -86,6 +86,15 @@ Each meta-tool accepts an `operation` parameter that specifies the action to per
     - **Clients**: `list_clients`, `get_client`, `create_client`, `update_client`, `delete_client`
     - Organize resources by client, manage alert notifications
 
+### 📊 Data Presentation & Reporting
+11. **`slide_presentation`** - Professional data formatting and documentation
+    - **Operations**: `get_card`, `get_runbook_template`, `get_daily_report_template`, `get_monthly_report_template`
+    - **Card Types**: Individual item cards (agent, client, device, snapshot) and table cards (agents_table, clients_table, etc.)
+    - **Report Templates**: Runbook procedures, daily activity summaries, monthly analysis reports
+    - **Formats**: HTML, Markdown, HAML support for multiple output needs
+    - Perfect for status displays, dashboards, documentation, and professional reporting
+**⚠️ IMPORTANT**: If you are building your own presentation logic or custom formatting, you may want to disable the `slide_presentation` tool to avoid conflicts with your custom implementation. To disable just the `slide_presentation` tool, add it to the `DISABLED_TOOLS` environment variable or in the --disabled-tools part of the CLI
+
 ### 🔍 Special Tools
 - **`list_all_clients_devices_and_agents`** - Hierarchical overview
   - Get complete view of all clients, their devices, and agents in one call
@@ -118,7 +127,84 @@ Each meta-tool accepts an `operation` parameter that specifies the action to per
 - **User Management**: Account access and permissions
 - **Comprehensive Filtering**: Advanced pagination and sorting across all resources
 
+### 📋 Professional Data Presentation
+- **Smart Cards**: Individual and table-based cards for agents, clients, devices, and snapshots
+- **Report Templates**: Runbook procedures, daily summaries, and monthly analysis reports
+- **Multiple Formats**: HTML, Markdown, and HAML output for different use cases
+- **Dashboard Ready**: Pre-formatted cards perfect for status displays and monitoring
+- **Documentation Support**: Professional templates for operational procedures and troubleshooting
+
 All meta-tools support pagination (`limit`, `offset`) and sorting options where applicable.
+
+## 📊 Data Presentation Tool Guide
+
+The **`slide_presentation`** tool is your primary resource for professional data formatting and documentation. It provides pre-built templates and smart cards that transform raw data into polished, readable formats.
+
+### 🎯 When to Use the Presentation Tool
+
+**Always consider this tool first** when you need to:
+- Display system status or monitoring data to users
+- Show lists of items (agents, clients, devices, snapshots)
+- Present individual item details in a structured format
+- Create reports or summaries
+- Generate documentation or procedures
+- Format any data that could benefit from professional presentation
+
+### 📋 Report Templates
+
+Perfect for comprehensive documentation and analysis:
+
+#### **Runbook Templates** (`get_runbook_template`)
+- **Purpose**: Operational procedures, troubleshooting guides, step-by-step instructions
+- **Use Cases**: Incident response, maintenance procedures, troubleshooting guides
+- **Formats**: HTML, Markdown, HAML
+
+#### **Daily Report Templates** (`get_daily_report_template`)
+- **Purpose**: Activity summaries, status updates, end-of-day reports
+- **Use Cases**: Daily operational summaries, status briefings, activity tracking
+- **Formats**: HTML (default), Markdown, HAML
+
+#### **Monthly Report Templates** (`get_monthly_report_template`)
+- **Purpose**: Comprehensive analysis, trends, monthly summaries
+- **Use Cases**: Executive summaries, trend analysis, performance reviews
+- **Formats**: HTML (default), Markdown, HAML
+
+### 📊 Smart Cards
+
+Perfect for status displays, dashboards, and data visualization:
+
+#### **Single Item Cards** - Detailed Views
+- **`agent`**: Individual backup agent with hostname, OS, status, recent backups
+- **`client`**: Individual client with name, agent count, device assignments, stats
+- **`device`**: Individual backup device with capacity, assignments, storage info
+- **`snapshot`**: Individual backup snapshot with date, size, status, retention
+
+#### **Table Cards** - Overview Dashboards
+- **`agents_table`**: Multiple agents comparison with status overview and assignments
+- **`clients_table`**: Multiple clients summary with agent counts and status
+- **`devices_table`**: Multiple devices overview with capacity and utilization
+- **`snapshots_table`**: Chronological backup history with sizes and status
+
+### 💡 Decision Guide
+
+Choose the right presentation format based on your needs:
+
+| Need | Recommendation | Example |
+|------|----------------|---------|
+| Show ONE item in detail | Single item cards | `agent`, `client`, `device`, `snapshot` |
+| Show MULTIPLE items overview | Table cards | `agents_table`, `clients_table`, `devices_table` |
+| Create documentation | Report templates | `get_runbook_template` |
+| Generate status reports | Daily/Monthly templates | `get_daily_report_template` |
+| Dashboard display | Table cards | `agents_table`, `devices_table` |
+| Troubleshooting guide | Runbook template | `get_runbook_template` |
+
+### 🚀 Best Practices
+
+1. **Start with Presentation**: Always consider using the presentation tool before displaying raw data
+2. **Choose the Right Card**: Use single cards for details, table cards for overviews
+3. **Format for Purpose**: Use HTML for web displays, Markdown for documentation
+4. **Professional Output**: Let the tool handle formatting instead of manual formatting
+5. **Consistent Experience**: Use cards for a consistent look and feel across all data displays
 
 ## 📦 Installation & Configuration
 
@@ -154,36 +240,36 @@ The GUI installer will:
 
 ### Manual Installation
 
-#### Download Pre-built Binary (v1.17.3)
+#### Download Pre-built Binary (v2.0.1)
 ```bash
 # For macOS ARM64 (Apple Silicon)
-curl -L -o slide-mcp-server-v1.17.3-macos-arm64.tar.gz https://github.com/austinmcchord/slide-mcp-server/releases/latest/download/slide-mcp-server-v1.17.3-macos-arm64.tar.gz
-tar -xzf slide-mcp-server-v1.17.3-macos-arm64.tar.gz
-chmod +x slide-mcp-server-v1.17.3-macos-arm64
-mv slide-mcp-server-v1.17.3-macos-arm64 slide-mcp-server
+curl -L -o slide-mcp-server-v2.0.1-macos-arm64.tar.gz https://github.com/austinmcchord/slide-mcp-server/releases/latest/download/slide-mcp-server-v2.0.1-macos-arm64.tar.gz
+tar -xzf slide-mcp-server-v2.0.1-macos-arm64.tar.gz
+chmod +x slide-mcp-server-v2.0.1-macos-arm64
+mv slide-mcp-server-v2.0.1-macos-arm64 slide-mcp-server
 
 # For macOS AMD64 
-curl -L -o slide-mcp-server-v1.17.3-macos-x64.tar.gz https://github.com/austinmcchord/slide-mcp-server/releases/latest/download/slide-mcp-server-v1.17.3-macos-x64.tar.gz
-tar -xzf slide-mcp-server-v1.17.3-macos-x64.tar.gz
-chmod +x slide-mcp-server-v1.17.3-macos-x64
-mv slide-mcp-server-v1.17.3-macos-x64 slide-mcp-server
+curl -L -o slide-mcp-server-v2.0.1-macos-x64.tar.gz https://github.com/austinmcchord/slide-mcp-server/releases/latest/download/slide-mcp-server-v2.0.1-macos-x64.tar.gz
+tar -xzf slide-mcp-server-v2.0.1-macos-x64.tar.gz
+chmod +x slide-mcp-server-v2.0.1-macos-x64
+mv slide-mcp-server-v2.0.1-macos-x64 slide-mcp-server
 
 # For Linux AMD64
-curl -L -o slide-mcp-server-v1.17.3-linux-x64.tar.gz https://github.com/austinmcchord/slide-mcp-server/releases/latest/download/slide-mcp-server-v1.17.3-linux-x64.tar.gz
-tar -xzf slide-mcp-server-v1.17.3-linux-x64.tar.gz
-chmod +x slide-mcp-server-v1.17.3-linux-x64
-mv slide-mcp-server-v1.17.3-linux-x64 slide-mcp-server
+curl -L -o slide-mcp-server-v2.0.1-linux-x64.tar.gz https://github.com/austinmcchord/slide-mcp-server/releases/latest/download/slide-mcp-server-v2.0.1-linux-x64.tar.gz
+tar -xzf slide-mcp-server-v2.0.1-linux-x64.tar.gz
+chmod +x slide-mcp-server-v2.0.1-linux-x64
+mv slide-mcp-server-v2.0.1-linux-x64 slide-mcp-server
 
 # For Linux ARM64
-curl -L -o slide-mcp-server-v1.17.3-linux-arm64.tar.gz https://github.com/austinmcchord/slide-mcp-server/releases/latest/download/slide-mcp-server-v1.17.3-linux-arm64.tar.gz
-tar -xzf slide-mcp-server-v1.17.3-linux-arm64.tar.gz
-chmod +x slide-mcp-server-v1.17.3-linux-arm64
-mv slide-mcp-server-v1.17.3-linux-arm64 slide-mcp-server
+curl -L -o slide-mcp-server-v2.0.1-linux-arm64.tar.gz https://github.com/austinmcchord/slide-mcp-server/releases/latest/download/slide-mcp-server-v2.0.1-linux-arm64.tar.gz
+tar -xzf slide-mcp-server-v2.0.1-linux-arm64.tar.gz
+chmod +x slide-mcp-server-v2.0.1-linux-arm64
+mv slide-mcp-server-v2.0.1-linux-arm64 slide-mcp-server
 
 # For Windows AMD64
-curl -L -o slide-mcp-server-v1.17.3-windows-x64.zip https://github.com/austinmcchord/slide-mcp-server/releases/latest/download/slide-mcp-server-v1.17.3-windows-x64.zip
-unzip slide-mcp-server-v1.17.3-windows-x64.zip
-mv slide-mcp-server-v1.17.3-windows-x64.exe slide-mcp-server.exe
+curl -L -o slide-mcp-server-v2.0.1-windows-x64.zip https://github.com/austinmcchord/slide-mcp-server/releases/latest/download/slide-mcp-server-v2.0.1-windows-x64.zip
+unzip slide-mcp-server-v2.0.1-windows-x64.zip
+mv slide-mcp-server-v2.0.1-windows-x64.exe slide-mcp-server.exe
 ```
 
 #### Build from Source
@@ -224,6 +310,38 @@ If installed system-wide:
 }
 ```
 
+With custom permission mode and disabled tools:
+```json
+{
+  "mcpServers": {
+    "slide": {
+      "command": "/path/to/slide-mcp-server",
+      "env": {
+        "SLIDE_API_KEY": "YOUR_API_KEY_HERE",
+        "SLIDE_TOOLS": "reporting",
+        "SLIDE_DISABLED_TOOLS": "slide_accounts,slide_users"
+      }
+    }
+  }
+}
+```
+
+Or using CLI arguments:
+```json
+{
+  "mcpServers": {
+    "slide": {
+      "command": "/path/to/slide-mcp-server",
+      "args": [
+        "--api-key", "YOUR_API_KEY_HERE",
+        "--tools", "full-safe", 
+        "--disabled-tools", "slide_agents,slide_backups"
+      ]
+    }
+  }
+}
+```
+
 #### Test Your Installation
 ```bash
 # Set your API key
@@ -254,6 +372,7 @@ The Slide MCP Server supports several command-line arguments for flexible config
 | `--api-key` | Slide API key for authentication | `SLIDE_API_KEY` | Required |
 | `--base-url` | Base URL for Slide API endpoint | `SLIDE_BASE_URL` | `https://api.slide.tech` |
 | `--tools` | Permission mode for tool access | `SLIDE_TOOLS` | `full-safe` |
+| `--disabled-tools` | Comma-separated list of tools to disable | `SLIDE_DISABLED_TOOLS` | None |
 | `--version` | Show version information and exit | - | - |
 
 **Priority**: CLI flags take precedence over environment variables.
@@ -274,9 +393,78 @@ export SLIDE_TOOLS="reporting"
 export SLIDE_TOOLS="full"
 ./slide-mcp-server --api-key sk_test_123 --tools reporting  # Uses reporting mode
 
+# Disable specific tools
+./slide-mcp-server --api-key sk_test_123 --disabled-tools "slide_agents,slide_backups"
+
 # Show version
 ./slide-mcp-server --version
-# Output: slide-mcp-server version 1.2.5
+# Output: slide-mcp-server version 2.0.1
+```
+
+### 🚫 Disabling Specific Tools
+
+In addition to permission modes, you can disable specific tools entirely using the `--disabled-tools` flag or `SLIDE_DISABLED_TOOLS` environment variable. This provides fine-grained control over which tools are available.
+
+#### Usage Examples
+
+```bash
+# Disable specific tools via CLI flag
+./slide-mcp-server --api-key YOUR_KEY --disabled-tools "slide_agents,slide_backups"
+
+# Disable tools via environment variable
+export SLIDE_DISABLED_TOOLS="slide_devices,slide_users"
+./slide-mcp-server --api-key YOUR_KEY
+
+# Combined with permission modes
+./slide-mcp-server --api-key YOUR_KEY --tools reporting --disabled-tools "slide_snapshots"
+
+# Whitespace is handled gracefully
+./slide-mcp-server --api-key YOUR_KEY --disabled-tools " slide_agents , slide_backups , slide_devices "
+```
+
+#### Available Tool Names
+- `slide_agents` - Agent management
+- `slide_backups` - Backup operations  
+- `slide_snapshots` - Snapshot management
+- `slide_restores` - File and image restoration
+- `slide_networks` - Network management
+- `slide_users` - User management
+- `slide_alerts` - Alert monitoring
+- `slide_accounts` - Account and client management
+- `slide_devices` - Device management
+- `slide_vms` - Virtual machine management
+- `slide_presentation` - Data presentation and reporting
+- `list_all_clients_devices_and_agents` - Hierarchical overview
+
+#### Key Features
+
+- **Precedence**: CLI flags take precedence over environment variables
+- **Whitespace Handling**: Extra spaces around tool names are automatically trimmed
+- **Error Messages**: Clear error messages when attempting to use disabled tools
+- **Combined Filtering**: Works alongside permission modes for layered access control
+- **Transparency**: Logs which tools are disabled on server startup
+
+#### Use Cases
+
+```bash
+# Create a read-only server that can't access sensitive data
+./slide-mcp-server --tools reporting --disabled-tools "slide_accounts,slide_users"
+
+# Allow restores but prevent network changes
+./slide-mcp-server --tools restores --disabled-tools "slide_networks"
+
+# Monitoring setup that excludes VM management
+./slide-mcp-server --tools reporting --disabled-tools "slide_vms,slide_networks"
+```
+
+When a disabled tool is called, the server returns:
+```json
+{
+  "error": {
+    "code": -32601,
+    "message": "Tool 'slide_agents' is disabled"
+  }
+}
 ```
 
 ## 🔒 Permission Modes
@@ -392,6 +580,32 @@ Optionally, you can add it to a file called `.vscode/mcp.json` in your workspace
 }
 ```
 
+With custom configuration and disabled tools:
+```json
+{
+  "mcp": {
+    "inputs": [
+      {
+        "type": "promptString",
+        "id": "slide_api_key",
+        "description": "Slide API Key",
+        "password": true
+      }
+    ],
+    "servers": {
+      "slide": {
+        "command": "/path/to/slide-mcp-server",
+        "env": {
+          "SLIDE_API_KEY": "${input:slide_api_key}",
+          "SLIDE_TOOLS": "reporting",
+          "SLIDE_DISABLED_TOOLS": "slide_accounts,slide_users"
+        }
+      }
+    }
+  }
+}
+```
+
 ## 💡 Usage Examples
 
 ### List All Devices
@@ -462,6 +676,50 @@ Optionally, you can add it to a file called `.vscode/mcp.json` in your workspace
     "device_id": "device-123",
     "image_type": "vhd-dynamic",
     "boot_remove_passwords": true
+  }
+}
+```
+
+### Display Agent Status Card
+```json
+{
+  "name": "slide_presentation",
+  "arguments": {
+    "operation": "get_card",
+    "card_type": "agent"
+  }
+}
+```
+
+### Generate Multiple Devices Overview
+```json
+{
+  "name": "slide_presentation",
+  "arguments": {
+    "operation": "get_card",
+    "card_type": "devices_table"
+  }
+}
+```
+
+### Create Runbook Template
+```json
+{
+  "name": "slide_presentation",
+  "arguments": {
+    "operation": "get_runbook_template",
+    "format": "markdown"
+  }
+}
+```
+
+### Generate Daily Report Template
+```json
+{
+  "name": "slide_presentation",
+  "arguments": {
+    "operation": "get_daily_report_template",
+    "format": "html"
   }
 }
 ```

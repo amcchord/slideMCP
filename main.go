@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 )
 
 // MCP Protocol structures
@@ -43,7 +44,7 @@ type ToolContent struct {
 // Configuration
 const (
 	ServerName = "slide-mcp-server"
-	Version    = "1.2.5"
+	Version    = "2.0.1"
 )
 
 // Tools filtering modes
@@ -55,9 +56,16 @@ const (
 )
 
 var toolsMode string = ToolsFullSafe // Default to full-safe access
+var disabledTools []string           // List of disabled tool names
 
 // Helper functions for tools filtering
 func isToolAllowed(toolName string) bool {
+	// First check if tool is explicitly disabled
+	if isToolDisabled(toolName) {
+		return false
+	}
+
+	// Then check tools mode permissions
 	switch toolsMode {
 	case ToolsReporting:
 		// Only allow read-only tools
@@ -74,6 +82,15 @@ func isToolAllowed(toolName string) bool {
 	default:
 		return false
 	}
+}
+
+func isToolDisabled(toolName string) bool {
+	for _, disabled := range disabledTools {
+		if disabled == toolName {
+			return true
+		}
+	}
+	return false
 }
 
 func isOperationAllowed(toolName, operation string) bool {
@@ -189,6 +206,7 @@ func main() {
 	var cliAPIKey = flag.String("api-key", "", "API key for Slide service (overrides SLIDE_API_KEY environment variable)")
 	var cliBaseURL = flag.String("base-url", "", "Base URL for Slide API (overrides SLIDE_BASE_URL environment variable)")
 	var cliTools = flag.String("tools", "", "Tools mode: reporting, restores, full-safe, full (overrides SLIDE_TOOLS environment variable)")
+	var cliDisabledTools = flag.String("disabled-tools", "", "Comma-separated list of tool names to disable (overrides SLIDE_DISABLED_TOOLS environment variable)")
 	var showVersion = flag.Bool("version", false, "Show version information and exit")
 	var exitAfterFirst = flag.Bool("exit-after-first", false, "Exit after processing the first request instead of running continuously")
 	flag.Parse()
@@ -207,6 +225,28 @@ func main() {
 		toolsMode = envTools
 	}
 	// If neither is provided, toolsMode keeps its default value (full-safe)
+
+	// Get disabled tools from CLI flag or environment variable
+	// CLI flag takes precedence over environment variable
+	var disabledToolsStr string
+	if *cliDisabledTools != "" {
+		disabledToolsStr = *cliDisabledTools
+	} else if envDisabledTools := os.Getenv("SLIDE_DISABLED_TOOLS"); envDisabledTools != "" {
+		disabledToolsStr = envDisabledTools
+	}
+
+	// Parse disabled tools list
+	if disabledToolsStr != "" {
+		// Split by comma and trim whitespace
+		toolsList := strings.Split(disabledToolsStr, ",")
+		for _, tool := range toolsList {
+			tool = strings.TrimSpace(tool)
+			if tool != "" {
+				disabledTools = append(disabledTools, tool)
+			}
+		}
+		log.Printf("Disabled tools: %v", disabledTools)
+	}
 
 	// Validate tools mode
 	switch toolsMode {
@@ -371,6 +411,11 @@ func handleToolCall(request MCPRequest) MCPResponse {
 	name, ok := params["name"].(string)
 	if !ok {
 		return sendError(request.ID, -32602, "Tool name required", nil)
+	}
+
+	// Check if tool is explicitly disabled
+	if isToolDisabled(name) {
+		return sendError(request.ID, -32601, fmt.Sprintf("Tool '%s' is disabled", name), nil)
 	}
 
 	// Check if tool is allowed in current tools mode
