@@ -114,9 +114,9 @@ func isOperationAllowed(toolName, operation string) bool {
 
 func isReadOnlyTool(toolName string) bool {
 	readOnlyTools := []string{
-		"slide_agents", "slide_backups", "slide_snapshots", "slide_users",
-		"slide_alerts", "slide_accounts", "slide_devices", "slide_networks",
-		"slide_vms", "slide_restores", "slide_presentation", "list_all_clients_devices_and_agents",
+		"slide_agents", "slide_backups", "slide_snapshots", "slide_user_management",
+		"slide_alerts", "slide_devices", "slide_networks",
+		"slide_vms", "slide_restores", "slide_presentation", "slide_meta", "list_all_clients_devices_and_agents",
 	}
 	for _, tool := range readOnlyTools {
 		if tool == toolName {
@@ -149,8 +149,8 @@ func isReadOperation(operation string) bool {
 		"list", "get", "browse", "list_deleted",
 		// Restores tool read operations
 		"list_files", "get_file", "browse_file", "list_images", "get_image", "browse_image",
-		// Accounts tool read operations
-		"list_accounts", "get_account", "list_clients", "get_client",
+		// User management tool read operations
+		"list_users", "get_user", "list_accounts", "get_account", "list_clients", "get_client",
 		// Reports tool read operations
 		"get_runbook_template",
 	}
@@ -181,7 +181,9 @@ func isRestoreManagementOperation(toolName, operation string) bool {
 		return operation == "create" || operation == "pair" || operation == "update"
 	case "slide_backups":
 		return operation == "start"
-		// Removed account management and alert resolution from restores mode
+	case "slide_user_management":
+		return operation == "update_account" || operation == "create_client" || operation == "update_client" || operation == "delete_client"
+		// Removed alert resolution from restores mode
 	}
 	return false
 }
@@ -502,8 +504,8 @@ func handleToolCall(request MCPRequest) MCPResponse {
 			}
 		}
 
-	case "slide_users":
-		data, err := handleUsersTool(args)
+	case "slide_user_management":
+		data, err := handleUserManagementTool(args)
 		if err != nil {
 			result = ToolResult{
 				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
@@ -518,20 +520,6 @@ func handleToolCall(request MCPRequest) MCPResponse {
 
 	case "slide_alerts":
 		data, err := handleAlertsTool(args)
-		if err != nil {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
-				IsError: true,
-			}
-		} else {
-			result = ToolResult{
-				Content: []ToolContent{{Type: "text", Text: data}},
-				IsError: false,
-			}
-		}
-
-	case "slide_accounts":
-		data, err := handleAccountsTool(args)
 		if err != nil {
 			result = ToolResult{
 				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
@@ -586,9 +574,25 @@ func handleToolCall(request MCPRequest) MCPResponse {
 			}
 		}
 
-	// Special tools (keep as-is)
+	case "slide_meta":
+		data, err := handleMetaTool(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+
+	// Special tools (keep as-is) - now handled by slide_meta
 	case "list_all_clients_devices_and_agents":
-		data, err := listAllClientsDevicesAndAgents(args)
+		// Redirect to slide_meta for backward compatibility
+		args["operation"] = "list_all_clients_devices_and_agents"
+		data, err := handleMetaTool(args)
 		if err != nil {
 			result = ToolResult{
 				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
@@ -639,13 +643,13 @@ func getAllTools() []ToolInfo {
 		getSnapshotsToolInfo(),
 		getRestoresToolInfo(),
 		getNetworksToolInfo(),
-		getUsersToolInfo(),
+		getUserManagementToolInfo(),
 		getAlertsToolInfo(),
-		getAccountsToolInfo(),
 		getDevicesToolInfo(),
 		getVMsToolInfo(),
 		getPresentationToolInfo(),
-		// Special tools
+		getMetaToolInfo(),
+		// Special tools (kept for backward compatibility)
 		{
 			Name:        "list_all_clients_devices_and_agents",
 			Description: "Get a complete hierarchical view of all clients, their devices, and the agents on those devices. Use this tool when answers questions about how many agents, devices, or clients",

@@ -95,10 +95,18 @@ Each meta-tool accepts an `operation` parameter that specifies the action to per
     - Perfect for status displays, dashboards, documentation, and professional reporting
 **⚠️ IMPORTANT**: If you are building your own presentation logic or custom formatting, you may want to disable the `slide_presentation` tool to avoid conflicts with your custom implementation. To disable just the `slide_presentation` tool, add it to the `DISABLED_TOOLS` environment variable or in the --disabled-tools part of the CLI
 
+12. **`slide_meta`** - Meta tools for reporting and aggregated data views
+    - **Operations**: `list_all_clients_devices_and_agents`, `get_snapshot_changes`, `get_reporting_data`
+    - **list_all_clients_devices_and_agents**: Complete hierarchical view of infrastructure
+    - **get_snapshot_changes**: Track new and deleted snapshots over time periods (day, week, month)
+    - **get_reporting_data**: Pre-formatted data for populating report templates
+    - Perfect for generating reports with accurate, pre-calculated metrics
+
 ### 🔍 Special Tools
-- **`list_all_clients_devices_and_agents`** - Hierarchical overview
+- **`list_all_clients_devices_and_agents`** - Hierarchical overview (now part of `slide_meta`)
   - Get complete view of all clients, their devices, and agents in one call
   - Perfect for answering questions about infrastructure scale and organization
+  - Can be called directly or via `slide_meta` with operation `list_all_clients_devices_and_agents`
 
 ## Key Features
 
@@ -426,13 +434,13 @@ export SLIDE_DISABLED_TOOLS="slide_devices,slide_users"
 - `slide_snapshots` - Snapshot management
 - `slide_restores` - File and image restoration
 - `slide_networks` - Network management
-- `slide_users` - User management
+- `slide_user_management` - User and account management
 - `slide_alerts` - Alert monitoring
-- `slide_accounts` - Account and client management
 - `slide_devices` - Device management
 - `slide_vms` - Virtual machine management
 - `slide_presentation` - Data presentation and reporting
-- `list_all_clients_devices_and_agents` - Hierarchical overview
+- `slide_meta` - Meta tools for reporting and aggregated data views
+- `list_all_clients_devices_and_agents` - Hierarchical overview (legacy, use slide_meta instead)
 
 #### Key Features
 
