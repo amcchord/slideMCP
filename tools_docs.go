@@ -3,8 +3,56 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"strings"
+	"time"
 )
+
+// Documentation Tool Usage Guide for LLMs
+// ========================================
+//
+// The slide_docs tool provides access to Slide's documentation system. Here's how to use it effectively:
+//
+// 1. DISCOVERING DOCUMENTATION:
+//    - Start with "list_sections" to see all available documentation categories
+//    - Use "get_topics" with a specific section to drill down into topics
+//    - Example flow: list_sections → get_topics (section: "API") → get_content (topic: "Authentication")
+//
+// 2. SEARCHING FOR INFORMATION:
+//    - Use "search_docs" when you know what you're looking for but not where it is
+//    - The search looks through both topic names and content
+//    - Search is case-insensitive and finds partial matches
+//    - Example: search_docs (query: "backup retention") finds all retention-related docs
+//
+// 3. GETTING SPECIFIC CONTENT:
+//    - Use "get_content" when you know the exact topic name
+//    - Topic names come from the "get_topics" operation
+//    - Content is returned in Markdown format for easy reading
+//
+// 4. API REFERENCE:
+//    - Use "get_api_reference" to get the complete OpenAPI specification
+//    - This fetches the live OpenAPI spec from http://api.slide.tech/openapi.json
+//    - The spec includes all endpoints, parameters, responses, and schemas
+//    - For specific endpoint details, the OpenAPI spec is the authoritative source
+//
+// 5. BEST PRACTICES FOR LLMS:
+//    - Always start broad (list_sections) if you're unsure where to find something
+//    - Use search_docs for general queries before drilling into specific sections
+//    - The API reference contains the complete, up-to-date API documentation
+//    - Combine multiple operations to build comprehensive answers
+//    - Remember that actual API calls should use the slide_* tools, not raw HTTP
+//
+// 6. COMMON PATTERNS:
+//    - For "How do I..." questions: search_docs first, then get_content for details
+//    - For API questions: get_api_reference for the complete OpenAPI spec
+//    - For feature exploration: list_sections → get_topics → get_content
+//    - For troubleshooting: search_docs with error keywords
+//
+// 7. RESPONSE FORMATS:
+//    - All responses are JSON with a consistent structure
+//    - Look for "_metadata" fields for additional context
+//    - Content is typically in Markdown format for readability
 
 // Documentation structure based on docs.slide.tech
 var docSections = map[string][]string{
@@ -389,9 +437,62 @@ https://docs.slide.tech`, topic, topic, getSectionForTopic(topic))
 }
 
 func getAPIReference(args map[string]interface{}) (string, error) {
+	// Fetch the actual OpenAPI specification from the API
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+
+	resp, err := client.Get("http://api.slide.tech/openapi.json")
+	if err != nil {
+		// Fallback to basic information if fetch fails
+		return getAPIReferenceFallback(args)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		// Fallback to basic information if fetch fails
+		return getAPIReferenceFallback(args)
+	}
+
+	// Read the OpenAPI spec
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return getAPIReferenceFallback(args)
+	}
+
+	// Parse to ensure it's valid JSON
+	var openAPISpec interface{}
+	if err := json.Unmarshal(body, &openAPISpec); err != nil {
+		return getAPIReferenceFallback(args)
+	}
+
+	// Return the complete OpenAPI specification
+	result := map[string]interface{}{
+		"openapi_spec": openAPISpec,
+		"_metadata": map[string]interface{}{
+			"source":      "http://api.slide.tech/openapi.json",
+			"description": "Complete OpenAPI 3.0 specification for the Slide API",
+			"usage_notes": []string{
+				"This is the authoritative API documentation",
+				"All endpoints, parameters, and schemas are defined here",
+				"Use the slide_* tools to make actual API calls",
+				"Authentication is handled automatically by the slide_* tools",
+			},
+		},
+	}
+
+	jsonData, err := json.MarshalIndent(result, "", "  ")
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal result: %w", err)
+	}
+
+	return string(jsonData), nil
+}
+
+func getAPIReferenceFallback(args map[string]interface{}) (string, error) {
 	endpoint, _ := args["endpoint"].(string)
 
-	// Provide API reference structure
+	// Provide API reference structure as fallback
 	apiRef := map[string]interface{}{
 		"base_url": "https://api.slide.com/v1",
 		"authentication": map[string]interface{}{
@@ -414,8 +515,9 @@ func getAPIReference(args map[string]interface{}) (string, error) {
 			"burst_limit":         10,
 		},
 		"_metadata": map[string]interface{}{
-			"description": "Slide API reference summary",
+			"description": "Basic API reference (fallback - OpenAPI spec unavailable)",
 			"docs_url":    "https://docs.slide.tech/api",
+			"openapi_url": "http://api.slide.tech/openapi.json",
 			"note":        "Use slide_* tools for direct API access with proper authentication",
 		},
 	}
@@ -474,8 +576,18 @@ func getSectionForTopic(topic string) string {
 
 func getDocsToolInfo() ToolInfo {
 	return ToolInfo{
-		Name:        "slide_docs",
-		Description: "Access Slide documentation from docs.slide.tech. Search topics, browse sections, and get detailed documentation content.",
+		Name: "slide_docs",
+		Description: `Access Slide documentation and API reference. This tool provides comprehensive access to:
+- Documentation sections and topics from docs.slide.tech
+- Search functionality across all documentation
+- Complete OpenAPI specification from http://api.slide.tech/openapi.json
+
+Usage patterns:
+- Start with 'list_sections' to explore available documentation
+- Use 'search_docs' to find information on specific topics
+- Use 'get_api_reference' to retrieve the complete, authoritative OpenAPI spec
+- For API questions, always fetch the OpenAPI spec rather than relying on summaries
+- Remember to use slide_* tools for actual API calls, not raw HTTP requests`,
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
@@ -504,7 +616,7 @@ func getDocsToolInfo() ToolInfo {
 				},
 				"endpoint": map[string]interface{}{
 					"type":        "string",
-					"description": "Specific API endpoint to get reference for (optional for get_api_reference)",
+					"description": "Specific API endpoint to get reference for (optional for get_api_reference) - Note: This parameter is ignored as the full OpenAPI spec is always returned",
 				},
 			},
 			"required": []string{"operation"},

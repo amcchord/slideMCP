@@ -246,36 +246,41 @@ The Mac GUI installer will:
 
 ### Manual Installation
 
-#### Download Pre-built Binary (v2.0.2)
+#### Download Pre-built Binary (v2.2.0)
+
+For **macOS ARM64** (Apple Silicon):
 ```bash
-# For macOS ARM64 (Apple Silicon)
-curl -L -o slide-mcp-server-v2.0.2-macos-arm64.tar.gz https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.0.2-macos-arm64.tar.gz
-tar -xzf slide-mcp-server-v2.0.2-macos-arm64.tar.gz
-chmod +x slide-mcp-server-v2.0.2-macos-arm64
-mv slide-mcp-server-v2.0.2-macos-arm64 slide-mcp-server
-
-# For macOS AMD64 
-curl -L -o slide-mcp-server-v2.0.2-macos-x64.tar.gz https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.0.2-macos-x64.tar.gz
-tar -xzf slide-mcp-server-v2.0.2-macos-x64.tar.gz
-chmod +x slide-mcp-server-v2.0.2-macos-x64
-mv slide-mcp-server-v2.0.2-macos-x64 slide-mcp-server
-
-# For Linux AMD64
-curl -L -o slide-mcp-server-v2.0.2-linux-x64.tar.gz https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.0.2-linux-x64.tar.gz
-tar -xzf slide-mcp-server-v2.0.2-linux-x64.tar.gz
-chmod +x slide-mcp-server-v2.0.2-linux-x64
-mv slide-mcp-server-v2.0.2-linux-x64 slide-mcp-server
-
-# For Linux ARM64
-curl -L -o slide-mcp-server-v2.0.2-linux-arm64.tar.gz https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.0.2-linux-arm64.tar.gz
-tar -xzf slide-mcp-server-v2.0.2-linux-arm64.tar.gz
-chmod +x slide-mcp-server-v2.0.2-linux-arm64
-mv slide-mcp-server-v2.0.2-linux-arm64 slide-mcp-server
-
-# For Windows AMD64
-curl -L -o slide-mcp-server-v2.0.2-windows-x64.zip https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.0.2-windows-x64.zip
-unzip slide-mcp-server-v2.0.2-windows-x64.zip
-mv slide-mcp-server-v2.0.2-windows-x64.exe slide-mcp-server.exe
+curl -L -o slide-mcp-server-v2.2.0-macos-arm64.tar.gz https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.2.0-macos-arm64.tar.gz
+tar -xzf slide-mcp-server-v2.2.0-macos-arm64.tar.gz
+chmod +x slide-mcp-server-v2.2.0-macos-arm64
+mv slide-mcp-server-v2.2.0-macos-arm64 slide-mcp-server
+```
+For **macOS x64**:
+```bash
+curl -L -o slide-mcp-server-v2.2.0-macos-x64.tar.gz https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.2.0-macos-x64.tar.gz
+tar -xzf slide-mcp-server-v2.2.0-macos-x64.tar.gz
+chmod +x slide-mcp-server-v2.2.0-macos-x64
+mv slide-mcp-server-v2.2.0-macos-x64 slide-mcp-server
+```
+For **Linux x64**:
+```bash
+curl -L -o slide-mcp-server-v2.2.0-linux-x64.tar.gz https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.2.0-linux-x64.tar.gz
+tar -xzf slide-mcp-server-v2.2.0-linux-x64.tar.gz
+chmod +x slide-mcp-server-v2.2.0-linux-x64
+mv slide-mcp-server-v2.2.0-linux-x64 slide-mcp-server
+```
+For **Linux ARM64**:
+```bash
+curl -L -o slide-mcp-server-v2.2.0-linux-arm64.tar.gz https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.2.0-linux-arm64.tar.gz
+tar -xzf slide-mcp-server-v2.2.0-linux-arm64.tar.gz
+chmod +x slide-mcp-server-v2.2.0-linux-arm64
+mv slide-mcp-server-v2.2.0-linux-arm64 slide-mcp-server
+```
+For **Windows x64**:
+```cmd
+curl -L -o slide-mcp-server-v2.2.0-windows-x64.zip https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.2.0-windows-x64.zip
+unzip slide-mcp-server-v2.2.0-windows-x64.zip
+mv slide-mcp-server-v2.2.0-windows-x64.exe slide-mcp-server.exe
 ```
 
 #### Build from Source

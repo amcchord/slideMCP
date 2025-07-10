@@ -21,11 +21,6 @@ Provides comprehensive daily statistics including:
 - **Snapshot Statistics**
   - Total snapshots
   - Active snapshots
-  - Deleted snapshots
-  - Deletion reasons:
-    - By retention policy
-    - Manual deletion
-    - Other reasons
   - Storage locations:
     - Local storage count
     - Cloud storage count
@@ -39,7 +34,6 @@ Provides weekly statistics (Sunday to Saturday) including:
   - Total backups for the week
   - Weekly success rate
   - Total snapshots
-  - Snapshots deleted
 
 - **Daily Breakdown**
   - Statistics for each day of the week
@@ -56,7 +50,6 @@ Provides monthly statistics with a visual calendar including:
   - Total backups for the month
   - Monthly success rate
   - Total snapshots
-  - Snapshots deleted
 
 - **Calendar View** (Markdown format only)
   - Visual calendar table showing each day
