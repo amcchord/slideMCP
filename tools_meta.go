@@ -45,6 +45,14 @@ func getMetaToolInfo() ToolInfo {
 					"description": "Time period for snapshot changes - used with 'get_snapshot_changes' operation",
 					"enum":        []string{"day", "week", "month"},
 				},
+				"summary_only": map[string]interface{}{
+					"type":        "boolean",
+					"description": "Return only summary counts without detailed snapshot lists (reduces output size) - default: false",
+				},
+				"include_metadata": map[string]interface{}{
+					"type":        "boolean",
+					"description": "Include agent and device names in detailed results (increases output size) - default: false",
+				},
 				"client_id": map[string]interface{}{
 					"type":        "string",
 					"description": "Filter by client ID - optional for time-based operations",
@@ -98,6 +106,18 @@ func getSnapshotChanges(args map[string]interface{}) (string, error) {
 		return "", fmt.Errorf("period is required")
 	}
 
+	// Check if summary_only is requested (default: false for backward compatibility)
+	summaryOnly := false
+	if val, ok := args["summary_only"].(bool); ok {
+		summaryOnly = val
+	}
+
+	// Check if we should include metadata (default: false to reduce size)
+	includeMetadata := false
+	if val, ok := args["include_metadata"].(bool); ok {
+		includeMetadata = val
+	}
+
 	// Calculate the time range based on period
 	now := time.Now()
 	var startTime time.Time
@@ -114,7 +134,7 @@ func getSnapshotChanges(args map[string]interface{}) (string, error) {
 
 	// Build filters for snapshot queries
 	filters := make(map[string]interface{})
-	filters["limit"] = 50 // We'll need to handle pagination for large datasets
+	filters["limit"] = 50
 
 	// Add optional filters
 	if clientID, ok := args["client_id"].(string); ok && clientID != "" {
@@ -127,150 +147,173 @@ func getSnapshotChanges(args map[string]interface{}) (string, error) {
 		filters["agent_id"] = agentID
 	}
 
-	// Get all snapshots (active and deleted)
-	allSnapshots := make([]Snapshot, 0)
+	// Initialize counters and aggregated data
+	newSnapshotCount := 0
+	deletedSnapshotCount := 0
+	newSnapshotsByAgent := make(map[string]int)
+	deletedSnapshotsByAgent := make(map[string]int)
 
-	// Get active snapshots
-	activeFilters := make(map[string]interface{})
-	for k, v := range filters {
-		activeFilters[k] = v
-	}
-	activeFilters["snapshot_location"] = "exists_cloud"
-
-	activeData, err := makeAPIRequest("GET", buildQueryString("/v1/snapshot", activeFilters), nil)
-	if err != nil {
-		return "", fmt.Errorf("failed to get active snapshots: %w", err)
-	}
-
-	var activeResult PaginatedResponse[Snapshot]
-	if err := json.Unmarshal(activeData, &activeResult); err != nil {
-		return "", fmt.Errorf("failed to parse active snapshots: %w", err)
-	}
-	allSnapshots = append(allSnapshots, activeResult.Data...)
-
-	// Get deleted snapshots
-	deletedFilters := make(map[string]interface{})
-	for k, v := range filters {
-		deletedFilters[k] = v
-	}
-	deletedFilters["snapshot_location"] = "exists_deleted"
-
-	deletedData, err := makeAPIRequest("GET", buildQueryString("/v1/snapshot", deletedFilters), nil)
-	if err != nil {
-		return "", fmt.Errorf("failed to get deleted snapshots: %w", err)
-	}
-
-	var deletedResult PaginatedResponse[Snapshot]
-	if err := json.Unmarshal(deletedData, &deletedResult); err != nil {
-		return "", fmt.Errorf("failed to parse deleted snapshots: %w", err)
-	}
-	allSnapshots = append(allSnapshots, deletedResult.Data...)
-
-	// Process snapshots to find changes within the time period
+	// For detailed results (when not summary_only)
 	newSnapshots := make([]map[string]interface{}, 0)
 	deletedSnapshots := make([]map[string]interface{}, 0)
 
-	for _, snapshot := range allSnapshots {
-		// Check if snapshot was created in the time period
-		backupTime, err := time.Parse(time.RFC3339, snapshot.BackupEndedAt)
-		if err == nil && backupTime.After(startTime) {
-			snapshotInfo := map[string]interface{}{
-				"snapshot_id":       snapshot.SnapshotID,
-				"agent_id":          snapshot.AgentID,
-				"backup_started_at": snapshot.BackupStartedAt,
-				"backup_ended_at":   snapshot.BackupEndedAt,
-				"locations":         snapshot.Locations,
+	// Process snapshots with proper pagination
+	processSnapshots := func(location string, isDeleted bool) error {
+		offset := 0
+		for {
+			queryFilters := make(map[string]interface{})
+			for k, v := range filters {
+				queryFilters[k] = v
+			}
+			queryFilters["snapshot_location"] = location
+			queryFilters["offset"] = offset
+
+			data, err := makeAPIRequest("GET", buildQueryString("/v1/snapshot", queryFilters), nil)
+			if err != nil {
+				return fmt.Errorf("failed to get snapshots: %w", err)
 			}
 
-			// Get agent info for context
-			agentData, err := makeAPIRequest("GET", fmt.Sprintf("/v1/agent/%s", snapshot.AgentID), nil)
-			if err == nil {
-				var agent Agent
-				if json.Unmarshal(agentData, &agent) == nil {
-					snapshotInfo["agent_name"] = agent.DisplayName
-					snapshotInfo["agent_hostname"] = agent.Hostname
-					snapshotInfo["device_id"] = agent.DeviceID
+			var result PaginatedResponse[Snapshot]
+			if err := json.Unmarshal(data, &result); err != nil {
+				return fmt.Errorf("failed to parse snapshots: %w", err)
+			}
 
-					// Get device info
-					deviceData, err := makeAPIRequest("GET", fmt.Sprintf("/v1/device/%s", agent.DeviceID), nil)
-					if err == nil {
-						var device Device
-						if json.Unmarshal(deviceData, &device) == nil {
-							snapshotInfo["device_name"] = device.DisplayName
-							snapshotInfo["device_hostname"] = device.Hostname
-							if device.ClientID != nil {
-								snapshotInfo["client_id"] = *device.ClientID
-								snapshotInfo["client_name"] = getClientName(*device.ClientID)
+			// Process each snapshot
+			for _, snapshot := range result.Data {
+				if isDeleted && snapshot.Deleted != nil && len(snapshot.Deletions) > 0 {
+					// Check deleted snapshots
+					for _, deletion := range snapshot.Deletions {
+						deletedTime, err := time.Parse(time.RFC3339, deletion.Deleted)
+						if err == nil && deletedTime.After(startTime) && deletedTime.Before(now) {
+							deletedSnapshotCount++
+							deletedSnapshotsByAgent[snapshot.AgentID]++
+
+							if !summaryOnly && len(deletedSnapshots) < 100 { // Limit detailed results
+								snapshotInfo := map[string]interface{}{
+									"snapshot_id":     snapshot.SnapshotID,
+									"agent_id":        snapshot.AgentID,
+									"backup_ended_at": snapshot.BackupEndedAt,
+									"deleted_at":      deletion.Deleted,
+									"deletion_type":   deletion.Type,
+								}
+
+								if includeMetadata {
+									// Only fetch additional metadata if requested
+									if agentData, err := makeAPIRequest("GET", fmt.Sprintf("/v1/agent/%s", snapshot.AgentID), nil); err == nil {
+										var agent Agent
+										if json.Unmarshal(agentData, &agent) == nil {
+											snapshotInfo["agent_name"] = agent.DisplayName
+											snapshotInfo["device_id"] = agent.DeviceID
+										}
+									}
+								}
+
+								deletedSnapshots = append(deletedSnapshots, snapshotInfo)
 							}
 						}
 					}
-				}
-			}
+				} else if !isDeleted {
+					// Check new snapshots
+					backupTime, err := time.Parse(time.RFC3339, snapshot.BackupEndedAt)
+					if err == nil && backupTime.After(startTime) && backupTime.Before(now) {
+						newSnapshotCount++
+						newSnapshotsByAgent[snapshot.AgentID]++
 
-			newSnapshots = append(newSnapshots, snapshotInfo)
-		}
+						if !summaryOnly && len(newSnapshots) < 100 { // Limit detailed results
+							snapshotInfo := map[string]interface{}{
+								"snapshot_id":       snapshot.SnapshotID,
+								"agent_id":          snapshot.AgentID,
+								"backup_started_at": snapshot.BackupStartedAt,
+								"backup_ended_at":   snapshot.BackupEndedAt,
+							}
 
-		// Check if snapshot was deleted in the time period
-		if snapshot.Deleted != nil && len(snapshot.Deletions) > 0 {
-			for _, deletion := range snapshot.Deletions {
-				deletedTime, err := time.Parse(time.RFC3339, deletion.Deleted)
-				if err == nil && deletedTime.After(startTime) {
-					snapshotInfo := map[string]interface{}{
-						"snapshot_id":       snapshot.SnapshotID,
-						"agent_id":          snapshot.AgentID,
-						"backup_started_at": snapshot.BackupStartedAt,
-						"backup_ended_at":   snapshot.BackupEndedAt,
-						"deleted_at":        deletion.Deleted,
-						"deleted_by":        deletion.DeletedBy,
-						"deletion_type":     deletion.Type,
-					}
-
-					// Get agent info for context
-					agentData, err := makeAPIRequest("GET", fmt.Sprintf("/v1/agent/%s", snapshot.AgentID), nil)
-					if err == nil {
-						var agent Agent
-						if json.Unmarshal(agentData, &agent) == nil {
-							snapshotInfo["agent_name"] = agent.DisplayName
-							snapshotInfo["agent_hostname"] = agent.Hostname
-							snapshotInfo["device_id"] = agent.DeviceID
-
-							// Get device info
-							deviceData, err := makeAPIRequest("GET", fmt.Sprintf("/v1/device/%s", agent.DeviceID), nil)
-							if err == nil {
-								var device Device
-								if json.Unmarshal(deviceData, &device) == nil {
-									snapshotInfo["device_name"] = device.DisplayName
-									snapshotInfo["device_hostname"] = device.Hostname
-									if device.ClientID != nil {
-										snapshotInfo["client_id"] = *device.ClientID
-										snapshotInfo["client_name"] = getClientName(*device.ClientID)
+							if includeMetadata {
+								// Only fetch additional metadata if requested
+								if agentData, err := makeAPIRequest("GET", fmt.Sprintf("/v1/agent/%s", snapshot.AgentID), nil); err == nil {
+									var agent Agent
+									if json.Unmarshal(agentData, &agent) == nil {
+										snapshotInfo["agent_name"] = agent.DisplayName
+										snapshotInfo["device_id"] = agent.DeviceID
 									}
 								}
 							}
+
+							newSnapshots = append(newSnapshots, snapshotInfo)
 						}
 					}
-
-					deletedSnapshots = append(deletedSnapshots, snapshotInfo)
 				}
 			}
+
+			// Check if we have more pages
+			if result.Pagination.NextOffset == nil {
+				break
+			}
+			offset = *result.Pagination.NextOffset
 		}
+		return nil
 	}
 
-	// Build the result
-	result := map[string]interface{}{
-		"period":            period,
-		"start_time":        startTime.Format(time.RFC3339),
-		"end_time":          now.Format(time.RFC3339),
-		"new_snapshots":     newSnapshots,
-		"deleted_snapshots": deletedSnapshots,
-		"summary": map[string]interface{}{
-			"total_new":     len(newSnapshots),
-			"total_deleted": len(deletedSnapshots),
-		},
-		"_metadata": map[string]interface{}{
-			"description": fmt.Sprintf("Snapshot changes over the last %s", period),
-			"usage":       "Use this data to populate reporting templates with accurate snapshot creation and deletion information",
-		},
+	// Process active snapshots for new ones
+	if err := processSnapshots("exists_cloud", false); err != nil {
+		return "", err
+	}
+
+	// Process deleted snapshots
+	if err := processSnapshots("exists_deleted", true); err != nil {
+		return "", err
+	}
+
+	// Build the result based on summary_only flag
+	var result map[string]interface{}
+
+	if summaryOnly {
+		// Return only summary data
+		result = map[string]interface{}{
+			"period":     period,
+			"start_time": startTime.Format(time.RFC3339),
+			"end_time":   now.Format(time.RFC3339),
+			"summary": map[string]interface{}{
+				"total_new":              newSnapshotCount,
+				"total_deleted":          deletedSnapshotCount,
+				"new_by_agent_count":     len(newSnapshotsByAgent),
+				"deleted_by_agent_count": len(deletedSnapshotsByAgent),
+			},
+			"_metadata": map[string]interface{}{
+				"description": fmt.Sprintf("Summary of snapshot changes over the last %s", period),
+				"mode":        "summary_only",
+				"note":        "Use summary_only=false to get detailed snapshot lists (limited to 100 each)",
+			},
+		}
+	} else {
+		// Return detailed data (limited)
+		result = map[string]interface{}{
+			"period":            period,
+			"start_time":        startTime.Format(time.RFC3339),
+			"end_time":          now.Format(time.RFC3339),
+			"new_snapshots":     newSnapshots,
+			"deleted_snapshots": deletedSnapshots,
+			"summary": map[string]interface{}{
+				"total_new":              newSnapshotCount,
+				"total_deleted":          deletedSnapshotCount,
+				"shown_new":              len(newSnapshots),
+				"shown_deleted":          len(deletedSnapshots),
+				"new_by_agent_count":     len(newSnapshotsByAgent),
+				"deleted_by_agent_count": len(deletedSnapshotsByAgent),
+			},
+			"_metadata": map[string]interface{}{
+				"description":   fmt.Sprintf("Snapshot changes over the last %s", period),
+				"mode":          "detailed",
+				"limit_notice":  "Detailed results are limited to 100 snapshots each to prevent excessive data",
+				"metadata_mode": includeMetadata,
+			},
+		}
+
+		// Add notice if we hit the limit
+		if newSnapshotCount > 100 || deletedSnapshotCount > 100 {
+			result["_metadata"].(map[string]interface{})["truncated"] = true
+			result["_metadata"].(map[string]interface{})["truncation_message"] = fmt.Sprintf("Showing %d of %d new and %d of %d deleted snapshots",
+				len(newSnapshots), newSnapshotCount, len(deletedSnapshots), deletedSnapshotCount)
+		}
 	}
 
 	jsonData, err := json.MarshalIndent(result, "", "  ")
@@ -317,9 +360,10 @@ func getReportingData(args map[string]interface{}) (string, error) {
 		return "", fmt.Errorf("invalid report_type: %s", reportType)
 	}
 
-	// Get snapshot changes for the period
+	// Get snapshot changes for the period (summary only for performance)
 	changesData, err := getSnapshotChanges(map[string]interface{}{
-		"period": period,
+		"period":       period,
+		"summary_only": true,
 	})
 	if err != nil {
 		return "", fmt.Errorf("failed to get snapshot changes: %w", err)
@@ -403,11 +447,11 @@ func getReportingData(args map[string]interface{}) (string, error) {
 			"deleted_snapshots": changes["summary"].(map[string]interface{})["total_deleted"],
 		},
 		"client_metrics":   clientMetrics,
-		"snapshot_changes": changes,
-		"hierarchy":        hierarchy,
+		"snapshot_summary": changes["summary"],
 		"_metadata": map[string]interface{}{
 			"description": fmt.Sprintf("Pre-formatted data for %s report template", reportType),
 			"usage":       "Use this data to populate report templates. All metrics are pre-calculated and formatted for easy insertion.",
+			"note":        "Full hierarchy data not included by default to reduce size. Use list_all_clients_devices_and_agents separately if needed.",
 			"template_placeholders": map[string]interface{}{
 				"daily": []string{
 					"REPORT_DATE", "TOTAL_SUCCESSFUL_SNAPSHOTS", "TOTAL_FAILED_SNAPSHOTS",

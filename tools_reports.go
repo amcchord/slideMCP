@@ -621,7 +621,7 @@ func generateDeviceDailyReport(deviceID string, date time.Time) ([]DailyReport, 
 	// Get all agents on the device
 	agentsData, err := listAgents(map[string]interface{}{
 		"device_id": deviceID,
-		"limit":     100, // Increased limit for better batching
+		"limit":     50, // API limit
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list agents: %w", err)
@@ -644,7 +644,7 @@ func generateClientDailyReport(clientID string, date time.Time) ([]DailyReport, 
 	// Get all agents for the client
 	agentsData, err := listAgents(map[string]interface{}{
 		"client_id": clientID,
-		"limit":     100, // Increased limit for better batching
+		"limit":     50, // API limit
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list agents: %w", err)
@@ -666,7 +666,7 @@ func generateClientDailyReport(clientID string, date time.Time) ([]DailyReport, 
 func generateAllAgentsDailyReport(date time.Time) ([]DailyReport, error) {
 	var allAgents []Agent
 	offset := 0
-	limit := 100 // Increased for better batching
+	limit := 50 // API limit
 
 	// Check if verbose logging is needed
 	verbose := os.Getenv("SLIDE_REPORTS_VERBOSE") == "true"
@@ -1321,7 +1321,7 @@ func formatMonthlyReportsAsMarkdown(monthReports map[int][]DailyReport, firstDay
 func getReportsToolInfo() ToolInfo {
 	return ToolInfo{
 		Name:        "slide_reports",
-		Description: "Generate statistical reports about backups, snapshots, and system health. Provides pre-calculated metrics to help LLMs analyze data without complex calculations.",
+		Description: "Generate statistical reports about backups, snapshots, and system health. Provides pre-calculated metrics with optimized performance through parallel processing and caching.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{

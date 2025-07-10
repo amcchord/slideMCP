@@ -442,8 +442,36 @@ func enrichWithClientName(data interface{}) interface{} {
 	}
 }
 
-// API client helper
+// API client helper with 429 retry logic
 func makeAPIRequest(method, endpoint string, body []byte) ([]byte, error) {
+	maxRetries := 3
+
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		responseBody, statusCode, err := performSingleAPIRequest(method, endpoint, body)
+
+		// If no HTTP error occurred, return the response
+		if err == nil {
+			return responseBody, nil
+		}
+
+		// Check if this is a 429 error and we have retries left
+		if statusCode == 429 && attempt < maxRetries {
+			// Calculate wait time: 1s, 2s, 4s for attempts 0, 1, 2
+			waitSeconds := 1 << attempt // 2^attempt: 1, 2, 4
+			time.Sleep(time.Duration(waitSeconds) * time.Second)
+			continue
+		}
+
+		// For non-429 errors or when max retries reached, return the error
+		return nil, err
+	}
+
+	// This should never be reached, but added for completeness
+	return nil, fmt.Errorf("unexpected error in retry logic")
+}
+
+// performSingleAPIRequest performs a single API request without retry logic
+func performSingleAPIRequest(method, endpoint string, body []byte) ([]byte, int, error) {
 	url := APIBaseURL + endpoint
 
 	var req *http.Request
@@ -456,7 +484,7 @@ func makeAPIRequest(method, endpoint string, body []byte) ([]byte, error) {
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
+		return nil, 0, fmt.Errorf("failed to create request: %w", err)
 	}
 
 	req.Header.Set("Authorization", "Bearer "+apiKey)
@@ -464,20 +492,20 @@ func makeAPIRequest(method, endpoint string, body []byte) ([]byte, error) {
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("request failed: %w", err)
+		return nil, 0, fmt.Errorf("request failed: %w", err)
 	}
 	defer resp.Body.Close()
 
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read response: %w", err)
+		return nil, resp.StatusCode, fmt.Errorf("failed to read response: %w", err)
 	}
 
 	if resp.StatusCode >= 400 {
-		return nil, fmt.Errorf("API error %d: %s", resp.StatusCode, string(responseBody))
+		return nil, resp.StatusCode, fmt.Errorf("API error %d: %s", resp.StatusCode, string(responseBody))
 	}
 
-	return responseBody, nil
+	return responseBody, resp.StatusCode, nil
 }
 
 // API implementations

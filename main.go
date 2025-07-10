@@ -574,6 +574,20 @@ func handleToolCall(request MCPRequest) MCPResponse {
 			}
 		}
 
+	case "slide_reports":
+		data, err := handleReportsTool(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+
 	case "slide_meta":
 		data, err := handleMetaTool(args)
 		if err != nil {
@@ -648,6 +662,7 @@ func getAllTools() []ToolInfo {
 		getDevicesToolInfo(),
 		getVMsToolInfo(),
 		getPresentationToolInfo(),
+		getReportsToolInfo(),
 		getMetaToolInfo(),
 		// Special tools (kept for backward compatibility)
 		{
