@@ -9,7 +9,7 @@ set -e  # Exit on error
 # Script configuration
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_DIR="$( cd "$SCRIPT_DIR/.." && pwd )"
-VERSION="v2.2.0"
+VERSION="v2.2.1"
 BINARY_NAME="slide-mcp-server"
 BUILD_DIR="$PROJECT_DIR/build"
 

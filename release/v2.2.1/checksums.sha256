@@ -1,0 +1,17 @@
+7b5cf995ed3dc19d2bc0a69714ebf3fc9fa394785192a4c9cbe0ccb6acc72792  slide-mcp-server-v2.2.1-darwin-amd64.tar.gz
+26f341e8c2a49dd3f8baec72e13ac8c12294e6275a941fede557ed390e0e8d27  slide-mcp-server-v2.2.1-darwin-arm64.tar.gz
+9631019001340092e46309964ca75ef6f9084aef4d0025e71f431f54e304e725  slide-mcp-server-v2.2.1-linux-arm64.tar.gz
+cb9b390a584e773e45f9c07c52ee8b39ca4eac556e2d22cab21c2ce62e55609c  slide-mcp-server-v2.2.1-linux-x64.tar.gz
+26f341e8c2a49dd3f8baec72e13ac8c12294e6275a941fede557ed390e0e8d27  slide-mcp-server-v2.2.1-macos-arm64.tar.gz
+7b5cf995ed3dc19d2bc0a69714ebf3fc9fa394785192a4c9cbe0ccb6acc72792  slide-mcp-server-v2.2.1-macos-x64.tar.gz
+8d2275aad636e46c3f9d819a78e3bae106b8f41e36bb6778fede68e5f40d6437  slide-mcp-server-v2.2.1-windows-x64.zip
+# Also provided for compatibility:
+6c65a78b204ea4437ff37ea29f075652cd39ca9e7e9f6c5270f64bdff1b23777  slide-mcp-server-darwin-amd64.zip
+f887429e851d7d9c6df5a56a30f3c77ec58358e66ab29fd7fe527a4426eb80fe  slide-mcp-server-darwin-arm64.zip
+# Installer packages:
+a6eac5a17d048db01a5eee32c6f35f64cf73589e1cd096e06cc69f6a6592d3e8  slide-mcp-installer-v2.2.1-darwin-amd64-signed.tar.gz
+ea708202fead09d4f3ab9de592ba7bdb99bf39a489a0a59e95382f717820dd04  slide-mcp-installer-v2.2.1-darwin-arm64-signed.tar.gz
+70e46fd72031201ddda7905069b194712596c83e268ad5f2d26f87b4aa1346f1  slide-mcp-installer-v2.2.1-linux-amd64.tar.gz
+70e46fd72031201ddda7905069b194712596c83e268ad5f2d26f87b4aa1346f1  slide-mcp-installer-v2.2.1-linux-arm64.tar.gz
+1751d1991ca1d2658a726ceeb4bdeda3597b9b3703252cc1eabe9f35628ad3d1  slide-mcp-installer-v2.2.1-windows-386.zip
+df4e4dc5d20167d45456530fe8914978f08120a4d68e7fbee0f941bddbd55644  slide-mcp-installer-v2.2.1-windows-amd64.zip
