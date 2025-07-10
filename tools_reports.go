@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -568,30 +569,72 @@ func generateAgentReportsConcurrent(agents []Agent, date time.Time, maxConcurren
 
 	var wg sync.WaitGroup
 
+	// Create a context with timeout for the entire operation
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+
 	for i, agent := range agents {
 		wg.Add(1)
 		go func(idx int, ag Agent) {
 			defer wg.Done()
 
+			// Check if context is cancelled
+			select {
+			case <-ctx.Done():
+				if verbose {
+					fmt.Fprintf(os.Stderr, "[Concurrent] Context cancelled, skipping agent %s\n", ag.DisplayName)
+				}
+				return
+			default:
+			}
+
 			// Acquire semaphore
-			semaphore <- struct{}{}
-			defer func() { <-semaphore }()
+			select {
+			case semaphore <- struct{}{}:
+				defer func() { <-semaphore }()
+			case <-ctx.Done():
+				return
+			}
 
 			if verbose && idx%10 == 0 {
 				fmt.Fprintf(os.Stderr, "[Concurrent] Processing agent %d/%d (%s)...\n",
 					idx+1, len(agents), ag.DisplayName)
 			}
 
-			report, err := generateAgentDailyReport(ag.AgentID, date)
-			if err != nil {
+			// Create a channel to receive the report result
+			reportChan := make(chan *DailyReport, 1)
+			errChan := make(chan error, 1)
+
+			// Run report generation in a goroutine with timeout
+			go func() {
+				report, err := generateAgentDailyReport(ag.AgentID, date)
+				if err != nil {
+					errChan <- err
+				} else {
+					reportChan <- report
+				}
+			}()
+
+			// Wait for result with timeout
+			select {
+			case report := <-reportChan:
+				resultChan <- report
+			case err := <-errChan:
 				if verbose {
 					fmt.Fprintf(os.Stderr, "[Concurrent] Error processing agent %s: %v\n",
 						ag.DisplayName, err)
 				}
-				return
+			case <-time.After(30 * time.Second): // 30 second timeout per agent
+				if verbose {
+					fmt.Fprintf(os.Stderr, "[Concurrent] Timeout processing agent %s after 30 seconds\n",
+						ag.DisplayName)
+				}
+			case <-ctx.Done():
+				if verbose {
+					fmt.Fprintf(os.Stderr, "[Concurrent] Context cancelled while processing agent %s\n",
+						ag.DisplayName)
+				}
 			}
-
-			resultChan <- report
 		}(i, agent)
 	}
 
@@ -836,8 +879,26 @@ func calculateBackupStats(agentID string, date time.Time) (*BackupStats, error) 
 			break
 		}
 
+		// Safety check: ensure we're making progress
+		newOffset := *backupsList.Pagination.NextOffset
+		if newOffset <= offset {
+			// We're not making progress, break to avoid infinite loop
+			if verbose {
+				fmt.Fprintf(os.Stderr, "[Backup Stats] WARNING: Pagination not progressing, stopping at offset %d\n", offset)
+			}
+			break
+		}
+
+		// Additional safety: limit maximum iterations
+		if offset > 10000 {
+			if verbose {
+				fmt.Fprintf(os.Stderr, "[Backup Stats] WARNING: Reached maximum offset limit, stopping\n")
+			}
+			break
+		}
+
 		// Update offset
-		offset = *backupsList.Pagination.NextOffset
+		offset = newOffset
 	}
 
 done:
@@ -931,7 +992,31 @@ func calculateSnapshotStats(agentID string, date time.Time) (*SnapshotStats, err
 			break
 		}
 
-		offset = *snapshotsList.Pagination.NextOffset
+		// Safety check: ensure we're making progress
+		newOffset := *snapshotsList.Pagination.NextOffset
+		if newOffset <= offset {
+			// We're not making progress, break to avoid infinite loop
+			if verbose {
+				fmt.Fprintf(os.Stderr, "[Snapshot Stats] WARNING: Active snapshots pagination not progressing, stopping at offset %d\n", offset)
+			}
+			if stats.Active == 0 {
+				stats.Active = activeCount
+			}
+			break
+		}
+
+		// Additional safety: limit maximum iterations
+		if offset > 10000 {
+			if verbose {
+				fmt.Fprintf(os.Stderr, "[Snapshot Stats] WARNING: Reached maximum offset limit for active snapshots\n")
+			}
+			if stats.Active == 0 {
+				stats.Active = activeCount
+			}
+			break
+		}
+
+		offset = newOffset
 	}
 
 	stats.LocalStorage = localCount
@@ -1006,7 +1091,31 @@ func calculateSnapshotStats(agentID string, date time.Time) (*SnapshotStats, err
 			break
 		}
 
-		offset = *snapshotsList.Pagination.NextOffset
+		// Safety check: ensure we're making progress
+		newOffset := *snapshotsList.Pagination.NextOffset
+		if newOffset <= offset {
+			// We're not making progress, break to avoid infinite loop
+			if verbose {
+				fmt.Fprintf(os.Stderr, "[Snapshot Stats] WARNING: Deleted snapshots pagination not progressing, stopping at offset %d\n", offset)
+			}
+			if stats.Deleted == 0 {
+				stats.Deleted = deletedCount
+			}
+			break
+		}
+
+		// Additional safety: limit maximum iterations
+		if offset > 10000 {
+			if verbose {
+				fmt.Fprintf(os.Stderr, "[Snapshot Stats] WARNING: Reached maximum offset limit for deleted snapshots\n")
+			}
+			if stats.Deleted == 0 {
+				stats.Deleted = deletedCount
+			}
+			break
+		}
+
+		offset = newOffset
 	}
 
 	stats.DeletedByRetention = deletedByRetention
