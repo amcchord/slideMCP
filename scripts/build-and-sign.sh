@@ -1,16 +1,17 @@
 #!/bin/bash
 
-# Build and Sign Script for Slide MCP Server
-# This script builds the Go MCP server for all platforms and optionally signs macOS binaries
+# Build script for Slide MCP Server with code signing and notarization support
+# This script builds the slide-mcp-server for all supported platforms
+# and handles macOS code signing and notarization when credentials are available.
 
-set -e  # Exit on any error
+set -e  # Exit on error
 
-# Configuration
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-BUILD_DIR="$PROJECT_DIR/build"
+# Script configuration
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_DIR="$( cd "$SCRIPT_DIR/.." && pwd )"
+VERSION="v2.2.0"
 BINARY_NAME="slide-mcp-server"
-VERSION="v2.0.2"
+BUILD_DIR="$PROJECT_DIR/build"
 
 # Color codes for output
 RED='\033[0;31m'
