@@ -116,7 +116,7 @@ func isReadOnlyTool(toolName string) bool {
 	readOnlyTools := []string{
 		"slide_agents", "slide_backups", "slide_snapshots", "slide_user_management",
 		"slide_alerts", "slide_devices", "slide_networks",
-		"slide_vms", "slide_restores", "slide_presentation", "slide_meta", "list_all_clients_devices_and_agents",
+		"slide_vms", "slide_restores", "slide_presentation", "slide_meta", "slide_docs", "list_all_clients_devices_and_agents",
 	}
 	for _, tool := range readOnlyTools {
 		if tool == toolName {
@@ -602,6 +602,20 @@ func handleToolCall(request MCPRequest) MCPResponse {
 			}
 		}
 
+	case "slide_docs":
+		data, err := handleDocsTool(args)
+		if err != nil {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("Error: %v", err)}},
+				IsError: true,
+			}
+		} else {
+			result = ToolResult{
+				Content: []ToolContent{{Type: "text", Text: data}},
+				IsError: false,
+			}
+		}
+
 	// Special tools (keep as-is) - now handled by slide_meta
 	case "list_all_clients_devices_and_agents":
 		// Redirect to slide_meta for backward compatibility
@@ -664,6 +678,7 @@ func getAllTools() []ToolInfo {
 		getPresentationToolInfo(),
 		getReportsToolInfo(),
 		getMetaToolInfo(),
+		getDocsToolInfo(), // Documentation access tool
 		// Special tools (kept for backward compatibility)
 		{
 			Name:        "list_all_clients_devices_and_agents",

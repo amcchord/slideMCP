@@ -1,6 +1,8 @@
 package main
 
 import (
+	"archive/zip"
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -435,13 +437,17 @@ func (i *Installer) getAssetName(version string) string {
 	switch runtime.GOOS {
 	case "darwin":
 		if runtime.GOARCH == "arm64" {
-			return fmt.Sprintf("%s-%s-darwin-arm64.tar.gz", binaryName, version)
+			return fmt.Sprintf("%s-%s-macos-arm64.tar.gz", binaryName, version)
 		}
-		return fmt.Sprintf("%s-%s-darwin-amd64.tar.gz", binaryName, version)
+		return fmt.Sprintf("%s-%s-macos-x64.tar.gz", binaryName, version)
 	case "linux":
-		return fmt.Sprintf("%s-%s-linux-amd64.tar.gz", binaryName, version)
+		if runtime.GOARCH == "arm64" {
+			return fmt.Sprintf("%s-%s-linux-arm64.tar.gz", binaryName, version)
+		}
+		return fmt.Sprintf("%s-%s-linux-x64.tar.gz", binaryName, version)
 	case "windows":
-		return fmt.Sprintf("%s-%s-windows-amd64.zip", binaryName, version)
+		// Windows releases use x64 naming
+		return fmt.Sprintf("%s-%s-windows-x64.zip", binaryName, version)
 	default:
 		return ""
 	}
@@ -501,43 +507,34 @@ func (i *Installer) extractFromTarGzCLI(data []byte) ([]byte, error) {
 }
 
 func (i *Installer) extractFromZipCLI(data []byte) ([]byte, error) {
-	// Create a temporary file for the archive
-	tmpArchive, err := os.CreateTemp("", "slide-mcp-*.zip")
+	// Use Go's built-in zip package for better Windows compatibility
+	reader, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
-		return nil, fmt.Errorf("failed to create temp file: %w", err)
-	}
-	defer os.Remove(tmpArchive.Name())
-	defer tmpArchive.Close()
-
-	// Write archive data to temp file
-	if _, err := tmpArchive.Write(data); err != nil {
-		return nil, fmt.Errorf("failed to write temp file: %w", err)
-	}
-	tmpArchive.Close()
-
-	// Create temp directory for extraction
-	tmpDir, err := os.MkdirTemp("", "slide-mcp-extract-*")
-	if err != nil {
-		return nil, fmt.Errorf("failed to create temp dir: %w", err)
-	}
-	defer os.RemoveAll(tmpDir)
-
-	// Extract using unzip command
-	cmd := exec.Command("unzip", "-q", tmpArchive.Name(), "-d", tmpDir)
-	if err := cmd.Run(); err != nil {
-		return nil, fmt.Errorf("failed to extract archive: %w", err)
+		return nil, fmt.Errorf("failed to open zip archive: %w", err)
 	}
 
-	// Find the binary file
-	entries, err := os.ReadDir(tmpDir)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read extracted dir: %w", err)
-	}
+	// Find the binary file in the archive
+	for _, file := range reader.File {
+		// Skip directories (they end with /)
+		if strings.HasSuffix(file.Name, "/") {
+			continue
+		}
 
-	for _, entry := range entries {
-		if strings.Contains(entry.Name(), binaryName) && !entry.IsDir() {
-			binaryPath := filepath.Join(tmpDir, entry.Name())
-			return os.ReadFile(binaryPath)
+		if strings.Contains(file.Name, binaryName) {
+			// Open the file in the archive
+			rc, err := file.Open()
+			if err != nil {
+				return nil, fmt.Errorf("failed to open file in archive: %w", err)
+			}
+			defer rc.Close()
+
+			// Read the file contents
+			fileData, err := io.ReadAll(rc)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read file from archive: %w", err)
+			}
+
+			return fileData, nil
 		}
 	}
 

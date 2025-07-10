@@ -1,0 +1,3667 @@
+{
+  "_metadata": {
+    "description": "Pre-formatted data for monthly report template",
+    "template_placeholders": {
+      "daily": [
+        "REPORT_DATE",
+        "TOTAL_SUCCESSFUL_SNAPSHOTS",
+        "TOTAL_FAILED_SNAPSHOTS",
+        "TOTAL_CLIENTS",
+        "TOTAL_DEVICES",
+        "AGENTS_ONLINE",
+        "TOTAL_AGENTS",
+        "DEVICES_ACTIVE",
+        "SNAPSHOTS_TODAY",
+        "CLIENT_NAME",
+        "DEVICE_NAME"
+      ],
+      "monthly": [
+        "REPORT_MONTH_YEAR",
+        "TOTAL_MONTHLY_SNAPSHOTS",
+        "TOTAL_FAILED_SNAPSHOTS",
+        "TOTAL_DELETED_SNAPSHOTS",
+        "ACTIVE_DAYS",
+        "TOTAL_DATA_SIZE",
+        "RETENTION_RULES",
+        "SNAPSHOTS_DELETED_COUNT",
+        "SPACE_FREED"
+      ]
+    },
+    "usage": "Use this data to populate report templates. All metrics are pre-calculated and formatted for easy insertion."
+  },
+  "client_metrics": [
+    {
+      "active_devices": 1,
+      "agent_count": 7,
+      "client_id": "c_kaxmvazb564k",
+      "client_name": "Acme",
+      "device_count": 1,
+      "online_agents": 7
+    },
+    {
+      "active_devices": 1,
+      "agent_count": 3,
+      "client_id": "c_i1y6p7vlpfhr",
+      "client_name": "Veridian Dynamics",
+      "device_count": 1,
+      "online_agents": 3
+    }
+  ],
+  "hierarchy": {
+    "_metadata": {
+      "agent_identification": "Agents are identified by display_name (or hostname if display_name is empty).",
+      "client_identification": "Clients are identified by name. '[Unassigned]' represents devices not assigned to any client.",
+      "description": "Complete hierarchy of clients, devices, and agents",
+      "device_identification": "Devices are identified by hostname (the primary human-readable identifier).",
+      "relationships": {
+        "client_to_device": "One client can have multiple devices",
+        "device_to_agent": "One device can have multiple agents (backup software instances)"
+      },
+      "structure": "clients -\u003e devices -\u003e agents",
+      "workflow_guidance": "This gives you a complete overview of the backup infrastructure. Clients are organizational units (often customers in MSP scenarios), devices are the Slide appliances, and agents are the backup software installed on computers."
+    },
+    "clients": [
+      {
+        "client_id": "c_kaxmvazb564k",
+        "comments": "",
+        "devices": [
+          {
+            "agents": [
+              {
+                "agent_id": "a_ox5a4699532v",
+                "display_name": "",
+                "hostname": "Acme-SQL01",
+                "last_seen_at": "2025-07-02T02:25:57.543784Z",
+                "os": "windows",
+                "os_version": "10.0.20348",
+                "platform": "Microsoft Windows Server 2022 Standard Evaluation"
+              },
+              {
+                "agent_id": "a_s7m8c6u8mxqe",
+                "display_name": "Acme-Print",
+                "hostname": "Acme-Print",
+                "last_seen_at": "2025-07-02T02:26:33.305237Z",
+                "os": "windows",
+                "os_version": "10.0.20348",
+                "platform": "Microsoft Windows Server 2022 Standard Evaluation"
+              },
+              {
+                "agent_id": "a_o6u7joc4lbpx",
+                "display_name": "",
+                "hostname": "Acme-HQ-PC02",
+                "last_seen_at": "2025-07-02T02:26:34.736557Z",
+                "os": "windows",
+                "os_version": "10.0.19045",
+                "platform": "Microsoft Windows 10 Home"
+              },
+              {
+                "agent_id": "a_0i0tchjs2p7c",
+                "display_name": "",
+                "hostname": "Acme-HQ-PC01",
+                "last_seen_at": "2025-07-02T02:25:52.651226Z",
+                "os": "windows",
+                "os_version": "10.0.19045",
+                "platform": "Microsoft Windows 10 Home"
+              },
+              {
+                "agent_id": "a_59lnwy05xzxd",
+                "display_name": "",
+                "hostname": "Acme-HQ-LT01",
+                "last_seen_at": "2025-07-02T02:26:34.74573Z",
+                "os": "windows",
+                "os_version": "10.0.22631",
+                "platform": "Microsoft Windows 11 Pro N for Workstations"
+              },
+              {
+                "agent_id": "a_6usqly6qidbl",
+                "display_name": "",
+                "hostname": "Acme-FS01",
+                "last_seen_at": "2025-07-02T02:25:47.749289Z",
+                "os": "windows",
+                "os_version": "10.0.20348",
+                "platform": "Microsoft Windows Server 2022 Standard Evaluation"
+              },
+              {
+                "agent_id": "a_b01rcs89a35y",
+                "display_name": "",
+                "hostname": "Acme-DC01",
+                "last_seen_at": "2025-07-02T02:26:35.271747Z",
+                "os": "windows",
+                "os_version": "10.0.20348",
+                "platform": "Microsoft Windows Server 2022 Standard Evaluation"
+              }
+            ],
+            "device_id": "d_h62yh7q4wzm0",
+            "display_name": "Acme-bkp",
+            "hostname": "nwk-int-demo-box-1",
+            "last_seen_at": "2025-07-02T02:26:36.331858Z",
+            "service_status": "active"
+          }
+        ],
+        "name": "Acme"
+      },
+      {
+        "client_id": "c_i1y6p7vlpfhr",
+        "comments": "",
+        "devices": [
+          {
+            "agents": [
+              {
+                "agent_id": "a_mbepgxrb629h",
+                "display_name": "",
+                "hostname": "Veridian-HQ-Jabberwocky",
+                "last_seen_at": "2025-07-02T02:25:59.239909Z",
+                "os": "windows",
+                "os_version": "10.0.20348",
+                "platform": "Microsoft Windows Server 2022 Standard Evaluation"
+              },
+              {
+                "agent_id": "a_ympzr1q1aofr",
+                "display_name": "",
+                "hostname": "Veridian-HQ-Files",
+                "last_seen_at": "2025-07-02T02:26:28.510209Z",
+                "os": "windows",
+                "os_version": "10.0.20348",
+                "platform": "Microsoft Windows Server 2022 Standard Evaluation"
+              },
+              {
+                "agent_id": "a_nz6x3h2hs6qj",
+                "display_name": "",
+                "hostname": "Veridian-HQ-DC01",
+                "last_seen_at": "2025-07-02T02:25:58.877887Z",
+                "os": "windows",
+                "os_version": "10.0.20348",
+                "platform": "Microsoft Windows Server 2022 Standard Evaluation"
+              }
+            ],
+            "device_id": "d_zsmqzb11fls1",
+            "display_name": "",
+            "hostname": "Veridian-bkp",
+            "last_seen_at": "2025-07-02T02:26:04.79147Z",
+            "service_status": "active"
+          }
+        ],
+        "name": "Veridian Dynamics"
+      }
+    ]
+  },
+  "metrics": {
+    "agents_online": 10,
+    "deleted_snapshots": 100,
+    "devices_active": 2,
+    "new_snapshots": 100,
+    "total_agents": 10,
+    "total_clients": 2,
+    "total_devices": 2
+  },
+  "report_date": "July 1, 2025",
+  "report_period": "Last 30 days",
+  "report_type": "monthly",
+  "snapshot_changes": {
+    "_metadata": {
+      "description": "Snapshot changes over the last month",
+      "usage": "Use this data to populate reporting templates with accurate snapshot creation and deletion information"
+    },
+    "deleted_snapshots": [
+      {
+        "agent_hostname": "Acme-Print",
+        "agent_id": "a_s7m8c6u8mxqe",
+        "agent_name": "Acme-Print",
+        "backup_ended_at": "2025-07-01T00:00:11.599127Z",
+        "backup_started_at": "2025-07-01T00:00:00.000838Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-02T01:39:19.545799Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_xkg0ebs24o91"
+      },
+      {
+        "agent_hostname": "Acme-Print",
+        "agent_id": "a_s7m8c6u8mxqe",
+        "agent_name": "Acme-Print",
+        "backup_ended_at": "2025-07-01T00:00:11.599127Z",
+        "backup_started_at": "2025-07-01T00:00:00.000838Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-02T01:39:20.215176Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_xkg0ebs24o91"
+      },
+      {
+        "agent_hostname": "Acme-Print",
+        "agent_id": "a_s7m8c6u8mxqe",
+        "agent_name": "Acme-Print",
+        "backup_ended_at": "2025-06-30T23:00:25Z",
+        "backup_started_at": "2025-06-30T23:00:14Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-02T01:39:19.293164Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_dwriepy3n92k"
+      },
+      {
+        "agent_hostname": "Acme-Print",
+        "agent_id": "a_s7m8c6u8mxqe",
+        "agent_name": "Acme-Print",
+        "backup_ended_at": "2025-06-30T23:00:25Z",
+        "backup_started_at": "2025-06-30T23:00:14Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-02T01:39:19.953453Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_dwriepy3n92k"
+      },
+      {
+        "agent_hostname": "Acme-FS01",
+        "agent_id": "a_6usqly6qidbl",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T23:00:22Z",
+        "backup_started_at": "2025-06-30T23:00:15Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-02T00:53:43.230846Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_i8iwu6eszcpa"
+      },
+      {
+        "agent_hostname": "Acme-FS01",
+        "agent_id": "a_6usqly6qidbl",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T23:00:22Z",
+        "backup_started_at": "2025-06-30T23:00:15Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-02T00:53:43.977251Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_i8iwu6eszcpa"
+      },
+      {
+        "agent_hostname": "Acme-DC01",
+        "agent_id": "a_b01rcs89a35y",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T23:00:12.652768Z",
+        "backup_started_at": "2025-06-30T23:00:00.002556Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-02T00:53:36.355834Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_350z42dhkva2"
+      },
+      {
+        "agent_hostname": "Acme-DC01",
+        "agent_id": "a_b01rcs89a35y",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T23:00:12.652768Z",
+        "backup_started_at": "2025-06-30T23:00:00.002556Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-02T00:53:37.172228Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_350z42dhkva2"
+      },
+      {
+        "agent_hostname": "Acme-SQL01",
+        "agent_id": "a_ox5a4699532v",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T23:00:12.603715Z",
+        "backup_started_at": "2025-06-30T23:00:00.002415Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-02T00:51:50.774195Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_ftspf17sqlh9"
+      },
+      {
+        "agent_hostname": "Acme-SQL01",
+        "agent_id": "a_ox5a4699532v",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T23:00:12.603715Z",
+        "backup_started_at": "2025-06-30T23:00:00.002415Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-02T00:51:51.49869Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_ftspf17sqlh9"
+      },
+      {
+        "agent_hostname": "Acme-HQ-PC02",
+        "agent_id": "a_o6u7joc4lbpx",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T22:00:58Z",
+        "backup_started_at": "2025-06-30T22:00:47Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-02T00:53:29.028122Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_eemyguym0rcq"
+      },
+      {
+        "agent_hostname": "Acme-HQ-PC02",
+        "agent_id": "a_o6u7joc4lbpx",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T22:00:58Z",
+        "backup_started_at": "2025-06-30T22:00:47Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-02T00:53:29.417425Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_eemyguym0rcq"
+      },
+      {
+        "agent_hostname": "Acme-FS01",
+        "agent_id": "a_6usqly6qidbl",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T22:00:45Z",
+        "backup_started_at": "2025-06-30T22:00:34Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-02T00:53:42.935481Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_axbal8bapmt4"
+      },
+      {
+        "agent_hostname": "Acme-FS01",
+        "agent_id": "a_6usqly6qidbl",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T22:00:45Z",
+        "backup_started_at": "2025-06-30T22:00:34Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-02T00:53:43.665936Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_axbal8bapmt4"
+      },
+      {
+        "agent_hostname": "Acme-DC01",
+        "agent_id": "a_b01rcs89a35y",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T22:00:45Z",
+        "backup_started_at": "2025-06-30T22:00:34Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-02T00:53:35.860365Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_tjsyjwigovoq"
+      },
+      {
+        "agent_hostname": "Acme-DC01",
+        "agent_id": "a_b01rcs89a35y",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T22:00:45Z",
+        "backup_started_at": "2025-06-30T22:00:34Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-02T00:53:36.903753Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_tjsyjwigovoq"
+      },
+      {
+        "agent_hostname": "Acme-Print",
+        "agent_id": "a_s7m8c6u8mxqe",
+        "agent_name": "Acme-Print",
+        "backup_ended_at": "2025-06-30T22:00:32Z",
+        "backup_started_at": "2025-06-30T22:00:21Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T23:10:58.467829Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_orkjvzpxpw18"
+      },
+      {
+        "agent_hostname": "Acme-Print",
+        "agent_id": "a_s7m8c6u8mxqe",
+        "agent_name": "Acme-Print",
+        "backup_ended_at": "2025-06-30T22:00:32Z",
+        "backup_started_at": "2025-06-30T22:00:21Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T23:10:59.566692Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_orkjvzpxpw18"
+      },
+      {
+        "agent_hostname": "Acme-HQ-LT01",
+        "agent_id": "a_59lnwy05xzxd",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T22:00:31Z",
+        "backup_started_at": "2025-06-30T22:00:20Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-02T00:52:11.812765Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_kti6w2vlh9i3"
+      },
+      {
+        "agent_hostname": "Acme-HQ-LT01",
+        "agent_id": "a_59lnwy05xzxd",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T22:00:31Z",
+        "backup_started_at": "2025-06-30T22:00:20Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-02T00:52:12.207303Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_kti6w2vlh9i3"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-DC01",
+        "agent_id": "a_nz6x3h2hs6qj",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T22:00:27Z",
+        "backup_started_at": "2025-06-30T22:00:14Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "deleted_at": "2025-07-02T00:56:13.477034Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "snapshot_id": "s_w5tpekxwctkb"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-DC01",
+        "agent_id": "a_nz6x3h2hs6qj",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T22:00:27Z",
+        "backup_started_at": "2025-06-30T22:00:14Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "deleted_at": "2025-07-02T00:56:13.857423Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "snapshot_id": "s_w5tpekxwctkb"
+      },
+      {
+        "agent_hostname": "Acme-SQL01",
+        "agent_id": "a_ox5a4699532v",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T22:00:14.345059Z",
+        "backup_started_at": "2025-06-30T22:00:00.00179Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-02T00:51:50.513533Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_0bbmmq679vwm"
+      },
+      {
+        "agent_hostname": "Acme-SQL01",
+        "agent_id": "a_ox5a4699532v",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T22:00:14.345059Z",
+        "backup_started_at": "2025-06-30T22:00:00.00179Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-02T00:51:51.221553Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_0bbmmq679vwm"
+      },
+      {
+        "agent_hostname": "Acme-HQ-PC01",
+        "agent_id": "a_0i0tchjs2p7c",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T22:00:13.686816Z",
+        "backup_started_at": "2025-06-30T22:00:00.001693Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-02T00:53:49.576036Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_1gs0ticzw7qf"
+      },
+      {
+        "agent_hostname": "Acme-HQ-PC01",
+        "agent_id": "a_0i0tchjs2p7c",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T22:00:13.686816Z",
+        "backup_started_at": "2025-06-30T22:00:00.001693Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-02T00:53:49.99971Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_1gs0ticzw7qf"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-Jabberwocky",
+        "agent_id": "a_mbepgxrb629h",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T22:00:09.232905Z",
+        "backup_started_at": "2025-06-30T22:00:00.002642Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "deleted_at": "2025-07-02T00:55:57.218577Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "snapshot_id": "s_mey6x1olpg8k"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-Jabberwocky",
+        "agent_id": "a_mbepgxrb629h",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T22:00:09.232905Z",
+        "backup_started_at": "2025-06-30T22:00:00.002642Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "deleted_at": "2025-07-02T00:55:57.60018Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "snapshot_id": "s_mey6x1olpg8k"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-Files",
+        "agent_id": "a_ympzr1q1aofr",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T22:00:09.1784Z",
+        "backup_started_at": "2025-06-30T22:00:00.00275Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "deleted_at": "2025-07-02T00:55:50.146019Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "snapshot_id": "s_9hss5pb29q83"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-Files",
+        "agent_id": "a_ympzr1q1aofr",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T22:00:09.1784Z",
+        "backup_started_at": "2025-06-30T22:00:00.00275Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "deleted_at": "2025-07-02T00:55:50.656207Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "snapshot_id": "s_9hss5pb29q83"
+      },
+      {
+        "agent_hostname": "Acme-FS01",
+        "agent_id": "a_6usqly6qidbl",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T21:00:29Z",
+        "backup_started_at": "2025-06-30T21:00:18Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T22:20:55.549073Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_p6bdsn4p38ne"
+      },
+      {
+        "agent_hostname": "Acme-FS01",
+        "agent_id": "a_6usqly6qidbl",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T21:00:29Z",
+        "backup_started_at": "2025-06-30T21:00:18Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T22:20:56.645584Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_p6bdsn4p38ne"
+      },
+      {
+        "agent_hostname": "Acme-Print",
+        "agent_id": "a_s7m8c6u8mxqe",
+        "agent_name": "Acme-Print",
+        "backup_ended_at": "2025-06-30T21:00:29Z",
+        "backup_started_at": "2025-06-30T21:00:18Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T23:10:58.209263Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_xo16n8mpab3q"
+      },
+      {
+        "agent_hostname": "Acme-Print",
+        "agent_id": "a_s7m8c6u8mxqe",
+        "agent_name": "Acme-Print",
+        "backup_ended_at": "2025-06-30T21:00:29Z",
+        "backup_started_at": "2025-06-30T21:00:18Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T23:10:59.228829Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_xo16n8mpab3q"
+      },
+      {
+        "agent_hostname": "Acme-DC01",
+        "agent_id": "a_b01rcs89a35y",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T21:00:15.366031Z",
+        "backup_started_at": "2025-06-30T21:00:00.002494Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T22:20:47.096533Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_t6cd0wo0u7z4"
+      },
+      {
+        "agent_hostname": "Acme-DC01",
+        "agent_id": "a_b01rcs89a35y",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T21:00:15.366031Z",
+        "backup_started_at": "2025-06-30T21:00:00.002494Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T22:20:48.133888Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_t6cd0wo0u7z4"
+      },
+      {
+        "agent_hostname": "Acme-SQL01",
+        "agent_id": "a_ox5a4699532v",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T21:00:15.11847Z",
+        "backup_started_at": "2025-06-30T21:00:00.002737Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T22:18:42.78943Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_35zsp5xtd9y1"
+      },
+      {
+        "agent_hostname": "Acme-SQL01",
+        "agent_id": "a_ox5a4699532v",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T21:00:15.11847Z",
+        "backup_started_at": "2025-06-30T21:00:00.002737Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T22:18:43.947921Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_35zsp5xtd9y1"
+      },
+      {
+        "agent_hostname": "Acme-SQL01",
+        "agent_id": "a_ox5a4699532v",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T20:00:41Z",
+        "backup_started_at": "2025-06-30T20:00:32Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T22:18:42.492453Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_8q5h3tdst7mi"
+      },
+      {
+        "agent_hostname": "Acme-SQL01",
+        "agent_id": "a_ox5a4699532v",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T20:00:41Z",
+        "backup_started_at": "2025-06-30T20:00:32Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T22:18:43.602381Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_8q5h3tdst7mi"
+      },
+      {
+        "agent_hostname": "Acme-FS01",
+        "agent_id": "a_6usqly6qidbl",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T20:00:35Z",
+        "backup_started_at": "2025-06-30T20:00:27Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T22:20:55.26512Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_4967yx3qen5d"
+      },
+      {
+        "agent_hostname": "Acme-FS01",
+        "agent_id": "a_6usqly6qidbl",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T20:00:35Z",
+        "backup_started_at": "2025-06-30T20:00:27Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T22:20:56.329006Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_4967yx3qen5d"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-DC01",
+        "agent_id": "a_nz6x3h2hs6qj",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T20:00:32Z",
+        "backup_started_at": "2025-06-30T20:00:17Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "deleted_at": "2025-07-01T22:24:03.318936Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "snapshot_id": "s_u29p5i68g358"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-DC01",
+        "agent_id": "a_nz6x3h2hs6qj",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T20:00:32Z",
+        "backup_started_at": "2025-06-30T20:00:17Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "deleted_at": "2025-07-01T22:24:03.727239Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "snapshot_id": "s_u29p5i68g358"
+      },
+      {
+        "agent_hostname": "Acme-Print",
+        "agent_id": "a_s7m8c6u8mxqe",
+        "agent_name": "Acme-Print",
+        "backup_ended_at": "2025-06-30T20:00:28Z",
+        "backup_started_at": "2025-06-30T20:00:16Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T23:10:57.948069Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_ajc7wosl3h95"
+      },
+      {
+        "agent_hostname": "Acme-Print",
+        "agent_id": "a_s7m8c6u8mxqe",
+        "agent_name": "Acme-Print",
+        "backup_ended_at": "2025-06-30T20:00:28Z",
+        "backup_started_at": "2025-06-30T20:00:16Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T23:10:58.884719Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_ajc7wosl3h95"
+      },
+      {
+        "agent_hostname": "Acme-DC01",
+        "agent_id": "a_b01rcs89a35y",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T20:00:25Z",
+        "backup_started_at": "2025-06-30T20:00:18Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T22:20:46.821808Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_s23oudjgdfxg"
+      },
+      {
+        "agent_hostname": "Acme-DC01",
+        "agent_id": "a_b01rcs89a35y",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T20:00:25Z",
+        "backup_started_at": "2025-06-30T20:00:18Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T22:20:47.837301Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_s23oudjgdfxg"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-Jabberwocky",
+        "agent_id": "a_mbepgxrb629h",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T20:00:14.43569Z",
+        "backup_started_at": "2025-06-30T20:00:00.002007Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "deleted_at": "2025-07-01T22:23:41.919169Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "snapshot_id": "s_ol2nx4s9f6wa"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-Jabberwocky",
+        "agent_id": "a_mbepgxrb629h",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T20:00:14.43569Z",
+        "backup_started_at": "2025-06-30T20:00:00.002007Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "deleted_at": "2025-07-01T22:23:42.332626Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "snapshot_id": "s_ol2nx4s9f6wa"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-Files",
+        "agent_id": "a_ympzr1q1aofr",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T20:00:12.365715Z",
+        "backup_started_at": "2025-06-30T20:00:00.002156Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "deleted_at": "2025-07-01T22:23:35.432801Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "snapshot_id": "s_crt8kfwlqjkx"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-Files",
+        "agent_id": "a_ympzr1q1aofr",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T20:00:12.365715Z",
+        "backup_started_at": "2025-06-30T20:00:00.002156Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "deleted_at": "2025-07-01T22:23:35.866244Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "snapshot_id": "s_crt8kfwlqjkx"
+      },
+      {
+        "agent_hostname": "Acme-HQ-LT01",
+        "agent_id": "a_59lnwy05xzxd",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T20:00:12.498382Z",
+        "backup_started_at": "2025-06-30T20:00:00.002758Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T22:19:08.378142Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_2uw4nnillabb"
+      },
+      {
+        "agent_hostname": "Acme-HQ-LT01",
+        "agent_id": "a_59lnwy05xzxd",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T20:00:12.498382Z",
+        "backup_started_at": "2025-06-30T20:00:00.002758Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T22:19:08.968937Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_2uw4nnillabb"
+      },
+      {
+        "agent_hostname": "Acme-HQ-PC01",
+        "agent_id": "a_0i0tchjs2p7c",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T20:00:12.228734Z",
+        "backup_started_at": "2025-06-30T20:00:00.003045Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T22:21:03.645881Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_bj7rmpzb3812"
+      },
+      {
+        "agent_hostname": "Acme-HQ-PC01",
+        "agent_id": "a_0i0tchjs2p7c",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T20:00:12.228734Z",
+        "backup_started_at": "2025-06-30T20:00:00.003045Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T22:21:04.083855Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_bj7rmpzb3812"
+      },
+      {
+        "agent_hostname": "Acme-SQL01",
+        "agent_id": "a_ox5a4699532v",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T19:00:36Z",
+        "backup_started_at": "2025-06-30T19:00:29Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T22:18:42.189692Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_4h19nwg7tpox"
+      },
+      {
+        "agent_hostname": "Acme-SQL01",
+        "agent_id": "a_ox5a4699532v",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T19:00:36Z",
+        "backup_started_at": "2025-06-30T19:00:29Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T22:18:43.289183Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_4h19nwg7tpox"
+      },
+      {
+        "agent_hostname": "Acme-Print",
+        "agent_id": "a_s7m8c6u8mxqe",
+        "agent_name": "Acme-Print",
+        "backup_ended_at": "2025-06-30T19:00:27Z",
+        "backup_started_at": "2025-06-30T19:00:16Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T20:37:04.175576Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_m4xapvnnoho0"
+      },
+      {
+        "agent_hostname": "Acme-Print",
+        "agent_id": "a_s7m8c6u8mxqe",
+        "agent_name": "Acme-Print",
+        "backup_ended_at": "2025-06-30T19:00:27Z",
+        "backup_started_at": "2025-06-30T19:00:16Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T20:37:04.887515Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_m4xapvnnoho0"
+      },
+      {
+        "agent_hostname": "Acme-HQ-PC02",
+        "agent_id": "a_o6u7joc4lbpx",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T19:00:27Z",
+        "backup_started_at": "2025-06-30T19:00:16Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T22:20:41.233727Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_5fabu4rj2vxd"
+      },
+      {
+        "agent_hostname": "Acme-HQ-PC02",
+        "agent_id": "a_o6u7joc4lbpx",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T19:00:27Z",
+        "backup_started_at": "2025-06-30T19:00:16Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T22:20:41.6382Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_5fabu4rj2vxd"
+      },
+      {
+        "agent_hostname": "Acme-DC01",
+        "agent_id": "a_b01rcs89a35y",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T19:00:13.165075Z",
+        "backup_started_at": "2025-06-30T19:00:00.001942Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T22:20:46.518008Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_xipu24kqzkbh"
+      },
+      {
+        "agent_hostname": "Acme-DC01",
+        "agent_id": "a_b01rcs89a35y",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T19:00:13.165075Z",
+        "backup_started_at": "2025-06-30T19:00:00.001942Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T22:20:47.537148Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_xipu24kqzkbh"
+      },
+      {
+        "agent_hostname": "Acme-FS01",
+        "agent_id": "a_6usqly6qidbl",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T19:00:11.129566Z",
+        "backup_started_at": "2025-06-30T19:00:00.002128Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T22:20:54.998243Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_5w872hob764z"
+      },
+      {
+        "agent_hostname": "Acme-FS01",
+        "agent_id": "a_6usqly6qidbl",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T19:00:11.129566Z",
+        "backup_started_at": "2025-06-30T19:00:00.002128Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T22:20:55.990929Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_5w872hob764z"
+      },
+      {
+        "agent_hostname": "Acme-FS01",
+        "agent_id": "a_6usqly6qidbl",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T18:01:00Z",
+        "backup_started_at": "2025-06-30T18:00:52Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T19:48:54.772528Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_0obfcgp35ru0"
+      },
+      {
+        "agent_hostname": "Acme-FS01",
+        "agent_id": "a_6usqly6qidbl",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T18:01:00Z",
+        "backup_started_at": "2025-06-30T18:00:52Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T19:48:55.545099Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_0obfcgp35ru0"
+      },
+      {
+        "agent_hostname": "Acme-DC01",
+        "agent_id": "a_b01rcs89a35y",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T18:00:58Z",
+        "backup_started_at": "2025-06-30T18:00:49Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T19:48:47.119877Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_zavn54q3h8jk"
+      },
+      {
+        "agent_hostname": "Acme-DC01",
+        "agent_id": "a_b01rcs89a35y",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T18:00:58Z",
+        "backup_started_at": "2025-06-30T18:00:49Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T19:48:47.849166Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_zavn54q3h8jk"
+      },
+      {
+        "agent_hostname": "Acme-HQ-PC01",
+        "agent_id": "a_0i0tchjs2p7c",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T18:00:35Z",
+        "backup_started_at": "2025-06-30T18:00:25Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T19:49:04.073834Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_r6kefjjq5u4o"
+      },
+      {
+        "agent_hostname": "Acme-HQ-PC01",
+        "agent_id": "a_0i0tchjs2p7c",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T18:00:35Z",
+        "backup_started_at": "2025-06-30T18:00:25Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T19:49:05.332149Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_r6kefjjq5u4o"
+      },
+      {
+        "agent_hostname": "Acme-SQL01",
+        "agent_id": "a_ox5a4699532v",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T18:00:28Z",
+        "backup_started_at": "2025-06-30T18:00:20Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T19:46:56.528361Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_6fynrwxasyvy"
+      },
+      {
+        "agent_hostname": "Acme-SQL01",
+        "agent_id": "a_ox5a4699532v",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T18:00:28Z",
+        "backup_started_at": "2025-06-30T18:00:20Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T19:46:57.259026Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_6fynrwxasyvy"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-DC01",
+        "agent_id": "a_nz6x3h2hs6qj",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T18:00:28Z",
+        "backup_started_at": "2025-06-30T18:00:15Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "deleted_at": "2025-07-01T19:51:25.892607Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "snapshot_id": "s_zqe9z36007kw"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-DC01",
+        "agent_id": "a_nz6x3h2hs6qj",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T18:00:28Z",
+        "backup_started_at": "2025-06-30T18:00:15Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "deleted_at": "2025-07-01T19:51:26.277829Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "snapshot_id": "s_zqe9z36007kw"
+      },
+      {
+        "agent_hostname": "Acme-HQ-LT01",
+        "agent_id": "a_59lnwy05xzxd",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T18:00:16.26645Z",
+        "backup_started_at": "2025-06-30T18:00:00.00167Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T19:47:17.36937Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_kdaacw5v7fu6"
+      },
+      {
+        "agent_hostname": "Acme-HQ-LT01",
+        "agent_id": "a_59lnwy05xzxd",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T18:00:16.26645Z",
+        "backup_started_at": "2025-06-30T18:00:00.00167Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T19:47:18.231314Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_kdaacw5v7fu6"
+      },
+      {
+        "agent_hostname": "Acme-Print",
+        "agent_id": "a_s7m8c6u8mxqe",
+        "agent_name": "Acme-Print",
+        "backup_ended_at": "2025-06-30T18:00:12.453496Z",
+        "backup_started_at": "2025-06-30T18:00:00.002078Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T20:37:03.927056Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_3susvcsjpyr8"
+      },
+      {
+        "agent_hostname": "Acme-Print",
+        "agent_id": "a_s7m8c6u8mxqe",
+        "agent_name": "Acme-Print",
+        "backup_ended_at": "2025-06-30T18:00:12.453496Z",
+        "backup_started_at": "2025-06-30T18:00:00.002078Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T20:37:04.581236Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_3susvcsjpyr8"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-Jabberwocky",
+        "agent_id": "a_mbepgxrb629h",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T18:00:09.559261Z",
+        "backup_started_at": "2025-06-30T18:00:00.002887Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "deleted_at": "2025-07-01T19:51:05.920013Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "snapshot_id": "s_8syhjyew0rxa"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-Jabberwocky",
+        "agent_id": "a_mbepgxrb629h",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T18:00:09.559261Z",
+        "backup_started_at": "2025-06-30T18:00:00.002887Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "deleted_at": "2025-07-01T19:51:06.333133Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "snapshot_id": "s_8syhjyew0rxa"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-Files",
+        "agent_id": "a_ympzr1q1aofr",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T18:00:07.588018Z",
+        "backup_started_at": "2025-06-30T18:00:00.002769Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "deleted_at": "2025-07-01T19:50:59.897959Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "snapshot_id": "s_z88yhb2dc4xv"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-Files",
+        "agent_id": "a_ympzr1q1aofr",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T18:00:07.588018Z",
+        "backup_started_at": "2025-06-30T18:00:00.002769Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "deleted_at": "2025-07-01T19:51:00.316212Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "snapshot_id": "s_z88yhb2dc4xv"
+      },
+      {
+        "agent_hostname": "Acme-DC01",
+        "agent_id": "a_b01rcs89a35y",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T17:00:30Z",
+        "backup_started_at": "2025-06-30T17:00:22Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T19:48:46.855229Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_gbtcadqyb0pv"
+      },
+      {
+        "agent_hostname": "Acme-DC01",
+        "agent_id": "a_b01rcs89a35y",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T17:00:30Z",
+        "backup_started_at": "2025-06-30T17:00:22Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T19:48:47.56329Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_gbtcadqyb0pv"
+      },
+      {
+        "agent_hostname": "Acme-Print",
+        "agent_id": "a_s7m8c6u8mxqe",
+        "agent_name": "Acme-Print",
+        "backup_ended_at": "2025-06-30T17:00:30Z",
+        "backup_started_at": "2025-06-30T17:00:18Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T18:09:46.985905Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_janqripo86x6"
+      },
+      {
+        "agent_hostname": "Acme-Print",
+        "agent_id": "a_s7m8c6u8mxqe",
+        "agent_name": "Acme-Print",
+        "backup_ended_at": "2025-06-30T17:00:30Z",
+        "backup_started_at": "2025-06-30T17:00:18Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T18:09:47.421328Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_janqripo86x6"
+      },
+      {
+        "agent_hostname": "Acme-SQL01",
+        "agent_id": "a_ox5a4699532v",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T17:00:13.193054Z",
+        "backup_started_at": "2025-06-30T17:00:00.002007Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T19:46:56.250865Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_jhsvj692wnu3"
+      },
+      {
+        "agent_hostname": "Acme-SQL01",
+        "agent_id": "a_ox5a4699532v",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T17:00:13.193054Z",
+        "backup_started_at": "2025-06-30T17:00:00.002007Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T19:46:56.96568Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_jhsvj692wnu3"
+      },
+      {
+        "agent_hostname": "Acme-FS01",
+        "agent_id": "a_6usqly6qidbl",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T17:00:08.085099Z",
+        "backup_started_at": "2025-06-30T17:00:00.002134Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T19:48:54.445043Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_48d8mdreh262"
+      },
+      {
+        "agent_hostname": "Acme-FS01",
+        "agent_id": "a_6usqly6qidbl",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T17:00:08.085099Z",
+        "backup_started_at": "2025-06-30T17:00:00.002134Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T19:48:55.268941Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_48d8mdreh262"
+      },
+      {
+        "agent_hostname": "Acme-HQ-PC02",
+        "agent_id": "a_o6u7joc4lbpx",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T16:00:15.300671Z",
+        "backup_started_at": "2025-06-30T16:00:00.003401Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T17:23:58.629932Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_6vq64d3qtbja"
+      },
+      {
+        "agent_hostname": "Acme-HQ-PC02",
+        "agent_id": "a_o6u7joc4lbpx",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T16:00:15.300671Z",
+        "backup_started_at": "2025-06-30T16:00:00.003401Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T17:23:59.237468Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_6vq64d3qtbja"
+      },
+      {
+        "agent_hostname": "Acme-HQ-PC01",
+        "agent_id": "a_0i0tchjs2p7c",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T16:00:15.433802Z",
+        "backup_started_at": "2025-06-30T16:00:00.001986Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T17:24:14.520421Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_buoav2k79dd6"
+      },
+      {
+        "agent_hostname": "Acme-HQ-PC01",
+        "agent_id": "a_0i0tchjs2p7c",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T16:00:15.433802Z",
+        "backup_started_at": "2025-06-30T16:00:00.001986Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T17:24:14.974922Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_buoav2k79dd6"
+      },
+      {
+        "agent_hostname": "Acme-HQ-PC01",
+        "agent_id": "a_0i0tchjs2p7c",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T14:00:09.545221Z",
+        "backup_started_at": "2025-06-30T14:00:00.00104Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T15:06:20.859068Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_ogkud9rnutu6"
+      },
+      {
+        "agent_hostname": "Acme-HQ-PC01",
+        "agent_id": "a_0i0tchjs2p7c",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T14:00:09.545221Z",
+        "backup_started_at": "2025-06-30T14:00:00.00104Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "deleted_at": "2025-07-01T15:06:21.293241Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "snapshot_id": "s_ogkud9rnutu6"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-Files",
+        "agent_id": "a_ympzr1q1aofr",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T04:00:17Z",
+        "backup_started_at": "2025-06-30T04:00:10Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "deleted_at": "2025-07-01T06:27:19.992598Z",
+        "deleted_by": "retention",
+        "deletion_type": "local",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "snapshot_id": "s_smzcwq0qqpt0"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-Files",
+        "agent_id": "a_ympzr1q1aofr",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T04:00:17Z",
+        "backup_started_at": "2025-06-30T04:00:10Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "deleted_at": "2025-07-01T06:27:20.374907Z",
+        "deleted_by": "retention",
+        "deletion_type": "cloud",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "snapshot_id": "s_smzcwq0qqpt0"
+      }
+    ],
+    "end_time": "2025-07-01T22:26:38-04:00",
+    "new_snapshots": [
+      {
+        "agent_hostname": "Veridian-HQ-Files",
+        "agent_id": "a_ympzr1q1aofr",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-02T02:00:18Z",
+        "backup_started_at": "2025-07-02T02:00:11Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "locations": [
+          {
+            "device_id": "d_zsmqzb11fls1",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_uc9cgdyd9xz9"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-DC01",
+        "agent_id": "a_nz6x3h2hs6qj",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-02T02:00:11.118288Z",
+        "backup_started_at": "2025-07-02T02:00:00.002168Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "locations": [
+          {
+            "device_id": "d_zsmqzb11fls1",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_k94ia6g6qt7d"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-Jabberwocky",
+        "agent_id": "a_mbepgxrb629h",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-02T02:00:07.31285Z",
+        "backup_started_at": "2025-07-02T02:00:00.002298Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "locations": [
+          {
+            "device_id": "d_zsmqzb11fls1",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_e2voar2vkd1x"
+      },
+      {
+        "agent_hostname": "Acme-Print",
+        "agent_id": "a_s7m8c6u8mxqe",
+        "agent_name": "Acme-Print",
+        "backup_ended_at": "2025-07-02T01:00:24Z",
+        "backup_started_at": "2025-07-02T01:00:13Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [
+          {
+            "device_id": "d_h62yh7q4wzm0",
+            "type": "local"
+          },
+          {
+            "device_id": "d_gkzw128d4w31",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_ekqbr7mzhl5v"
+      },
+      {
+        "agent_hostname": "Acme-FS01",
+        "agent_id": "a_6usqly6qidbl",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-02T01:00:20Z",
+        "backup_started_at": "2025-07-02T01:00:13Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [
+          {
+            "device_id": "d_h62yh7q4wzm0",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_s514n6z3tlua"
+      },
+      {
+        "agent_hostname": "Acme-DC01",
+        "agent_id": "a_b01rcs89a35y",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-02T01:00:11.679775Z",
+        "backup_started_at": "2025-07-02T01:00:00.001418Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [
+          {
+            "device_id": "d_h62yh7q4wzm0",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_cmlij86xuqy8"
+      },
+      {
+        "agent_hostname": "Acme-SQL01",
+        "agent_id": "a_ox5a4699532v",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-02T01:00:11.730298Z",
+        "backup_started_at": "2025-07-02T01:00:00.00157Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [
+          {
+            "device_id": "d_h62yh7q4wzm0",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_ictuit8nrnux"
+      },
+      {
+        "agent_hostname": "Acme-FS01",
+        "agent_id": "a_6usqly6qidbl",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-02T00:01:02Z",
+        "backup_started_at": "2025-07-02T00:00:52Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [
+          {
+            "device_id": "d_h62yh7q4wzm0",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_8bl9si6bsj2s"
+      },
+      {
+        "agent_hostname": "Acme-HQ-LT01",
+        "agent_id": "a_59lnwy05xzxd",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-02T00:00:37Z",
+        "backup_started_at": "2025-07-02T00:00:25Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [
+          {
+            "device_id": "d_h62yh7q4wzm0",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_5hb3ttnw1ypt"
+      },
+      {
+        "agent_hostname": "Acme-SQL01",
+        "agent_id": "a_ox5a4699532v",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-02T00:00:31Z",
+        "backup_started_at": "2025-07-02T00:00:22Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [
+          {
+            "device_id": "d_h62yh7q4wzm0",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_kvd4877xj5f1"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-Files",
+        "agent_id": "a_ympzr1q1aofr",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-02T00:00:27Z",
+        "backup_started_at": "2025-07-02T00:00:19Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "locations": [
+          {
+            "device_id": "d_zsmqzb11fls1",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_u57s22dz0swd"
+      },
+      {
+        "agent_hostname": "Acme-Print",
+        "agent_id": "a_s7m8c6u8mxqe",
+        "agent_name": "Acme-Print",
+        "backup_ended_at": "2025-07-02T00:00:11.718139Z",
+        "backup_started_at": "2025-07-02T00:00:00.001338Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [
+          {
+            "device_id": "d_h62yh7q4wzm0",
+            "type": "local"
+          },
+          {
+            "device_id": "d_gkzw128d4w31",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_bh7sfqd13rw4"
+      },
+      {
+        "agent_hostname": "Acme-DC01",
+        "agent_id": "a_b01rcs89a35y",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-02T00:00:11.769687Z",
+        "backup_started_at": "2025-07-02T00:00:00.001606Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [
+          {
+            "device_id": "d_h62yh7q4wzm0",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_mvogiylc0qs2"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-DC01",
+        "agent_id": "a_nz6x3h2hs6qj",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-02T00:00:11.715955Z",
+        "backup_started_at": "2025-07-02T00:00:00.001909Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "locations": [
+          {
+            "device_id": "d_zsmqzb11fls1",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_wc73rdr417h2"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-Jabberwocky",
+        "agent_id": "a_mbepgxrb629h",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-02T00:00:08.493266Z",
+        "backup_started_at": "2025-07-02T00:00:00.002094Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "locations": [
+          {
+            "device_id": "d_zsmqzb11fls1",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_ub8gtrjrcwpp"
+      },
+      {
+        "agent_hostname": "Acme-FS01",
+        "agent_id": "a_6usqly6qidbl",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-01T23:00:27Z",
+        "backup_started_at": "2025-07-01T23:00:19Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [
+          {
+            "device_id": "d_h62yh7q4wzm0",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_vr6hk5bdwrpx"
+      },
+      {
+        "agent_hostname": "Acme-DC01",
+        "agent_id": "a_b01rcs89a35y",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-01T23:00:25Z",
+        "backup_started_at": "2025-07-01T23:00:18Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [
+          {
+            "device_id": "d_h62yh7q4wzm0",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_pj632628p5y2"
+      },
+      {
+        "agent_hostname": "Acme-SQL01",
+        "agent_id": "a_ox5a4699532v",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-01T23:00:11.927168Z",
+        "backup_started_at": "2025-07-01T23:00:00.001967Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [
+          {
+            "device_id": "d_h62yh7q4wzm0",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_x1185yi9xvuk"
+      },
+      {
+        "agent_hostname": "Acme-Print",
+        "agent_id": "a_s7m8c6u8mxqe",
+        "agent_name": "Acme-Print",
+        "backup_ended_at": "2025-07-01T23:00:11.975895Z",
+        "backup_started_at": "2025-07-01T23:00:00.00172Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [
+          {
+            "device_id": "d_h62yh7q4wzm0",
+            "type": "local"
+          },
+          {
+            "device_id": "d_gkzw128d4w31",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_q7y5sty1bv09"
+      },
+      {
+        "agent_hostname": "Acme-HQ-PC02",
+        "agent_id": "a_o6u7joc4lbpx",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-01T22:01:14Z",
+        "backup_started_at": "2025-07-01T22:01:03Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [
+          {
+            "device_id": "d_h62yh7q4wzm0",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_i96njcxppjfz"
+      },
+      {
+        "agent_hostname": "Acme-FS01",
+        "agent_id": "a_6usqly6qidbl",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-01T22:00:45Z",
+        "backup_started_at": "2025-07-01T22:00:34Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [
+          {
+            "device_id": "d_h62yh7q4wzm0",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_d3652bqb4odz"
+      },
+      {
+        "agent_hostname": "Acme-HQ-LT01",
+        "agent_id": "a_59lnwy05xzxd",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-01T22:00:45Z",
+        "backup_started_at": "2025-07-01T22:00:34Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [
+          {
+            "device_id": "d_h62yh7q4wzm0",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_42xp19hhfrvu"
+      },
+      {
+        "agent_hostname": "Acme-Print",
+        "agent_id": "a_s7m8c6u8mxqe",
+        "agent_name": "Acme-Print",
+        "backup_ended_at": "2025-07-01T22:00:31Z",
+        "backup_started_at": "2025-07-01T22:00:20Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [
+          {
+            "device_id": "d_h62yh7q4wzm0",
+            "type": "local"
+          },
+          {
+            "device_id": "d_gkzw128d4w31",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_chcik35se3ol"
+      },
+      {
+        "agent_hostname": "Acme-SQL01",
+        "agent_id": "a_ox5a4699532v",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-01T22:00:31Z",
+        "backup_started_at": "2025-07-01T22:00:19Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [
+          {
+            "device_id": "d_h62yh7q4wzm0",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_g1fjc6q7ylvs"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-Files",
+        "agent_id": "a_ympzr1q1aofr",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-01T22:00:28Z",
+        "backup_started_at": "2025-07-01T22:00:20Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "locations": [
+          {
+            "device_id": "d_zsmqzb11fls1",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_sg0cm6uz7pbh"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-DC01",
+        "agent_id": "a_nz6x3h2hs6qj",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-01T22:00:21.03849Z",
+        "backup_started_at": "2025-07-01T22:00:00.005177Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "locations": [
+          {
+            "device_id": "d_zsmqzb11fls1",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_ub7bawdif843"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-Jabberwocky",
+        "agent_id": "a_mbepgxrb629h",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-01T22:00:11.30345Z",
+        "backup_started_at": "2025-07-01T22:00:00.004981Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "locations": [
+          {
+            "device_id": "d_zsmqzb11fls1",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_bh97473ulhe1"
+      },
+      {
+        "agent_hostname": "Acme-DC01",
+        "agent_id": "a_b01rcs89a35y",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-01T22:00:11.480447Z",
+        "backup_started_at": "2025-07-01T22:00:00.002107Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [
+          {
+            "device_id": "d_h62yh7q4wzm0",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_p74c8lt2sote"
+      },
+      {
+        "agent_hostname": "Acme-HQ-PC01",
+        "agent_id": "a_0i0tchjs2p7c",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-01T22:00:11.431189Z",
+        "backup_started_at": "2025-07-01T22:00:00.002238Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [
+          {
+            "device_id": "d_h62yh7q4wzm0",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_r0dhbx670cdq"
+      },
+      {
+        "agent_hostname": "Acme-Print",
+        "agent_id": "a_s7m8c6u8mxqe",
+        "agent_name": "Acme-Print",
+        "backup_ended_at": "2025-07-01T21:00:29Z",
+        "backup_started_at": "2025-07-01T21:00:17Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [
+          {
+            "device_id": "d_h62yh7q4wzm0",
+            "type": "local"
+          },
+          {
+            "device_id": "d_gkzw128d4w31",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_h4cfxon0psfg"
+      },
+      {
+        "agent_hostname": "Acme-FS01",
+        "agent_id": "a_6usqly6qidbl",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-01T21:00:29Z",
+        "backup_started_at": "2025-07-01T21:00:18Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [
+          {
+            "device_id": "d_h62yh7q4wzm0",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_h5qsaev29ovr"
+      },
+      {
+        "agent_hostname": "Acme-SQL01",
+        "agent_id": "a_ox5a4699532v",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-01T21:00:15.762399Z",
+        "backup_started_at": "2025-07-01T21:00:00.001663Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [
+          {
+            "device_id": "d_h62yh7q4wzm0",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_44ipr0nj75dm"
+      },
+      {
+        "agent_hostname": "Acme-DC01",
+        "agent_id": "a_b01rcs89a35y",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-01T21:00:15.908865Z",
+        "backup_started_at": "2025-07-01T21:00:00.001804Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [
+          {
+            "device_id": "d_h62yh7q4wzm0",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_pw3i1g1xzcaa"
+      },
+      {
+        "agent_hostname": "Acme-Print",
+        "agent_id": "a_s7m8c6u8mxqe",
+        "agent_name": "Acme-Print",
+        "backup_ended_at": "2025-07-01T20:00:53Z",
+        "backup_started_at": "2025-07-01T20:00:42Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [
+          {
+            "device_id": "d_h62yh7q4wzm0",
+            "type": "local"
+          },
+          {
+            "device_id": "d_gkzw128d4w31",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_q6patcl828u4"
+      },
+      {
+        "agent_hostname": "Acme-FS01",
+        "agent_id": "a_6usqly6qidbl",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-01T20:00:53Z",
+        "backup_started_at": "2025-07-01T20:00:46Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [
+          {
+            "device_id": "d_h62yh7q4wzm0",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_3190gfl4djro"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-Jabberwocky",
+        "agent_id": "a_mbepgxrb629h",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-01T20:00:32Z",
+        "backup_started_at": "2025-07-01T20:00:21Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "locations": [
+          {
+            "device_id": "d_zsmqzb11fls1",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_rw09shlt27dt"
+      },
+      {
+        "agent_hostname": "Acme-HQ-PC01",
+        "agent_id": "a_0i0tchjs2p7c",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-01T20:00:31Z",
+        "backup_started_at": "2025-07-01T20:00:22Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [
+          {
+            "device_id": "d_h62yh7q4wzm0",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_dq7vmfu9byap"
+      },
+      {
+        "agent_hostname": "Acme-SQL01",
+        "agent_id": "a_ox5a4699532v",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-01T20:00:30Z",
+        "backup_started_at": "2025-07-01T20:00:20Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [
+          {
+            "device_id": "d_h62yh7q4wzm0",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_zqtt8w0k1bpj"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-DC01",
+        "agent_id": "a_nz6x3h2hs6qj",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-01T20:00:16.322279Z",
+        "backup_started_at": "2025-07-01T20:00:00.002197Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "locations": [
+          {
+            "device_id": "d_zsmqzb11fls1",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_n6dbv6jkytot"
+      },
+      {
+        "agent_hostname": "Acme-HQ-LT01",
+        "agent_id": "a_59lnwy05xzxd",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-01T20:00:14.865445Z",
+        "backup_started_at": "2025-07-01T20:00:00.004652Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [
+          {
+            "device_id": "d_h62yh7q4wzm0",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_pp0gskx99kwi"
+      },
+      {
+        "agent_hostname": "Acme-DC01",
+        "agent_id": "a_b01rcs89a35y",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-01T20:00:14.814058Z",
+        "backup_started_at": "2025-07-01T20:00:00.004768Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [
+          {
+            "device_id": "d_h62yh7q4wzm0",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_es3jskko9jjx"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-Files",
+        "agent_id": "a_ympzr1q1aofr",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-01T20:00:13.95204Z",
+        "backup_started_at": "2025-07-01T20:00:00.002082Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "locations": [
+          {
+            "device_id": "d_zsmqzb11fls1",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_wxa46kss2bkn"
+      },
+      {
+        "agent_hostname": "Acme-DC01",
+        "agent_id": "a_b01rcs89a35y",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-01T19:22:15.701677Z",
+        "backup_started_at": "2025-07-01T19:22:08.732843Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [
+          {
+            "device_id": "d_h62yh7q4wzm0",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_zuwgij1qu0uv"
+      },
+      {
+        "agent_hostname": "Acme-SQL01",
+        "agent_id": "a_ox5a4699532v",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-01T19:00:32Z",
+        "backup_started_at": "2025-07-01T19:00:24Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [
+          {
+            "device_id": "d_h62yh7q4wzm0",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_213u0p1mn2lo"
+      },
+      {
+        "agent_hostname": "Acme-HQ-PC02",
+        "agent_id": "a_o6u7joc4lbpx",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-01T19:00:26Z",
+        "backup_started_at": "2025-07-01T19:00:15Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [
+          {
+            "device_id": "d_h62yh7q4wzm0",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_vls71fl1a6z2"
+      },
+      {
+        "agent_hostname": "Acme-FS01",
+        "agent_id": "a_6usqly6qidbl",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-01T19:00:21Z",
+        "backup_started_at": "2025-07-01T19:00:14Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [
+          {
+            "device_id": "d_h62yh7q4wzm0",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_825dzqdftboy"
+      },
+      {
+        "agent_hostname": "Acme-Print",
+        "agent_id": "a_s7m8c6u8mxqe",
+        "agent_name": "Acme-Print",
+        "backup_ended_at": "2025-07-01T19:00:14.774017Z",
+        "backup_started_at": "2025-07-01T19:00:00.002013Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [
+          {
+            "device_id": "d_h62yh7q4wzm0",
+            "type": "local"
+          },
+          {
+            "device_id": "d_gkzw128d4w31",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_ww2whmy93gj9"
+      },
+      {
+        "agent_hostname": "Acme-DC01",
+        "agent_id": "a_b01rcs89a35y",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-01T19:00:13.306207Z",
+        "backup_started_at": "2025-07-01T19:00:00.002156Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [
+          {
+            "device_id": "d_h62yh7q4wzm0",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_pw13ul4obsnr"
+      },
+      {
+        "agent_hostname": "Acme-HQ-LT01",
+        "agent_id": "a_59lnwy05xzxd",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-01T18:00:41Z",
+        "backup_started_at": "2025-07-01T18:00:30Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [
+          {
+            "device_id": "d_h62yh7q4wzm0",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_db4fi2ccl3ku"
+      },
+      {
+        "agent_hostname": "Acme-SQL01",
+        "agent_id": "a_ox5a4699532v",
+        "agent_name": "",
+        "backup_ended_at": "2025-07-01T18:00:36Z",
+        "backup_started_at": "2025-07-01T18:00:29Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [
+          {
+            "device_id": "d_h62yh7q4wzm0",
+            "type": "local"
+          },
+          {
+            "device_id": "d_kyarqbvwo8cx",
+            "type": "cloud"
+          }
+        ],
+        "snapshot_id": "s_z3rrcfob2rhn"
+      },
+      {
+        "agent_hostname": "Acme-Print",
+        "agent_id": "a_s7m8c6u8mxqe",
+        "agent_name": "Acme-Print",
+        "backup_ended_at": "2025-07-01T00:00:11.599127Z",
+        "backup_started_at": "2025-07-01T00:00:00.000838Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [],
+        "snapshot_id": "s_xkg0ebs24o91"
+      },
+      {
+        "agent_hostname": "Acme-Print",
+        "agent_id": "a_s7m8c6u8mxqe",
+        "agent_name": "Acme-Print",
+        "backup_ended_at": "2025-06-30T23:00:25Z",
+        "backup_started_at": "2025-06-30T23:00:14Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [],
+        "snapshot_id": "s_dwriepy3n92k"
+      },
+      {
+        "agent_hostname": "Acme-FS01",
+        "agent_id": "a_6usqly6qidbl",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T23:00:22Z",
+        "backup_started_at": "2025-06-30T23:00:15Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [],
+        "snapshot_id": "s_i8iwu6eszcpa"
+      },
+      {
+        "agent_hostname": "Acme-DC01",
+        "agent_id": "a_b01rcs89a35y",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T23:00:12.652768Z",
+        "backup_started_at": "2025-06-30T23:00:00.002556Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [],
+        "snapshot_id": "s_350z42dhkva2"
+      },
+      {
+        "agent_hostname": "Acme-SQL01",
+        "agent_id": "a_ox5a4699532v",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T23:00:12.603715Z",
+        "backup_started_at": "2025-06-30T23:00:00.002415Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [],
+        "snapshot_id": "s_ftspf17sqlh9"
+      },
+      {
+        "agent_hostname": "Acme-HQ-PC02",
+        "agent_id": "a_o6u7joc4lbpx",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T22:00:58Z",
+        "backup_started_at": "2025-06-30T22:00:47Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [],
+        "snapshot_id": "s_eemyguym0rcq"
+      },
+      {
+        "agent_hostname": "Acme-FS01",
+        "agent_id": "a_6usqly6qidbl",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T22:00:45Z",
+        "backup_started_at": "2025-06-30T22:00:34Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [],
+        "snapshot_id": "s_axbal8bapmt4"
+      },
+      {
+        "agent_hostname": "Acme-DC01",
+        "agent_id": "a_b01rcs89a35y",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T22:00:45Z",
+        "backup_started_at": "2025-06-30T22:00:34Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [],
+        "snapshot_id": "s_tjsyjwigovoq"
+      },
+      {
+        "agent_hostname": "Acme-Print",
+        "agent_id": "a_s7m8c6u8mxqe",
+        "agent_name": "Acme-Print",
+        "backup_ended_at": "2025-06-30T22:00:32Z",
+        "backup_started_at": "2025-06-30T22:00:21Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [],
+        "snapshot_id": "s_orkjvzpxpw18"
+      },
+      {
+        "agent_hostname": "Acme-HQ-LT01",
+        "agent_id": "a_59lnwy05xzxd",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T22:00:31Z",
+        "backup_started_at": "2025-06-30T22:00:20Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [],
+        "snapshot_id": "s_kti6w2vlh9i3"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-DC01",
+        "agent_id": "a_nz6x3h2hs6qj",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T22:00:27Z",
+        "backup_started_at": "2025-06-30T22:00:14Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "locations": [],
+        "snapshot_id": "s_w5tpekxwctkb"
+      },
+      {
+        "agent_hostname": "Acme-SQL01",
+        "agent_id": "a_ox5a4699532v",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T22:00:14.345059Z",
+        "backup_started_at": "2025-06-30T22:00:00.00179Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [],
+        "snapshot_id": "s_0bbmmq679vwm"
+      },
+      {
+        "agent_hostname": "Acme-HQ-PC01",
+        "agent_id": "a_0i0tchjs2p7c",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T22:00:13.686816Z",
+        "backup_started_at": "2025-06-30T22:00:00.001693Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [],
+        "snapshot_id": "s_1gs0ticzw7qf"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-Jabberwocky",
+        "agent_id": "a_mbepgxrb629h",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T22:00:09.232905Z",
+        "backup_started_at": "2025-06-30T22:00:00.002642Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "locations": [],
+        "snapshot_id": "s_mey6x1olpg8k"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-Files",
+        "agent_id": "a_ympzr1q1aofr",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T22:00:09.1784Z",
+        "backup_started_at": "2025-06-30T22:00:00.00275Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "locations": [],
+        "snapshot_id": "s_9hss5pb29q83"
+      },
+      {
+        "agent_hostname": "Acme-FS01",
+        "agent_id": "a_6usqly6qidbl",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T21:00:29Z",
+        "backup_started_at": "2025-06-30T21:00:18Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [],
+        "snapshot_id": "s_p6bdsn4p38ne"
+      },
+      {
+        "agent_hostname": "Acme-Print",
+        "agent_id": "a_s7m8c6u8mxqe",
+        "agent_name": "Acme-Print",
+        "backup_ended_at": "2025-06-30T21:00:29Z",
+        "backup_started_at": "2025-06-30T21:00:18Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [],
+        "snapshot_id": "s_xo16n8mpab3q"
+      },
+      {
+        "agent_hostname": "Acme-DC01",
+        "agent_id": "a_b01rcs89a35y",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T21:00:15.366031Z",
+        "backup_started_at": "2025-06-30T21:00:00.002494Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [],
+        "snapshot_id": "s_t6cd0wo0u7z4"
+      },
+      {
+        "agent_hostname": "Acme-SQL01",
+        "agent_id": "a_ox5a4699532v",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T21:00:15.11847Z",
+        "backup_started_at": "2025-06-30T21:00:00.002737Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [],
+        "snapshot_id": "s_35zsp5xtd9y1"
+      },
+      {
+        "agent_hostname": "Acme-SQL01",
+        "agent_id": "a_ox5a4699532v",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T20:00:41Z",
+        "backup_started_at": "2025-06-30T20:00:32Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [],
+        "snapshot_id": "s_8q5h3tdst7mi"
+      },
+      {
+        "agent_hostname": "Acme-FS01",
+        "agent_id": "a_6usqly6qidbl",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T20:00:35Z",
+        "backup_started_at": "2025-06-30T20:00:27Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [],
+        "snapshot_id": "s_4967yx3qen5d"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-DC01",
+        "agent_id": "a_nz6x3h2hs6qj",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T20:00:32Z",
+        "backup_started_at": "2025-06-30T20:00:17Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "locations": [],
+        "snapshot_id": "s_u29p5i68g358"
+      },
+      {
+        "agent_hostname": "Acme-Print",
+        "agent_id": "a_s7m8c6u8mxqe",
+        "agent_name": "Acme-Print",
+        "backup_ended_at": "2025-06-30T20:00:28Z",
+        "backup_started_at": "2025-06-30T20:00:16Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [],
+        "snapshot_id": "s_ajc7wosl3h95"
+      },
+      {
+        "agent_hostname": "Acme-DC01",
+        "agent_id": "a_b01rcs89a35y",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T20:00:25Z",
+        "backup_started_at": "2025-06-30T20:00:18Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [],
+        "snapshot_id": "s_s23oudjgdfxg"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-Jabberwocky",
+        "agent_id": "a_mbepgxrb629h",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T20:00:14.43569Z",
+        "backup_started_at": "2025-06-30T20:00:00.002007Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "locations": [],
+        "snapshot_id": "s_ol2nx4s9f6wa"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-Files",
+        "agent_id": "a_ympzr1q1aofr",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T20:00:12.365715Z",
+        "backup_started_at": "2025-06-30T20:00:00.002156Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "locations": [],
+        "snapshot_id": "s_crt8kfwlqjkx"
+      },
+      {
+        "agent_hostname": "Acme-HQ-LT01",
+        "agent_id": "a_59lnwy05xzxd",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T20:00:12.498382Z",
+        "backup_started_at": "2025-06-30T20:00:00.002758Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [],
+        "snapshot_id": "s_2uw4nnillabb"
+      },
+      {
+        "agent_hostname": "Acme-HQ-PC01",
+        "agent_id": "a_0i0tchjs2p7c",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T20:00:12.228734Z",
+        "backup_started_at": "2025-06-30T20:00:00.003045Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [],
+        "snapshot_id": "s_bj7rmpzb3812"
+      },
+      {
+        "agent_hostname": "Acme-SQL01",
+        "agent_id": "a_ox5a4699532v",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T19:00:36Z",
+        "backup_started_at": "2025-06-30T19:00:29Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [],
+        "snapshot_id": "s_4h19nwg7tpox"
+      },
+      {
+        "agent_hostname": "Acme-Print",
+        "agent_id": "a_s7m8c6u8mxqe",
+        "agent_name": "Acme-Print",
+        "backup_ended_at": "2025-06-30T19:00:27Z",
+        "backup_started_at": "2025-06-30T19:00:16Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [],
+        "snapshot_id": "s_m4xapvnnoho0"
+      },
+      {
+        "agent_hostname": "Acme-HQ-PC02",
+        "agent_id": "a_o6u7joc4lbpx",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T19:00:27Z",
+        "backup_started_at": "2025-06-30T19:00:16Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [],
+        "snapshot_id": "s_5fabu4rj2vxd"
+      },
+      {
+        "agent_hostname": "Acme-DC01",
+        "agent_id": "a_b01rcs89a35y",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T19:00:13.165075Z",
+        "backup_started_at": "2025-06-30T19:00:00.001942Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [],
+        "snapshot_id": "s_xipu24kqzkbh"
+      },
+      {
+        "agent_hostname": "Acme-FS01",
+        "agent_id": "a_6usqly6qidbl",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T19:00:11.129566Z",
+        "backup_started_at": "2025-06-30T19:00:00.002128Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [],
+        "snapshot_id": "s_5w872hob764z"
+      },
+      {
+        "agent_hostname": "Acme-FS01",
+        "agent_id": "a_6usqly6qidbl",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T18:01:00Z",
+        "backup_started_at": "2025-06-30T18:00:52Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [],
+        "snapshot_id": "s_0obfcgp35ru0"
+      },
+      {
+        "agent_hostname": "Acme-DC01",
+        "agent_id": "a_b01rcs89a35y",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T18:00:58Z",
+        "backup_started_at": "2025-06-30T18:00:49Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [],
+        "snapshot_id": "s_zavn54q3h8jk"
+      },
+      {
+        "agent_hostname": "Acme-HQ-PC01",
+        "agent_id": "a_0i0tchjs2p7c",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T18:00:35Z",
+        "backup_started_at": "2025-06-30T18:00:25Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [],
+        "snapshot_id": "s_r6kefjjq5u4o"
+      },
+      {
+        "agent_hostname": "Acme-SQL01",
+        "agent_id": "a_ox5a4699532v",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T18:00:28Z",
+        "backup_started_at": "2025-06-30T18:00:20Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [],
+        "snapshot_id": "s_6fynrwxasyvy"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-DC01",
+        "agent_id": "a_nz6x3h2hs6qj",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T18:00:28Z",
+        "backup_started_at": "2025-06-30T18:00:15Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "locations": [],
+        "snapshot_id": "s_zqe9z36007kw"
+      },
+      {
+        "agent_hostname": "Acme-HQ-LT01",
+        "agent_id": "a_59lnwy05xzxd",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T18:00:16.26645Z",
+        "backup_started_at": "2025-06-30T18:00:00.00167Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [],
+        "snapshot_id": "s_kdaacw5v7fu6"
+      },
+      {
+        "agent_hostname": "Acme-Print",
+        "agent_id": "a_s7m8c6u8mxqe",
+        "agent_name": "Acme-Print",
+        "backup_ended_at": "2025-06-30T18:00:12.453496Z",
+        "backup_started_at": "2025-06-30T18:00:00.002078Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [],
+        "snapshot_id": "s_3susvcsjpyr8"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-Jabberwocky",
+        "agent_id": "a_mbepgxrb629h",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T18:00:09.559261Z",
+        "backup_started_at": "2025-06-30T18:00:00.002887Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "locations": [],
+        "snapshot_id": "s_8syhjyew0rxa"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-Files",
+        "agent_id": "a_ympzr1q1aofr",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T18:00:07.588018Z",
+        "backup_started_at": "2025-06-30T18:00:00.002769Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "locations": [],
+        "snapshot_id": "s_z88yhb2dc4xv"
+      },
+      {
+        "agent_hostname": "Acme-DC01",
+        "agent_id": "a_b01rcs89a35y",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T17:00:30Z",
+        "backup_started_at": "2025-06-30T17:00:22Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [],
+        "snapshot_id": "s_gbtcadqyb0pv"
+      },
+      {
+        "agent_hostname": "Acme-Print",
+        "agent_id": "a_s7m8c6u8mxqe",
+        "agent_name": "Acme-Print",
+        "backup_ended_at": "2025-06-30T17:00:30Z",
+        "backup_started_at": "2025-06-30T17:00:18Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [],
+        "snapshot_id": "s_janqripo86x6"
+      },
+      {
+        "agent_hostname": "Acme-SQL01",
+        "agent_id": "a_ox5a4699532v",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T17:00:13.193054Z",
+        "backup_started_at": "2025-06-30T17:00:00.002007Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [],
+        "snapshot_id": "s_jhsvj692wnu3"
+      },
+      {
+        "agent_hostname": "Acme-FS01",
+        "agent_id": "a_6usqly6qidbl",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T17:00:08.085099Z",
+        "backup_started_at": "2025-06-30T17:00:00.002134Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [],
+        "snapshot_id": "s_48d8mdreh262"
+      },
+      {
+        "agent_hostname": "Acme-HQ-PC02",
+        "agent_id": "a_o6u7joc4lbpx",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T16:00:15.300671Z",
+        "backup_started_at": "2025-06-30T16:00:00.003401Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [],
+        "snapshot_id": "s_6vq64d3qtbja"
+      },
+      {
+        "agent_hostname": "Acme-HQ-PC01",
+        "agent_id": "a_0i0tchjs2p7c",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T16:00:15.433802Z",
+        "backup_started_at": "2025-06-30T16:00:00.001986Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [],
+        "snapshot_id": "s_buoav2k79dd6"
+      },
+      {
+        "agent_hostname": "Acme-HQ-PC01",
+        "agent_id": "a_0i0tchjs2p7c",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T14:00:09.545221Z",
+        "backup_started_at": "2025-06-30T14:00:00.00104Z",
+        "client_id": "c_kaxmvazb564k",
+        "client_name": "",
+        "device_hostname": "nwk-int-demo-box-1",
+        "device_id": "d_h62yh7q4wzm0",
+        "device_name": "Acme-bkp",
+        "locations": [],
+        "snapshot_id": "s_ogkud9rnutu6"
+      },
+      {
+        "agent_hostname": "Veridian-HQ-Files",
+        "agent_id": "a_ympzr1q1aofr",
+        "agent_name": "",
+        "backup_ended_at": "2025-06-30T04:00:17Z",
+        "backup_started_at": "2025-06-30T04:00:10Z",
+        "client_id": "c_i1y6p7vlpfhr",
+        "client_name": "",
+        "device_hostname": "Veridian-bkp",
+        "device_id": "d_zsmqzb11fls1",
+        "device_name": "",
+        "locations": [],
+        "snapshot_id": "s_smzcwq0qqpt0"
+      }
+    ],
+    "period": "month",
+    "start_time": "2025-06-01T22:26:38-04:00",
+    "summary": {
+      "total_deleted": 100,
+      "total_new": 100
+    }
+  }
+}

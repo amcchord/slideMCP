@@ -56,3 +56,6 @@ Installer/releases/
 *.pkg
 *.zip
 *.tar.gz 
+
+# macOS
+.DS_Store 
