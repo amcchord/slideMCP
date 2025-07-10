@@ -8,7 +8,7 @@ An MCP server implementation that integrates with the Slide API, providing compr
 - **Low memory usage**: 10-20MB memory footprint
 - **Cross-platform**: Linux, macOS, Windows binaries
 - **Zero Installation Hassle**: Simple download and configure
-- **Streamlined Interface**: 10 meta-tools instead of 52+ individual tools for better LLM interaction
+- **Streamlined Interface**: 14 meta-tools instead of 52+ individual tools for better LLM interaction
 
 ---
 
@@ -16,7 +16,7 @@ For quick setup instructions with Claude Desktop, see the installation section b
 
 ## 🎯 Major Architecture Improvement
 
-**Meta-Tools Design**: This MCP server uses an innovative meta-tools architecture that consolidates 52+ individual API operations into just **10 focused meta-tools**. This design significantly reduces complexity for LLMs while maintaining full functionality.
+**Meta-Tools Design**: This MCP server uses an innovative meta-tools architecture that consolidates 52+ individual API operations into just **14 focused meta-tools**. This design significantly reduces complexity for LLMs while maintaining full functionality.
 
 Each meta-tool accepts an `operation` parameter that specifies the action to perform, along with the relevant parameters for that operation.
 
@@ -101,6 +101,22 @@ Each meta-tool accepts an `operation` parameter that specifies the action to per
     - **get_snapshot_changes**: Track new and deleted snapshots over time periods (day, week, month)
     - **get_reporting_data**: Pre-formatted data for populating report templates
     - Perfect for generating reports with accurate, pre-calculated metrics
+
+13. **`slide_reports`** - Pre-calculated statistics and reports for backup/snapshot analysis
+    - **Operations**: `daily_backup_snapshot`, `weekly_backup_snapshot`, `monthly_backup_snapshot`
+    - **Daily Reports**: Single day statistics with backup success rates and failure reasons
+    - **Weekly Reports**: 7-day breakdown with daily agent counts and success metrics
+    - **Monthly Reports**: Full month analysis with visual calendar view (in markdown format)
+    - **Filtering**: By agent_id, device_id, or client_id for targeted reporting
+    - **Formats**: JSON (structured data) or Markdown (human-readable)
+    - **Performance**: Use verbose mode to track progress on large reports
+
+14. **`slide_docs`** - Access to official Slide documentation
+    - **Operations**: `list_sections`, `get_topics`, `search_docs`, `get_content`, `get_api_reference`
+    - **Documentation Access**: Browse and search docs.slide.tech content directly
+    - **Contextual Help**: Get best practices, troubleshooting guidance, and feature explanations
+    - **API Reference**: Quick access to API endpoint documentation
+    - **Integration**: Complements other tools by providing context and guidance
 
 ### 🔍 Special Tools
 - **`list_all_clients_devices_and_agents`** - Hierarchical overview (now part of `slide_meta`)
@@ -224,20 +240,37 @@ Choose the right presentation format based on your needs:
 
 ## 🎯 Quick Setup with Claude Desktop
 
-### 🖥️ GUI Installer (macOS Only)
+### 🖥️ GUI Installer (Windows & macOS)
 
-**Note: Currently, there is only a GUI installer available for macOS. Other platforms must use manual installation.**
+For the easiest installation experience, use our GUI installer:
 
-For the easiest installation experience on macOS, use our GUI installer:
+#### macOS
+1. **Download the installer**: From the [latest release](https://github.com/amcchord/slideMCP/releases/latest)
+   - **Apple Silicon (M1/M2/M3/M4)**: `slide-mcp-installer-v2.2.1-darwin-arm64-signed.tar.gz`
+   - **Intel Mac**: `slide-mcp-installer-v2.2.1-darwin-amd64-signed.tar.gz`
 
-1. **Download the Mac installer**: `SlideMCP-MacInstaller.zip` from the [latest release](https://github.com/amcchord/slideMCP/releases/latest)
-
-2. **Extract and run**: Unzip the installer and double-click to run
+2. **Extract and run**: 
+   ```bash
+   tar -xzf slide-mcp-installer-v2.2.1-darwin-[arch]-signed.tar.gz
+   open slide-mcp-installer.app
+   ```
 3. **Enter your API key**: Input your Slide API key when prompted
 4. **Install**: Click "Install Slide MCP Server"
 5. **Restart Claude Desktop**: The installer will configure everything automatically
 
-The Mac GUI installer will:
+#### Windows
+1. **Download the installer**: From the [latest release](https://github.com/amcchord/slideMCP/releases/latest)
+   - **64-bit**: `slide-mcp-installer-v2.2.1-windows-amd64.zip`
+   - **32-bit**: `slide-mcp-installer-v2.2.1-windows-386.zip`
+
+2. **Extract and run**: 
+   - Extract the ZIP file
+   - Run `slide-mcp-installer.exe`
+3. **Enter your API key**: Input your Slide API key when prompted
+4. **Install**: Click "Install Slide MCP Server"
+5. **Restart Claude Desktop**: The installer will configure everything automatically
+
+The GUI installer will:
 - ✅ Check if Claude Desktop is installed
 - ✅ Download the latest slide-mcp-server binary
 - ✅ Install it to the correct location
@@ -246,41 +279,41 @@ The Mac GUI installer will:
 
 ### Manual Installation
 
-#### Download Pre-built Binary (v2.2.0)
+#### Download Pre-built Binary (v2.2.1)
 
 For **macOS ARM64** (Apple Silicon):
 ```bash
-curl -L -o slide-mcp-server-v2.2.0-macos-arm64.tar.gz https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.2.0-macos-arm64.tar.gz
-tar -xzf slide-mcp-server-v2.2.0-macos-arm64.tar.gz
-chmod +x slide-mcp-server-v2.2.0-macos-arm64
-mv slide-mcp-server-v2.2.0-macos-arm64 slide-mcp-server
+curl -L -o slide-mcp-server-v2.2.1-macos-arm64.tar.gz https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.2.1-macos-arm64.tar.gz
+tar -xzf slide-mcp-server-v2.2.1-macos-arm64.tar.gz
+chmod +x slide-mcp-server-v2.2.1-macos-arm64
+mv slide-mcp-server-v2.2.1-macos-arm64 slide-mcp-server
 ```
 For **macOS x64**:
 ```bash
-curl -L -o slide-mcp-server-v2.2.0-macos-x64.tar.gz https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.2.0-macos-x64.tar.gz
-tar -xzf slide-mcp-server-v2.2.0-macos-x64.tar.gz
-chmod +x slide-mcp-server-v2.2.0-macos-x64
-mv slide-mcp-server-v2.2.0-macos-x64 slide-mcp-server
+curl -L -o slide-mcp-server-v2.2.1-macos-x64.tar.gz https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.2.1-macos-x64.tar.gz
+tar -xzf slide-mcp-server-v2.2.1-macos-x64.tar.gz
+chmod +x slide-mcp-server-v2.2.1-macos-x64
+mv slide-mcp-server-v2.2.1-macos-x64 slide-mcp-server
 ```
 For **Linux x64**:
 ```bash
-curl -L -o slide-mcp-server-v2.2.0-linux-x64.tar.gz https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.2.0-linux-x64.tar.gz
-tar -xzf slide-mcp-server-v2.2.0-linux-x64.tar.gz
-chmod +x slide-mcp-server-v2.2.0-linux-x64
-mv slide-mcp-server-v2.2.0-linux-x64 slide-mcp-server
+curl -L -o slide-mcp-server-v2.2.1-linux-x64.tar.gz https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.2.1-linux-x64.tar.gz
+tar -xzf slide-mcp-server-v2.2.1-linux-x64.tar.gz
+chmod +x slide-mcp-server-v2.2.1-linux-x64
+mv slide-mcp-server-v2.2.1-linux-x64 slide-mcp-server
 ```
 For **Linux ARM64**:
 ```bash
-curl -L -o slide-mcp-server-v2.2.0-linux-arm64.tar.gz https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.2.0-linux-arm64.tar.gz
-tar -xzf slide-mcp-server-v2.2.0-linux-arm64.tar.gz
-chmod +x slide-mcp-server-v2.2.0-linux-arm64
-mv slide-mcp-server-v2.2.0-linux-arm64 slide-mcp-server
+curl -L -o slide-mcp-server-v2.2.1-linux-arm64.tar.gz https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.2.1-linux-arm64.tar.gz
+tar -xzf slide-mcp-server-v2.2.1-linux-arm64.tar.gz
+chmod +x slide-mcp-server-v2.2.1-linux-arm64
+mv slide-mcp-server-v2.2.1-linux-arm64 slide-mcp-server
 ```
 For **Windows x64**:
 ```cmd
-curl -L -o slide-mcp-server-v2.2.0-windows-x64.zip https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.2.0-windows-x64.zip
-unzip slide-mcp-server-v2.2.0-windows-x64.zip
-mv slide-mcp-server-v2.2.0-windows-x64.exe slide-mcp-server.exe
+curl -L -o slide-mcp-server-v2.2.1-windows-x64.zip https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.2.1-windows-x64.zip
+unzip slide-mcp-server-v2.2.1-windows-x64.zip
+mv slide-mcp-server-v2.2.1-windows-x64.exe slide-mcp-server.exe
 ```
 
 #### Build from Source
@@ -409,7 +442,7 @@ export SLIDE_TOOLS="full"
 
 # Show version
 ./slide-mcp-server --version
-# Output: slide-mcp-server version 2.0.2
+# Output: slide-mcp-server version 2.2.1
 ```
 
 ### 🚫 Disabling Specific Tools
@@ -445,6 +478,8 @@ export SLIDE_DISABLED_TOOLS="slide_devices,slide_users"
 - `slide_vms` - Virtual machine management
 - `slide_presentation` - Data presentation and reporting
 - `slide_meta` - Meta tools for reporting and aggregated data views
+- `slide_reports` - Pre-calculated backup/snapshot statistics and reports
+- `slide_docs` - Access to official Slide documentation
 - `list_all_clients_devices_and_agents` - Hierarchical overview (legacy, use slide_meta instead)
 
 #### Key Features
@@ -735,6 +770,29 @@ With custom configuration and disabled tools:
 }
 ```
 
+### Generate Backup Reports
+```json
+{
+  "name": "slide_reports",
+  "arguments": {
+    "operation": "daily_backup_snapshot",
+    "agent_id": "agent-123",
+    "format": "markdown"
+  }
+}
+```
+
+### Search Documentation
+```json
+{
+  "name": "slide_docs",
+  "arguments": {
+    "operation": "search_docs",
+    "query": "backup retention policies"
+  }
+}
+```
+
 ## Build
 
 ```bash
@@ -754,7 +812,7 @@ make help
 ## Architecture Benefits
 
 ### For LLMs
-- **Reduced Complexity**: 10 meta-tools vs 52+ individual tools
+- **Reduced Complexity**: 14 meta-tools vs 52+ individual tools
 - **Logical Grouping**: Related operations organized together
 - **Consistent Interface**: All meta-tools follow the same operation pattern
 - **Better Context**: Less tool switching, more focused conversations
@@ -768,4 +826,3 @@ make help
 ## License
 
 This MCP server is licensed under the MIT License. This means you are free to use, modify, and distribute the software, subject to the terms and conditions of the MIT License. For more details, please see the LICENSE file in the project repository.
-
