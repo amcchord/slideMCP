@@ -38,9 +38,9 @@ shasum -a 256 -c checksums.sha256
 
 ## macOS Security
 
-The macOS binaries are signed and notarized by Apple. They should run without security warnings on macOS 10.15+ systems.
+The macOS binaries are signed with a Developer ID certificate. However, they are not notarized by Apple, so you may see Gatekeeper warnings on first run.
 
-For older macOS versions or if you encounter security warnings, you may need to run:
+To run the binaries on macOS, you may need to:
 
 ```bash
 xattr -d com.apple.quarantine slide-mcp-server
