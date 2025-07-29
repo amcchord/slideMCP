@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 )
 
 // MCP Protocol structures
@@ -44,7 +45,7 @@ type ToolContent struct {
 // Configuration
 const (
 	ServerName = "slide-mcp-server"
-	Version    = "2.0.1"
+	Version    = "2.3.0"
 )
 
 // Tools filtering modes
@@ -348,6 +349,30 @@ func startMCPServer(exitAfterFirst bool) {
 	}
 }
 
+func fetchInitialContext() map[string]interface{} {
+	// Fetch the initial context data that's typically requested first
+	contextData, err := listAllClientsDevicesAndAgents(map[string]interface{}{})
+	if err != nil {
+		log.Printf("Warning: Failed to fetch initial context data: %v", err)
+		return map[string]interface{}{
+			"error": fmt.Sprintf("Failed to fetch initial context: %v", err),
+			"note":  "Initial context will be available via the list_all_clients_devices_and_agents tool",
+		}
+	}
+
+	// Parse the JSON string back to a map for inclusion
+	var contextMap map[string]interface{}
+	if err := json.Unmarshal([]byte(contextData), &contextMap); err != nil {
+		log.Printf("Warning: Failed to parse initial context data: %v", err)
+		return map[string]interface{}{
+			"error": fmt.Sprintf("Failed to parse initial context: %v", err),
+			"note":  "Initial context will be available via the list_all_clients_devices_and_agents tool",
+		}
+	}
+
+	return contextMap
+}
+
 func handleNotification(request MCPRequest) {
 	switch request.Method {
 	case "notifications/initialized":
@@ -365,6 +390,9 @@ func handleNotification(request MCPRequest) {
 func handleRequest(request MCPRequest) MCPResponse {
 	switch request.Method {
 	case "initialize":
+		// Fetch initial context data
+		initialContext := fetchInitialContext()
+
 		return MCPResponse{
 			JSONRPC: "2.0",
 			ID:      request.ID,
@@ -376,6 +404,15 @@ func handleRequest(request MCPRequest) MCPResponse {
 				"serverInfo": map[string]interface{}{
 					"name":    ServerName,
 					"version": Version,
+				},
+				"initialContext": map[string]interface{}{
+					"clients_devices_agents": initialContext,
+					"_metadata": map[string]interface{}{
+						"description": "Initial overview of all clients, devices, and agents loaded at startup for improved performance",
+						"source_tool": "list_all_clients_devices_and_agents",
+						"usage_note":  "This data is also available via the list_all_clients_devices_and_agents tool and should be refreshed if needed",
+						"timestamp":   fmt.Sprintf("%d", time.Now().Unix()),
+					},
 				},
 			},
 		}

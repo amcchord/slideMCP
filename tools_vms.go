@@ -27,6 +27,8 @@ func handleVMsTool(args map[string]interface{}) (string, error) {
 		return updateVirtualMachine(args)
 	case "delete":
 		return deleteVirtualMachine(args)
+	case "get_rdp_bookmark":
+		return generateRDPBookmark(args)
 	default:
 		return "", fmt.Errorf("unknown operation: %s", operation)
 	}
@@ -36,14 +38,14 @@ func handleVMsTool(args map[string]interface{}) (string, error) {
 func getVMsToolInfo() ToolInfo {
 	return ToolInfo{
 		Name:        "slide_vms",
-		Description: "Manage virtual machines created from snapshots. Virtual machines allow you to boot and interact with backed-up systems for testing, recovery, or migration purposes.",
+		Description: "Manage virtual machines created from snapshots. Virtual machines allow you to boot and interact with backed-up systems for testing, recovery, or migration purposes. Includes RDP bookmark generation for easy desktop access.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
 				"operation": map[string]interface{}{
 					"type":        "string",
 					"description": "The operation to perform",
-					"enum":        []string{"list", "get", "create", "update", "delete"},
+					"enum":        []string{"list", "get", "create", "update", "delete", "get_rdp_bookmark"},
 				},
 				// Common parameters for list operations
 				"limit": map[string]interface{}{
@@ -158,6 +160,16 @@ func getVMsToolInfo() ToolInfo {
 					"if": map[string]interface{}{
 						"properties": map[string]interface{}{
 							"operation": map[string]interface{}{"const": "delete"},
+						},
+					},
+					"then": map[string]interface{}{
+						"required": []string{"virt_id"},
+					},
+				},
+				{
+					"if": map[string]interface{}{
+						"properties": map[string]interface{}{
+							"operation": map[string]interface{}{"const": "get_rdp_bookmark"},
 						},
 					},
 					"then": map[string]interface{}{

@@ -176,7 +176,66 @@ Consolidating 52+ individual tools into 8 meta-tools organized by API segments t
 - [x] Test base URL configuration functionality
 - [x] Test tools filtering functionality
 
+## API v1.15.1 Update Tasks
+
+### Phase 8: Slide API v1.15.1 Integration
+- [x] **Agent Passphrase Management** (Tickets 1979, 2255, 2256)
+  - [x] Add AgentPassphrase and AgentVSSWriterConfig data structures
+  - [x] Update Agent struct with passphrases, sealed, and vss_writer_configs fields  
+  - [x] Add add_passphrase and delete_passphrase operations to slide_agents tool
+  - [x] Update agent update operation to support new parameters
+  
+- [x] **QCOW2 Image Type Support** (Ticket 682)
+  - [x] Add "qcow2" to image_type enum in slide_restores tool
+  
+- [x] **Enhanced VM Information** (Ticket 874)
+  - [x] Add ip_address, mac_address, and rdp_endpoint fields to VirtualMachine struct
+  
+- [x] **Testing & Validation**
+  - [x] Basic compilation testing completed
+  - [x] Version verification completed  
+  - [x] Update version to 2.2.0 for API v1.15.1 support
+  - [ ] Integration testing with actual API calls (requires API access)
+  
+### Additional Notes for API v1.15.1
+- **Note**: The WireGuard server public key (`wg_public_key`) and total protected data (`total_agent_included_volume_used_bytes`) fields mentioned in the changelog were already present in the existing Network and Device structs respectively, so no changes were needed for those features.
+
+## Phase 9: RDP Bookmark Enhancement
+
+### User Experience Improvement for VM Access
+- [x] Add `get_rdp_bookmark` operation to `slide_vms` tool
+- [x] Generate standard Windows RDP (.rdp) files for easy VM access
+- [x] Include comprehensive RDP configuration with optimal defaults
+- [x] Provide clear usage instructions and metadata
+- [x] Validate RDP endpoint availability before generating bookmark
+
+**RDP Bookmark Features:**
+- **One-click Access**: Generate downloadable .rdp files that users can double-click to connect
+- **Standard Format**: Compatible with Windows Remote Desktop, macOS Remote Desktop, and other RDP clients
+- **Optimized Settings**: Includes sensible defaults for compression, audio, clipboard, and display settings
+- **Security**: Prompts for credentials on connection, supports modern RDP security features
+- **User-friendly**: Clear instructions and suggested filename for easy use
+
+## Phase 10: Initial Context Enhancement
+
+### Performance Optimization for MCP Initialization
+- [x] Add `fetchInitialContext()` function to load client/device/agent data at startup
+- [x] Include initial context data in MCP `initialize` response
+- [x] Add comprehensive metadata for context usage guidance
+- [x] Implement graceful error handling for context loading failures
+- [x] Add timestamp for context freshness tracking
+
+**Initial Context Features:**
+- **Immediate Availability**: Client/device/agent hierarchy loaded at startup
+- **Performance Boost**: Eliminates the typical first API call delay
+- **Fallback Support**: Gracefully handles failures with helpful error messages
+- **Fresh Data**: Includes timestamp for cache management
+- **Metadata Rich**: Clear guidance on usage and refresh patterns
+- **Non-blocking**: Initialization succeeds even if context loading fails
+
 ## Version History
+- **2.3.0**: Added initial context loading and RDP bookmark generation features for improved performance and user experience
+- **2.2.0**: Added support for Slide API v1.15.1 features including agent passphrase management, QCOW2 image type, VSS writer configuration, and enhanced VM information
 - **2.0.1**: Added granular tool disabling feature - disable specific tools via --disabled-tools flag or SLIDE_DISABLED_TOOLS environment variable for fine-grained access control
 - **1.2.5**: Changed default tools mode from "full" to "full-safe" for improved security
 - **1.2.4**: Added tools filtering system for granular permission control (reporting, restores, full-safe, full)

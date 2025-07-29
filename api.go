@@ -34,45 +34,61 @@ var (
 
 // Data structures
 type Device struct {
-	DeviceID              string   `json:"device_id"`
-	DisplayName           string   `json:"display_name"`
-	LastSeenAt            string   `json:"last_seen_at"`
-	Hostname              string   `json:"hostname"`
-	IPAddresses           []string `json:"ip_addresses"`
-	Addresses             []any    `json:"addresses"`
-	PublicIPAddress       string   `json:"public_ip_address"`
-	ImageVersion          string   `json:"image_version"`
-	PackageVersion        string   `json:"package_version"`
-	StorageUsedBytes      int64    `json:"storage_used_bytes"`
-	StorageTotalBytes     int64    `json:"storage_total_bytes"`
-	SerialNumber          string   `json:"serial_number"`
-	HardwareModelName     string   `json:"hardware_model_name"`
-	ServiceModelName      string   `json:"service_model_name"`
-	ServiceModelNameShort string   `json:"service_model_name_short"`
-	ServiceStatus         string   `json:"service_status"`
-	NFR                   bool     `json:"nfr"`
-	ClientID              *string  `json:"client_id,omitempty"`
-	BootedAt              *string  `json:"booted_at,omitempty"`
+	DeviceID                          string   `json:"device_id"`
+	DisplayName                       string   `json:"display_name"`
+	LastSeenAt                        string   `json:"last_seen_at"`
+	Hostname                          string   `json:"hostname"`
+	IPAddresses                       []string `json:"ip_addresses"`
+	Addresses                         []any    `json:"addresses"`
+	PublicIPAddress                   string   `json:"public_ip_address"`
+	ImageVersion                      string   `json:"image_version"`
+	PackageVersion                    string   `json:"package_version"`
+	StorageUsedBytes                  int64    `json:"storage_used_bytes"`
+	StorageTotalBytes                 int64    `json:"storage_total_bytes"`
+	TotalAgentIncludedVolumeUsedBytes int64    `json:"total_agent_included_volume_used_bytes"`
+	SerialNumber                      string   `json:"serial_number"`
+	HardwareModelName                 string   `json:"hardware_model_name"`
+	ServiceModelName                  string   `json:"service_model_name"`
+	ServiceModelNameShort             string   `json:"service_model_name_short"`
+	ServiceStatus                     string   `json:"service_status"`
+	NFR                               bool     `json:"nfr"`
+	ClientID                          *string  `json:"client_id,omitempty"`
+	BootedAt                          *string  `json:"booted_at,omitempty"`
+}
+
+type AgentPassphrase struct {
+	AgentPassphraseID string  `json:"agent_passphrase_id"`
+	Name              string  `json:"name"`
+	Passphrase        *string `json:"passphrase,omitempty"`
+}
+
+type AgentVSSWriterConfig struct {
+	WriterID   string `json:"writer_id"`
+	WriterName string `json:"writer_name"`
+	Excluded   bool   `json:"excluded"`
 }
 
 type Agent struct {
-	AgentID             string   `json:"agent_id"`
-	DeviceID            string   `json:"device_id"`
-	DisplayName         string   `json:"display_name"`
-	LastSeenAt          string   `json:"last_seen_at"`
-	Hostname            string   `json:"hostname"`
-	IPAddresses         []string `json:"ip_addresses"`
-	Addresses           []any    `json:"addresses"`
-	PublicIPAddress     string   `json:"public_ip_address"`
-	AgentVersion        string   `json:"agent_version"`
-	Platform            string   `json:"platform"`
-	OS                  string   `json:"os"`
-	OSVersion           string   `json:"os_version"`
-	FirmwareType        string   `json:"firmware_type"`
-	EncryptionAlgorithm *string  `json:"encryption_algorithm,omitempty"`
-	Manufacturer        *string  `json:"manufacturer,omitempty"`
-	ClientID            *string  `json:"client_id,omitempty"`
-	BootedAt            *string  `json:"booted_at,omitempty"`
+	AgentID             string                 `json:"agent_id"`
+	DeviceID            string                 `json:"device_id"`
+	DisplayName         string                 `json:"display_name"`
+	LastSeenAt          string                 `json:"last_seen_at"`
+	Hostname            string                 `json:"hostname"`
+	IPAddresses         []string               `json:"ip_addresses"`
+	Addresses           []any                  `json:"addresses"`
+	PublicIPAddress     string                 `json:"public_ip_address"`
+	AgentVersion        string                 `json:"agent_version"`
+	Platform            string                 `json:"platform"`
+	OS                  string                 `json:"os"`
+	OSVersion           string                 `json:"os_version"`
+	FirmwareType        string                 `json:"firmware_type"`
+	EncryptionAlgorithm *string                `json:"encryption_algorithm,omitempty"`
+	Manufacturer        *string                `json:"manufacturer,omitempty"`
+	ClientID            *string                `json:"client_id,omitempty"`
+	BootedAt            *string                `json:"booted_at,omitempty"`
+	Passphrases         []AgentPassphrase      `json:"passphrases"`
+	Sealed              bool                   `json:"sealed"`
+	VSSWriterConfigs    []AgentVSSWriterConfig `json:"vss_writer_configs"`
 }
 
 type Pagination struct {
@@ -188,6 +204,9 @@ type VirtualMachine struct {
 	NetworkModel  string  `json:"network_model"`
 	NetworkType   *string `json:"network_type,omitempty"`
 	NetworkSource *string `json:"network_source,omitempty"`
+	IPAddress     *string `json:"ip_address,omitempty"`
+	MACAddress    *string `json:"mac_address,omitempty"`
+	RDPEndpoint   *string `json:"rdp_endpoint,omitempty"`
 	VNC           []VNC   `json:"vnc"`
 	VNCPassword   string  `json:"vnc_password"`
 }
@@ -883,13 +902,21 @@ func updateAgent(args map[string]interface{}) (string, error) {
 	if !ok {
 		return "", fmt.Errorf("agent_id is required")
 	}
-	displayName, ok := args["display_name"].(string)
-	if !ok {
-		return "", fmt.Errorf("display_name is required")
-	}
 
-	payload := map[string]interface{}{
-		"display_name": displayName,
+	payload := map[string]interface{}{}
+
+	// Optional parameters - only add them if provided
+	if displayName, ok := args["display_name"].(string); ok {
+		payload["display_name"] = displayName
+	}
+	if passphrase, ok := args["passphrase"].(string); ok {
+		payload["passphrase"] = passphrase
+	}
+	if sealed, ok := args["sealed"].(bool); ok {
+		payload["sealed"] = sealed
+	}
+	if vssWriterConfigs, ok := args["vss_writer_configs"]; ok {
+		payload["vss_writer_configs"] = vssWriterConfigs
 	}
 	body, err := json.Marshal(payload)
 	if err != nil {
@@ -916,6 +943,79 @@ func updateAgent(args map[string]interface{}) (string, error) {
 	}
 
 	return string(jsonData), nil
+}
+
+func addAgentPassphrase(args map[string]interface{}) (string, error) {
+	agentID, ok := args["agent_id"].(string)
+	if !ok {
+		return "", fmt.Errorf("agent_id is required")
+	}
+	passphraseName, ok := args["passphrase_name"].(string)
+	if !ok {
+		return "", fmt.Errorf("passphrase_name is required")
+	}
+	passphrase, ok := args["passphrase"].(string)
+	if !ok {
+		return "", fmt.Errorf("passphrase is required")
+	}
+
+	payload := map[string]interface{}{
+		"name":       passphraseName,
+		"passphrase": passphrase,
+	}
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	endpoint := fmt.Sprintf("/v1/agent/%s/passphrase", agentID)
+	data, err := makeAPIRequest("POST", endpoint, body)
+	if err != nil {
+		return "", err
+	}
+
+	var result AgentPassphrase
+	if err := json.Unmarshal(data, &result); err != nil {
+		return "", fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	jsonData, err := json.MarshalIndent(result, "", "  ")
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal result: %w", err)
+	}
+
+	return string(jsonData), nil
+}
+
+func deleteAgentPassphrase(args map[string]interface{}) (string, error) {
+	agentID, ok := args["agent_id"].(string)
+	if !ok {
+		return "", fmt.Errorf("agent_id is required")
+	}
+	agentPassphraseID, ok := args["agent_passphrase_id"].(string)
+	if !ok {
+		return "", fmt.Errorf("agent_passphrase_id is required")
+	}
+	passphrase, ok := args["passphrase"].(string)
+	if !ok {
+		return "", fmt.Errorf("passphrase is required")
+	}
+
+	payload := map[string]interface{}{
+		"passphrase": passphrase,
+	}
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	endpoint := fmt.Sprintf("/v1/agent/%s/passphrase/%s", agentID, agentPassphraseID)
+	_, err = makeAPIRequest("DELETE", endpoint, body)
+	if err != nil {
+		return "", err
+	}
+
+	return "Passphrase deleted successfully", nil
 }
 
 // Backup API functions
@@ -1689,6 +1789,9 @@ func getVirtualMachine(args map[string]interface{}) (string, error) {
 		"network_model":  result.NetworkModel,
 		"network_type":   result.NetworkType,
 		"network_source": result.NetworkSource,
+		"ip_address":     result.IPAddress,
+		"mac_address":    result.MACAddress,
+		"rdp_endpoint":   result.RDPEndpoint,
 		"vnc":            result.VNC,
 		"vnc_password":   result.VNCPassword,
 		"_metadata": map[string]interface{}{
@@ -1786,6 +1889,9 @@ func createVirtualMachine(args map[string]interface{}) (string, error) {
 		"network_model":  result.NetworkModel,
 		"network_type":   result.NetworkType,
 		"network_source": result.NetworkSource,
+		"ip_address":     result.IPAddress,
+		"mac_address":    result.MACAddress,
+		"rdp_endpoint":   result.RDPEndpoint,
 		"vnc":            result.VNC,
 		"vnc_password":   result.VNCPassword,
 		"_metadata": map[string]interface{}{
@@ -1918,6 +2024,101 @@ func deleteVirtualMachine(args map[string]interface{}) (string, error) {
 	}
 
 	return "Virtual machine deleted successfully", nil
+}
+
+func generateRDPBookmark(args map[string]interface{}) (string, error) {
+	virtID, ok := args["virt_id"].(string)
+	if !ok {
+		return "", fmt.Errorf("virt_id is required")
+	}
+
+	// Get VM details first
+	endpoint := fmt.Sprintf("/v1/restore/virt/%s", virtID)
+	data, err := makeAPIRequest("GET", endpoint, nil)
+	if err != nil {
+		return "", err
+	}
+
+	var vm VirtualMachine
+	if err := json.Unmarshal(data, &vm); err != nil {
+		return "", fmt.Errorf("failed to parse VM response: %w", err)
+	}
+
+	// Check if RDP endpoint is available
+	if vm.RDPEndpoint == nil || *vm.RDPEndpoint == "" {
+		return "", fmt.Errorf("RDP endpoint not available for this virtual machine")
+	}
+
+	// Generate RDP file content
+	rdpContent := fmt.Sprintf(`screen mode id:i:2
+use multimon:i:0
+desktopwidth:i:1920
+desktopheight:i:1080
+session bpp:i:32
+winposstr:s:0,3,0,0,800,600
+compression:i:1
+keyboardhook:i:2
+audiocapturemode:i:0
+videoplaybackmode:i:1
+connection type:i:7
+networkautodetect:i:1
+bandwidthautodetect:i:1
+displayconnectionbar:i:1
+enableworkspacereconnect:i:0
+disable wallpaper:i:0
+allow font smoothing:i:0
+allow desktop composition:i:0
+disable full window drag:i:1
+disable menu anims:i:1
+disable themes:i:0
+disable cursor setting:i:0
+bitmapcachepersistenable:i:1
+full address:s:%s
+audiomode:i:0
+redirectprinters:i:1
+redirectcomports:i:0
+redirectsmartcards:i:1
+redirectclipboard:i:1
+redirectposdevices:i:0
+autoreconnection enabled:i:1
+authentication level:i:2
+prompt for credentials:i:1
+negotiate security layer:i:1
+remoteapplicationmode:i:0
+alternate shell:s:
+shell working directory:s:
+gatewayhostname:s:
+gatewayusagemethod:i:4
+gatewaycredentialssource:i:4
+gatewayprofileusagemethod:i:0
+promptcredentialonce:i:0
+gatewaybrokeringtype:i:0
+use redirection server name:i:0
+rdgiskdcproxy:i:0
+kdcproxyname:s:
+`, *vm.RDPEndpoint)
+
+	// Create response with file content and metadata
+	result := map[string]interface{}{
+		"virt_id":      vm.VirtID,
+		"rdp_endpoint": *vm.RDPEndpoint,
+		"filename":     fmt.Sprintf("slide-vm-%s.rdp", vm.VirtID),
+		"content":      rdpContent,
+		"content_type": "application/rdp",
+		"_metadata": map[string]interface{}{
+			"usage_instructions": "Save the 'content' field to a file with the suggested 'filename', then double-click the .rdp file to connect to the virtual machine.",
+			"file_format":        "This generates a standard Windows Remote Desktop Connection (.rdp) file that can be used with any RDP client.",
+			"connection_info":    fmt.Sprintf("This bookmark will connect to: %s", *vm.RDPEndpoint),
+			"security_note":      "You will be prompted for credentials when connecting. Use the Windows account credentials from the original system.",
+		},
+	}
+
+	jsonData, err := json.MarshalIndent(result, "", "  ")
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal result: %w", err)
+	}
+
+	return string(jsonData), nil
 }
 
 // User API functions

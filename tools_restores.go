@@ -92,7 +92,7 @@ func getRestoresToolInfo() ToolInfo {
 				"image_type": map[string]interface{}{
 					"type":        "string",
 					"description": "Type of image to create - required for create_image operation",
-					"enum":        []string{"vhdx", "vhdx-dynamic", "vhd", "raw"},
+					"enum":        []string{"vhdx", "vhdx-dynamic", "vhd", "vmdk", "vmdk-flat", "qcow2", "raw"},
 				},
 				// Common parameters for create operations
 				"snapshot_id": map[string]interface{}{
