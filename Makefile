@@ -2,7 +2,7 @@
 
 BINARY_NAME=slide-mcp-server
 RELEASE_DIR=release
-VERSION=v2.2.1
+VERSION=v2.3.0
 BUILD_DIR=build
 
 # Code signing variables (set these via environment or command line)
