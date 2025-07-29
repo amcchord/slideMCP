@@ -58,11 +58,22 @@ const (
 
 var toolsMode string = ToolsFullSafe // Default to full-safe access
 var disabledTools []string           // List of disabled tool names
+// Tool enablement flags - presentation and reports tools are disabled by default
+var enablePresentation bool = false
+var enableReports bool = false
 
 // Helper functions for tools filtering
 func isToolAllowed(toolName string) bool {
 	// First check if tool is explicitly disabled
 	if isToolDisabled(toolName) {
+		return false
+	}
+
+	// Check if presentation or reports tools need explicit enablement
+	if toolName == "slide_presentation" && !enablePresentation {
+		return false
+	}
+	if toolName == "slide_reports" && !enableReports {
 		return false
 	}
 
@@ -210,8 +221,13 @@ func main() {
 	var cliBaseURL = flag.String("base-url", "", "Base URL for Slide API (overrides SLIDE_BASE_URL environment variable)")
 	var cliTools = flag.String("tools", "", "Tools mode: reporting, restores, full-safe, full (overrides SLIDE_TOOLS environment variable)")
 	var cliDisabledTools = flag.String("disabled-tools", "", "Comma-separated list of tool names to disable (overrides SLIDE_DISABLED_TOOLS environment variable)")
+	var cliEnablePresentation = flag.Bool("enable-presentation", false, "Enable the slide_presentation tool (overrides SLIDE_ENABLE_PRESENTATION environment variable)")
+	var cliEnableReports = flag.Bool("enable-reports", false, "Enable the slide_reports tool (overrides SLIDE_ENABLE_REPORTS environment variable)")
 	var showVersion = flag.Bool("version", false, "Show version information and exit")
 	var exitAfterFirst = flag.Bool("exit-after-first", false, "Exit after processing the first request instead of running continuously")
+	// One-shot tool execution flags
+	var cliOneShotTool = flag.String("tool", "", "Run a single tool then exit (e.g. --tool slide_reports)")
+	var cliToolArgs = flag.String("args", "", "JSON string with arguments for --tool (e.g. '{\"operation\":\"daily_backup_snapshot\"}')")
 	flag.Parse()
 
 	// Handle version flag
@@ -251,6 +267,29 @@ func main() {
 		log.Printf("Disabled tools: %v", disabledTools)
 	}
 
+	// Get presentation tool enablement from CLI flag or environment variable
+	// CLI flag takes precedence over environment variable
+	if *cliEnablePresentation {
+		enablePresentation = true
+	} else if envEnablePresentation := os.Getenv("SLIDE_ENABLE_PRESENTATION"); envEnablePresentation != "" {
+		enablePresentation = envEnablePresentation == "true" || envEnablePresentation == "1"
+	}
+
+	// Get reports tool enablement from CLI flag or environment variable
+	// CLI flag takes precedence over environment variable
+	if *cliEnableReports {
+		enableReports = true
+	} else if envEnableReports := os.Getenv("SLIDE_ENABLE_REPORTS"); envEnableReports != "" {
+		enableReports = envEnableReports == "true" || envEnableReports == "1"
+	}
+
+	if enablePresentation {
+		log.Printf("Presentation tool enabled")
+	}
+	if enableReports {
+		log.Printf("Reports tool enabled")
+	}
+
 	// Validate tools mode
 	switch toolsMode {
 	case ToolsReporting, ToolsRestores, ToolsFullSafe, ToolsFull:
@@ -277,7 +316,43 @@ func main() {
 	}
 
 	if apiKey == "" {
-		log.Fatal("Error: API key not provided. Use --api-key flag or set SLIDE_API_KEY environment variable")
+		log.Fatalf("Error: API key not provided. Use --api-key flag or set SLIDE_API_KEY environment variable.")
+	}
+
+	// -------------------------------------------------
+	// One-shot tool execution (if --tool flag provided)
+	// -------------------------------------------------
+	if *cliOneShotTool != "" {
+		// Parse JSON args (if provided)
+		var argsMap map[string]interface{}
+		if *cliToolArgs != "" {
+			if err := json.Unmarshal([]byte(*cliToolArgs), &argsMap); err != nil {
+				log.Fatalf("Invalid JSON for --args: %v", err)
+			}
+		} else {
+			argsMap = make(map[string]interface{})
+		}
+
+		// Construct a mock MCPRequest to reuse existing handler logic
+		req := MCPRequest{
+			JSONRPC: "2.0",
+			ID:      1,
+			Method:  "tools/call",
+			Params: map[string]interface{}{
+				"name":      *cliOneShotTool,
+				"arguments": argsMap,
+			},
+		}
+
+		resp := handleToolCall(req)
+
+		// Marshal and print the response so callers can parse
+		out, err := json.MarshalIndent(resp, "", "  ")
+		if err != nil {
+			log.Fatalf("Failed to encode response: %v", err)
+		}
+		fmt.Println(string(out))
+		return // Exit after one-shot execution
 	}
 
 	log.Println("Slide MCP Server starting...")

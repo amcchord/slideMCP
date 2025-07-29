@@ -72,13 +72,13 @@ var docSections = map[string][]string{
 		"Alerts",
 		"Users",
 		"Clients",
-		"Networks",
+		"Networks (Managing Networks)",
 		"My Settings",
 	},
 	"Product": {
 		"Backups",
 		"Slide Agent",
-		"Networking",
+		"Networking (Requirements)",
 		"Product Specifications",
 		"System Requirements",
 		"Security Features",
@@ -113,6 +113,28 @@ var docSections = map[string][]string{
 		"Security Recommendations",
 		"Performance Optimization",
 	},
+}
+
+// Detailed descriptions for each documentation section to help with disambiguation
+var docSectionDescriptions = map[string]string{
+	"Getting Started": "Initial setup guides and tutorials for new users getting started with Slide backup solutions",
+	"Slide Console":   "Web console interface documentation - how to manage and configure your Slide infrastructure through the UI. Includes managing networks on Slide devices/cloud",
+	"Product":         "Technical product documentation including system requirements, networking prerequisites, and core product features",
+	"Billing":         "Billing, subscription management, quotes, invoices, and payment-related documentation",
+	"API":             "Developer documentation for the Slide API - endpoints, authentication, examples, and SDKs",
+	"Troubleshooting": "Common issues, error codes, and problem-solving guides for various Slide components",
+	"Best Practices":  "Recommended approaches for backup strategies, retention, security, and performance optimization",
+}
+
+// Topic descriptions for ambiguous items
+var topicDescriptions = map[string]string{
+	"Networks (Managing Networks)": "How to create, configure, and manage virtual networks on Slide devices and in the Slide cloud through the console",
+	"Networking (Requirements)":    "Network infrastructure requirements, firewall rules, port configurations, and connectivity prerequisites for using Slide devices",
+	"Backups":                      "Core backup functionality - types of backups, backup processes, scheduling, and verification",
+	"Restores":                     "How to restore data from backups - file-level, image-level, and bare metal restore procedures",
+	"Alerts":                       "Configuring and managing system alerts, notifications, and monitoring thresholds",
+	"Users":                        "User management within the Slide console - creating users, permissions, and access control",
+	"Clients":                      "Managing client organizations and multi-tenancy features in Slide",
 }
 
 // Detailed documentation content (simplified for demonstration)
@@ -259,16 +281,22 @@ func handleDocsTool(args map[string]interface{}) (string, error) {
 }
 
 func listDocSections() (string, error) {
-	sections := make([]string, 0, len(docSections))
+	sections := make([]map[string]interface{}, 0, len(docSections))
 	for section := range docSections {
-		sections = append(sections, section)
+		sectionInfo := map[string]interface{}{
+			"name":        section,
+			"description": docSectionDescriptions[section],
+			"topic_count": len(docSections[section]),
+		}
+		sections = append(sections, sectionInfo)
 	}
 
 	result := map[string]interface{}{
 		"sections": sections,
 		"_metadata": map[string]interface{}{
-			"description": "Available documentation sections from docs.slide.tech",
-			"usage":       "Use 'get_topics' operation to see topics within a section",
+			"description": "Available documentation sections from docs.slide.tech with contextual descriptions",
+			"usage":       "Use 'get_topics' operation to see topics within a section. Pay attention to descriptions to choose the right section.",
+			"note":        "Some sections have similar names but different purposes - check descriptions carefully",
 		},
 	}
 
@@ -291,12 +319,26 @@ func getDocTopics(args map[string]interface{}) (string, error) {
 		return "", fmt.Errorf("section '%s' not found", section)
 	}
 
+	// Create topic list with descriptions where available
+	topicList := make([]map[string]interface{}, 0, len(topics))
+	for _, topic := range topics {
+		topicInfo := map[string]interface{}{
+			"name": topic,
+		}
+		if desc, hasDesc := topicDescriptions[topic]; hasDesc {
+			topicInfo["description"] = desc
+		}
+		topicList = append(topicList, topicInfo)
+	}
+
 	result := map[string]interface{}{
-		"section": section,
-		"topics":  topics,
+		"section":             section,
+		"section_description": docSectionDescriptions[section],
+		"topics":              topicList,
 		"_metadata": map[string]interface{}{
 			"description": fmt.Sprintf("Topics available in the '%s' section", section),
 			"usage":       "Use 'get_content' operation to retrieve specific topic content",
+			"note":        "Topics with descriptions have been clarified to avoid ambiguity",
 		},
 	}
 
@@ -322,11 +364,17 @@ func searchDocs(args map[string]interface{}) (string, error) {
 		for _, topic := range topics {
 			if strings.Contains(strings.ToLower(section), query) ||
 				strings.Contains(strings.ToLower(topic), query) {
-				results = append(results, map[string]interface{}{
-					"section": section,
-					"topic":   topic,
-					"type":    "topic_match",
-				})
+				searchResult := map[string]interface{}{
+					"section":             section,
+					"section_description": docSectionDescriptions[section],
+					"topic":               topic,
+					"type":                "topic_match",
+				}
+				// Add topic description if available
+				if desc, hasDesc := topicDescriptions[topic]; hasDesc {
+					searchResult["topic_description"] = desc
+				}
+				results = append(results, searchResult)
 			}
 		}
 	}
@@ -355,8 +403,8 @@ func searchDocs(args map[string]interface{}) (string, error) {
 		"results":      results,
 		"result_count": len(results),
 		"_metadata": map[string]interface{}{
-			"description": "Search results from Slide documentation",
-			"note":        "Results include both topic matches and content matches",
+			"description": "Search results from Slide documentation with contextual information",
+			"note":        "Results include section and topic descriptions to help identify the correct documentation",
 		},
 	}
 
@@ -577,14 +625,19 @@ func getSectionForTopic(topic string) string {
 func getDocsToolInfo() ToolInfo {
 	return ToolInfo{
 		Name: "slide_docs",
-		Description: `Access Slide documentation and API reference. This tool provides comprehensive access to:
-- Documentation sections and topics from docs.slide.tech
-- Search functionality across all documentation
+		Description: `Access Slide documentation and API reference with enhanced contextual information. This tool provides comprehensive access to:
+- Documentation sections and topics from docs.slide.tech with disambiguating descriptions
+- Search functionality across all documentation with context-aware results
 - Complete OpenAPI specification from http://api.slide.tech/openapi.json
 
+Key features:
+- Section descriptions help distinguish between similar-sounding sections (e.g., "Networks" in Console vs "Networking" in Product)
+- Topic descriptions clarify ambiguous terms
+- Search results include contextual information to help identify the correct documentation
+
 Usage patterns:
-- Start with 'list_sections' to explore available documentation
-- Use 'search_docs' to find information on specific topics
+- Start with 'list_sections' to explore available documentation with descriptions
+- Use 'search_docs' to find information on specific topics with contextual results
 - Use 'get_api_reference' to retrieve the complete, authoritative OpenAPI spec
 - For API questions, always fetch the OpenAPI spec rather than relying on summaries
 - Remember to use slide_* tools for actual API calls, not raw HTTP requests`,

@@ -4,11 +4,12 @@ An MCP server implementation that integrates with the Slide API, providing compr
 
 ## 🚀 Go Binary Implementation ⚡
 - **Single binary**: No dependencies, just download and run
-- **Fast startup**: ~50ms startup time
+- **Fast startup**: ~50ms startup time with initial context loading
 - **Low memory usage**: 10-20MB memory footprint
 - **Cross-platform**: Linux, macOS, Windows binaries
 - **Zero Installation Hassle**: Simple download and configure
 - **Streamlined Interface**: 14 meta-tools instead of 52+ individual tools for better LLM interaction
+- **Enhanced Performance**: Initial context loading eliminates first API call delays
 
 ---
 
@@ -67,8 +68,8 @@ Each meta-tool accepts an `operation` parameter that specifies the action to per
 
 ### ☁️ Virtual Infrastructure  
 7. **`slide_vms`** - Virtual machine management
-   - Operations: `list`, `get`, `create`, `update`, `delete`
-   - Browser-based VNC console access
+   - Operations: `list`, `get`, `create`, `update`, `delete`, `get_rdp_bookmark`
+   - Browser-based VNC console access and downloadable RDP bookmarks
    - Configurable CPU (1-16 cores) and RAM (1-12GB)
    - Multiple network modes and disk bus types
 
@@ -93,6 +94,7 @@ Each meta-tool accepts an `operation` parameter that specifies the action to per
     - **Report Templates**: Runbook procedures, daily activity summaries, monthly analysis reports
     - **Formats**: HTML, Markdown, HAML support for multiple output needs
     - Perfect for status displays, dashboards, documentation, and professional reporting
+    - **⚠️ DISABLED BY DEFAULT**: Must be explicitly enabled with `--enable-presentation` flag or `SLIDE_ENABLE_PRESENTATION=true`
 **⚠️ IMPORTANT**: If you are building your own presentation logic or custom formatting, you may want to disable the `slide_presentation` tool to avoid conflicts with your custom implementation. To disable just the `slide_presentation` tool, add it to the `DISABLED_TOOLS` environment variable or in the --disabled-tools part of the CLI
 
 12. **`slide_meta`** - Meta tools for reporting and aggregated data views
@@ -103,6 +105,7 @@ Each meta-tool accepts an `operation` parameter that specifies the action to per
     - Perfect for generating reports with accurate, pre-calculated metrics
 
 13. **`slide_reports`** - Pre-calculated statistics and reports for backup/snapshot analysis
+    - **⚠️ DISABLED BY DEFAULT**: Must be explicitly enabled with `--enable-reports` flag or `SLIDE_ENABLE_REPORTS=true`
     - **Operations**: `daily_backup_snapshot`, `weekly_backup_snapshot`, `monthly_backup_snapshot`
     - **Daily Reports**: Single day statistics with backup success rates and failure reasons
     - **Weekly Reports**: 7-day breakdown with daily agent counts and success metrics
@@ -144,6 +147,7 @@ Each meta-tool accepts an `operation` parameter that specifies the action to per
 - **Resource Control**: Configurable CPU/RAM allocation  
 - **Network Integration**: Connect VMs to isolated networks
 - **Console Access**: Browser-based VNC for direct VM interaction
+- **RDP Bookmarks**: Generate downloadable .rdp files for easy Windows Remote Desktop access
 
 ### 📊 Monitoring & Organization
 - **Alert Management**: Centralized alert monitoring and resolution
@@ -246,12 +250,12 @@ For the easiest installation experience, use our GUI installer:
 
 #### macOS
 1. **Download the installer**: From the [latest release](https://github.com/amcchord/slideMCP/releases/latest)
-   - **Apple Silicon (M1/M2/M3/M4)**: `slide-mcp-installer-v2.2.1-darwin-arm64-signed.tar.gz`
-   - **Intel Mac**: `slide-mcp-installer-v2.2.1-darwin-amd64-signed.tar.gz`
+   - **Apple Silicon (M1/M2/M3/M4)**: `slide-mcp-installer-v2.3.0-darwin-arm64-signed.tar.gz`
+   - **Intel Mac**: `slide-mcp-installer-v2.3.0-darwin-amd64-signed.tar.gz`
 
 2. **Extract and run**: 
    ```bash
-   tar -xzf slide-mcp-installer-v2.2.1-darwin-[arch]-signed.tar.gz
+   tar -xzf slide-mcp-installer-v2.3.0-darwin-[arch]-signed.tar.gz
    open slide-mcp-installer.app
    ```
 3. **Enter your API key**: Input your Slide API key when prompted
@@ -260,8 +264,8 @@ For the easiest installation experience, use our GUI installer:
 
 #### Windows
 1. **Download the installer**: From the [latest release](https://github.com/amcchord/slideMCP/releases/latest)
-   - **64-bit**: `slide-mcp-installer-v2.2.1-windows-amd64.zip`
-   - **32-bit**: `slide-mcp-installer-v2.2.1-windows-386.zip`
+   - **64-bit**: `slide-mcp-installer-v2.3.0-windows-amd64.zip`
+   - **32-bit**: `slide-mcp-installer-v2.3.0-windows-386.zip`
 
 2. **Extract and run**: 
    - Extract the ZIP file
@@ -279,41 +283,41 @@ The GUI installer will:
 
 ### Manual Installation
 
-#### Download Pre-built Binary (v2.2.1)
+#### Download Pre-built Binary (v2.3.0)
 
 For **macOS ARM64** (Apple Silicon):
 ```bash
-curl -L -o slide-mcp-server-v2.2.1-macos-arm64.tar.gz https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.2.1-macos-arm64.tar.gz
-tar -xzf slide-mcp-server-v2.2.1-macos-arm64.tar.gz
-chmod +x slide-mcp-server-v2.2.1-macos-arm64
-mv slide-mcp-server-v2.2.1-macos-arm64 slide-mcp-server
+curl -L -o slide-mcp-server-v2.3.0-macos-arm64.tar.gz https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.3.0-macos-arm64.tar.gz
+tar -xzf slide-mcp-server-v2.3.0-macos-arm64.tar.gz
+chmod +x slide-mcp-server-v2.3.0-macos-arm64
+mv slide-mcp-server-v2.3.0-macos-arm64 slide-mcp-server
 ```
 For **macOS x64**:
 ```bash
-curl -L -o slide-mcp-server-v2.2.1-macos-x64.tar.gz https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.2.1-macos-x64.tar.gz
-tar -xzf slide-mcp-server-v2.2.1-macos-x64.tar.gz
-chmod +x slide-mcp-server-v2.2.1-macos-x64
-mv slide-mcp-server-v2.2.1-macos-x64 slide-mcp-server
+curl -L -o slide-mcp-server-v2.3.0-macos-x64.tar.gz https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.3.0-macos-x64.tar.gz
+tar -xzf slide-mcp-server-v2.3.0-macos-x64.tar.gz
+chmod +x slide-mcp-server-v2.3.0-macos-x64
+mv slide-mcp-server-v2.3.0-macos-x64 slide-mcp-server
 ```
 For **Linux x64**:
 ```bash
-curl -L -o slide-mcp-server-v2.2.1-linux-x64.tar.gz https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.2.1-linux-x64.tar.gz
-tar -xzf slide-mcp-server-v2.2.1-linux-x64.tar.gz
-chmod +x slide-mcp-server-v2.2.1-linux-x64
-mv slide-mcp-server-v2.2.1-linux-x64 slide-mcp-server
+curl -L -o slide-mcp-server-v2.3.0-linux-x64.tar.gz https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.3.0-linux-x64.tar.gz
+tar -xzf slide-mcp-server-v2.3.0-linux-x64.tar.gz
+chmod +x slide-mcp-server-v2.3.0-linux-x64
+mv slide-mcp-server-v2.3.0-linux-x64 slide-mcp-server
 ```
 For **Linux ARM64**:
 ```bash
-curl -L -o slide-mcp-server-v2.2.1-linux-arm64.tar.gz https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.2.1-linux-arm64.tar.gz
-tar -xzf slide-mcp-server-v2.2.1-linux-arm64.tar.gz
-chmod +x slide-mcp-server-v2.2.1-linux-arm64
-mv slide-mcp-server-v2.2.1-linux-arm64 slide-mcp-server
+curl -L -o slide-mcp-server-v2.3.0-linux-arm64.tar.gz https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.3.0-linux-arm64.tar.gz
+tar -xzf slide-mcp-server-v2.3.0-linux-arm64.tar.gz
+chmod +x slide-mcp-server-v2.3.0-linux-arm64
+mv slide-mcp-server-v2.3.0-linux-arm64 slide-mcp-server
 ```
 For **Windows x64**:
 ```cmd
-curl -L -o slide-mcp-server-v2.2.1-windows-x64.zip https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.2.1-windows-x64.zip
-unzip slide-mcp-server-v2.2.1-windows-x64.zip
-mv slide-mcp-server-v2.2.1-windows-x64.exe slide-mcp-server.exe
+curl -L -o slide-mcp-server-v2.3.0-windows-x64.zip https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.3.0-windows-x64.zip
+unzip slide-mcp-server-v2.3.0-windows-x64.zip
+mv slide-mcp-server-v2.3.0-windows-x64.exe slide-mcp-server.exe
 ```
 
 #### Build from Source
@@ -417,6 +421,8 @@ The Slide MCP Server supports several command-line arguments for flexible config
 | `--base-url` | Base URL for Slide API endpoint | `SLIDE_BASE_URL` | `https://api.slide.tech` |
 | `--tools` | Permission mode for tool access | `SLIDE_TOOLS` | `full-safe` |
 | `--disabled-tools` | Comma-separated list of tools to disable | `SLIDE_DISABLED_TOOLS` | None |
+| `--enable-presentation` | Enable the `slide_presentation` tool | `SLIDE_ENABLE_PRESENTATION` | `false` |
+| `--enable-reports` | Enable the `slide_reports` tool | `SLIDE_ENABLE_REPORTS` | `false` |
 | `--version` | Show version information and exit | - | - |
 
 **Priority**: CLI flags take precedence over environment variables.
@@ -440,9 +446,15 @@ export SLIDE_TOOLS="full"
 # Disable specific tools
 ./slide-mcp-server --api-key sk_test_123 --disabled-tools "slide_agents,slide_backups"
 
+# Enable presentation and reports tools (disabled by default)
+./slide-mcp-server --api-key sk_test_123 --enable-presentation --enable-reports
+
+# Enable only the presentation tool
+./slide-mcp-server --api-key sk_test_123 --enable-presentation
+
 # Show version
 ./slide-mcp-server --version
-# Output: slide-mcp-server version 2.2.1
+# Output: slide-mcp-server version 2.3.0
 ```
 
 ### 🚫 Disabling Specific Tools
@@ -511,6 +523,47 @@ When a disabled tool is called, the server returns:
     "message": "Tool 'slide_agents' is disabled"
   }
 }
+```
+
+### 🎯 Enabling Presentation & Reports Tools
+
+The `slide_presentation` and `slide_reports` tools are **disabled by default** and must be explicitly enabled using CLI flags or environment variables. This design prevents accidental exposure of potentially sensitive reporting capabilities.
+
+#### Why These Tools Are Disabled by Default
+
+- **`slide_presentation`**: Provides advanced formatting and templating capabilities that could potentially be misused for data extraction or system information gathering
+- **`slide_reports`**: Generates comprehensive system reports that may contain sensitive operational data
+
+#### Enabling These Tools
+
+```bash
+# Enable both tools via CLI flags
+./slide-mcp-server --api-key YOUR_KEY --enable-presentation --enable-reports
+
+# Enable only presentation tool
+./slide-mcp-server --api-key YOUR_KEY --enable-presentation  
+
+# Enable only reports tool
+./slide-mcp-server --api-key YOUR_KEY --enable-reports
+
+# Enable via environment variables
+export SLIDE_ENABLE_PRESENTATION=true
+export SLIDE_ENABLE_REPORTS=true
+./slide-mcp-server --api-key YOUR_KEY
+
+# CLI flags take precedence over environment variables
+export SLIDE_ENABLE_PRESENTATION=false
+./slide-mcp-server --api-key YOUR_KEY --enable-presentation  # Presentation tool will be enabled
+```
+
+#### Combined with Other Options
+
+```bash
+# Enable with specific tools mode
+./slide-mcp-server --api-key YOUR_KEY --tools reporting --enable-presentation --enable-reports
+
+# Enable while disabling other tools
+./slide-mcp-server --api-key YOUR_KEY --enable-reports --disabled-tools "slide_agents,slide_backups"
 ```
 
 ## 🔒 Permission Modes
@@ -701,6 +754,48 @@ With custom configuration and disabled tools:
 }
 ```
 
+### Generate RDP Bookmark for VM
+```json
+{
+  "name": "slide_vms",
+  "arguments": {
+    "operation": "get_rdp_bookmark",
+    "virt_id": "vm-123"
+  }
+}
+```
+
+### Search Documentation
+```json
+{
+  "name": "slide_docs",
+  "arguments": {
+    "operation": "search_docs",
+    "query": "backup retention policies"
+  }
+}
+```
+
+## 🆕 What's New in v2.3.0
+
+### 🚀 Performance Enhancements
+- **Initial Context Loading**: The MCP server now loads client/device/agent hierarchy data at startup, eliminating typical first API call delays and providing immediate access to infrastructure overview
+- **Faster Response Times**: Initial context provides instant availability of system data for better user experience
+
+### 🖥️ Enhanced VM Management  
+- **RDP Bookmark Generation**: New `get_rdp_bookmark` operation in `slide_vms` tool
+  - Generate downloadable Windows Remote Desktop (.rdp) files
+  - One-click access to virtual machines via standard RDP clients  
+  - Compatible with Windows Remote Desktop, macOS Remote Desktop, and other RDP clients
+  - Includes optimized settings for compression, audio, clipboard, and display
+  - Automatic validation of RDP endpoint availability
+  - User-friendly filename suggestions and clear usage instructions
+
+### 📚 Documentation Integration
+- **Built-in Documentation Access**: The `slide_docs` tool provides direct access to official Slide documentation
+- **Contextual Help**: Get best practices, troubleshooting guidance, and API reference information
+- **Search Capabilities**: Find relevant documentation without leaving your MCP client
+
 ### Start Backup Job
 ```json
 {
@@ -791,6 +886,34 @@ With custom configuration and disabled tools:
     "query": "backup retention policies"
   }
 }
+```
+
+## Documentation System
+
+The MCP server includes a comprehensive documentation access system through the `slide_docs` tool. The documentation system has been enhanced with contextual descriptions to help LLMs make better choices when navigating between similar-sounding sections.
+
+### Enhanced Context Features
+
+1. **Section Descriptions**: Each documentation section now includes a detailed description explaining its purpose
+   - Example: "Slide Console > Networks" is clarified as "managing virtual networks on Slide devices/cloud"
+   - Example: "Product > Networking" is clarified as "network infrastructure requirements and prerequisites"
+
+2. **Topic Descriptions**: Ambiguous topic names include contextual descriptions
+   - Topics like "Networks (Managing Networks)" vs "Networking (Requirements)" are clearly differentiated
+
+3. **Context-Aware Search**: Search results include section and topic descriptions to help identify the correct documentation
+
+4. **Improved Navigation**: The LLM can now better distinguish between:
+   - Configuration vs Requirements documentation
+   - Console UI features vs System prerequisites
+   - User management vs Client organization management
+
+### Testing Documentation Context
+
+Run the test script to verify the context improvements:
+
+```bash
+./test_scripts/test_docs_context.sh
 ```
 
 ## Build

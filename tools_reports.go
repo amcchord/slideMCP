@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -35,6 +36,86 @@ type DailyReport struct {
 	DeviceName string        `json:"device_name,omitempty"`
 	ClientID   string        `json:"client_id,omitempty"`
 	ClientName string        `json:"client_name,omitempty"`
+}
+
+// ---- Caching & Concurrency helpers ----
+
+// deviceCache provides a simple in-memory cache so we only fetch each device once
+var deviceCache = struct {
+	sync.RWMutex
+	devices map[string]Device
+}{devices: make(map[string]Device)}
+
+// getDeviceNameCached returns a device's display/host name, fetching from API once and then caching.
+func getDeviceNameCached(deviceID string) string {
+	if deviceID == "" {
+		return ""
+	}
+
+	// Fast path – try cache first.
+	deviceCache.RLock()
+	if d, ok := deviceCache.devices[deviceID]; ok {
+		deviceCache.RUnlock()
+		if d.DisplayName != "" {
+			return d.DisplayName
+		}
+		return d.Hostname
+	}
+	deviceCache.RUnlock()
+
+	// Miss – fetch from API.
+	data, err := getDevice(map[string]interface{}{"device_id": deviceID})
+	if err != nil {
+		return "" // best-effort; avoid breaking report generation
+	}
+
+	var dev Device
+	if err := json.Unmarshal([]byte(data), &dev); err != nil {
+		return ""
+	}
+
+	deviceCache.Lock()
+	deviceCache.devices[deviceID] = dev
+	deviceCache.Unlock()
+
+	if dev.DisplayName != "" {
+		return dev.DisplayName
+	}
+	return dev.Hostname
+}
+
+// generateAgentReportsParallel calculates a specific day's report for many agents in parallel.
+// The concurrency level is capped so we don't overload the API.
+func generateAgentReportsParallel(agents []Agent, date time.Time) []DailyReport {
+	const concurrencyLimit = 10
+	sem := make(chan struct{}, concurrencyLimit)
+	reportsCh := make(chan DailyReport, len(agents))
+	var wg sync.WaitGroup
+
+	for _, agent := range agents {
+		agent := agent // capture
+		wg.Add(1)
+		sem <- struct{}{}
+		go func() {
+			defer wg.Done()
+			defer func() { <-sem }()
+
+			rep, err := generateAgentDailyReport(agent, date)
+			if err == nil && rep != nil {
+				reportsCh <- *rep
+			}
+		}()
+	}
+
+	wg.Wait()
+	close(reportsCh)
+
+	results := make([]DailyReport, 0, len(agents))
+	for r := range reportsCh {
+		results = append(results, r)
+	}
+
+	return results
 }
 
 // handleReportsTool handles all report-related operations
@@ -90,16 +171,8 @@ func generateDailyBackupSnapshotReport(args map[string]interface{}) (string, err
 		return "", fmt.Errorf("failed to get agents: %w", err)
 	}
 
-	// Generate reports for each agent
-	var reports []DailyReport
-	for _, agent := range agents {
-		report, err := generateAgentDailyReport(agent, targetDate)
-		if err != nil {
-			// Skip agents with errors
-			continue
-		}
-		reports = append(reports, *report)
-	}
+	// Generate reports concurrently for all agents
+	reports := generateAgentReportsParallel(agents, targetDate)
 
 	// Format output
 	if format == "markdown" {
@@ -157,23 +230,13 @@ func generateWeeklyBackupSnapshotReport(args map[string]interface{}) (string, er
 		return "", fmt.Errorf("failed to get agents: %w", err)
 	}
 
-	// Collect reports for each day of the week
+	// Collect reports for each day using parallel agent processing
 	dayLabels := []string{"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}
 	weekReports := make([][]DailyReport, 7)
 
 	for i := 0; i < 7; i++ {
 		currentDate := startOfWeek.AddDate(0, 0, i)
-		var dayReports []DailyReport
-
-		for _, agent := range agents {
-			report, err := generateAgentDailyReport(agent, currentDate)
-			if err != nil {
-				continue
-			}
-			dayReports = append(dayReports, *report)
-		}
-
-		weekReports[i] = dayReports
+		weekReports[i] = generateAgentReportsParallel(agents, currentDate)
 	}
 
 	// Format output
@@ -234,21 +297,11 @@ func generateMonthlyBackupSnapshotReport(args map[string]interface{}) (string, e
 		return "", fmt.Errorf("failed to get agents: %w", err)
 	}
 
-	// Collect reports for each day of the month
+	// Collect reports for each day, processing agents in parallel per day
 	monthReports := make(map[int][]DailyReport)
 
 	for d := firstDay; !d.After(lastDay); d = d.AddDate(0, 0, 1) {
-		var dayReports []DailyReport
-
-		for _, agent := range agents {
-			report, err := generateAgentDailyReport(agent, d)
-			if err != nil {
-				continue
-			}
-			dayReports = append(dayReports, *report)
-		}
-
-		monthReports[d.Day()] = dayReports
+		monthReports[d.Day()] = generateAgentReportsParallel(agents, d)
 	}
 
 	// Format output
@@ -396,18 +449,9 @@ func generateAgentDailyReport(agent Agent, date time.Time) (*DailyReport, error)
 		report.ClientName = getClientName(report.ClientID)
 	}
 
-	// Get device name
+	// Get device name (cached)
 	if report.DeviceID != "" {
-		deviceData, err := getDevice(map[string]interface{}{"device_id": report.DeviceID})
-		if err == nil {
-			var device Device
-			if err := json.Unmarshal([]byte(deviceData), &device); err == nil {
-				report.DeviceName = device.DisplayName
-				if report.DeviceName == "" {
-					report.DeviceName = device.Hostname
-				}
-			}
-		}
+		report.DeviceName = getDeviceNameCached(report.DeviceID)
 	}
 
 	// Calculate backup stats
