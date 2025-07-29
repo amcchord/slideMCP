@@ -30,6 +30,6 @@ cp ../build/slide-mcp-server-darwin-arm64 ../build/slide-mcp-server
 chmod +x ../build/slide-mcp-server
 
 # Move to /usr/local/bin
-mv ../build/slide-mcp-server /usr/local/bin/
+mv ../build/slide-mcp-server /Users/austinmcchord/.local/bin/slide-mcp-server
 
 echo "Installation complete"

@@ -18,8 +18,16 @@ func handleMetaTool(args map[string]interface{}) (string, error) {
 	case "list_all_clients_devices_and_agents":
 		return listAllClientsDevicesAndAgents(args)
 	case "get_snapshot_changes":
+		// Check if reporting or presentation tools are enabled
+		if !enableReports && !enablePresentation {
+			return "", fmt.Errorf("get_snapshot_changes operation requires reporting or presentation tools to be enabled")
+		}
 		return getSnapshotChanges(args)
 	case "get_reporting_data":
+		// Check if reporting or presentation tools are enabled
+		if !enableReports && !enablePresentation {
+			return "", fmt.Errorf("get_reporting_data operation requires reporting or presentation tools to be enabled")
+		}
 		return getReportingData(args)
 	default:
 		return "", fmt.Errorf("unknown operation: %s", operation)
@@ -28,6 +36,14 @@ func handleMetaTool(args map[string]interface{}) (string, error) {
 
 // getMetaToolInfo returns the tool definition for the meta tools
 func getMetaToolInfo() ToolInfo {
+	// Base operations that are always available
+	baseOperations := []string{"list_all_clients_devices_and_agents"}
+
+	// Add reporting operations only if reporting or presentation tools are enabled
+	if enableReports || enablePresentation {
+		baseOperations = append(baseOperations, "get_snapshot_changes", "get_reporting_data")
+	}
+
 	return ToolInfo{
 		Name:        "slide_meta",
 		Description: "Meta tools for reporting and aggregated data views. Provides hierarchical views and time-based snapshot analysis.",
@@ -37,9 +53,9 @@ func getMetaToolInfo() ToolInfo {
 				"operation": map[string]interface{}{
 					"type":        "string",
 					"description": "The operation to perform",
-					"enum":        []string{"list_all_clients_devices_and_agents", "get_snapshot_changes", "get_reporting_data"},
+					"enum":        baseOperations,
 				},
-				// Parameters for get_snapshot_changes
+				// Parameters for get_snapshot_changes (only shown if operation is available)
 				"period": map[string]interface{}{
 					"type":        "string",
 					"description": "Time period for snapshot changes - used with 'get_snapshot_changes' operation",
@@ -65,7 +81,7 @@ func getMetaToolInfo() ToolInfo {
 					"type":        "string",
 					"description": "Filter by agent ID - optional for time-based operations",
 				},
-				// Parameters for get_reporting_data
+				// Parameters for get_reporting_data (only shown if operation is available)
 				"report_type": map[string]interface{}{
 					"type":        "string",
 					"description": "Type of report data to generate - used with 'get_reporting_data' operation",
@@ -73,30 +89,50 @@ func getMetaToolInfo() ToolInfo {
 				},
 			},
 			"required": []string{"operation"},
-			"allOf": []map[string]interface{}{
-				{
-					"if": map[string]interface{}{
-						"properties": map[string]interface{}{
-							"operation": map[string]interface{}{"const": "get_snapshot_changes"},
-						},
-					},
-					"then": map[string]interface{}{
-						"required": []string{"period"},
-					},
-				},
-				{
-					"if": map[string]interface{}{
-						"properties": map[string]interface{}{
-							"operation": map[string]interface{}{"const": "get_reporting_data"},
-						},
-					},
-					"then": map[string]interface{}{
-						"required": []string{"report_type"},
-					},
-				},
-			},
+			"allOf":    buildConditionalRequirements(baseOperations),
 		},
 	}
+}
+
+// buildConditionalRequirements creates the conditional schema requirements based on available operations
+func buildConditionalRequirements(availableOperations []string) []map[string]interface{} {
+	var conditions []map[string]interface{}
+
+	// Only add get_snapshot_changes requirements if the operation is available
+	for _, op := range availableOperations {
+		if op == "get_snapshot_changes" {
+			conditions = append(conditions, map[string]interface{}{
+				"if": map[string]interface{}{
+					"properties": map[string]interface{}{
+						"operation": map[string]interface{}{"const": "get_snapshot_changes"},
+					},
+				},
+				"then": map[string]interface{}{
+					"required": []string{"period"},
+				},
+			})
+			break
+		}
+	}
+
+	// Only add get_reporting_data requirements if the operation is available
+	for _, op := range availableOperations {
+		if op == "get_reporting_data" {
+			conditions = append(conditions, map[string]interface{}{
+				"if": map[string]interface{}{
+					"properties": map[string]interface{}{
+						"operation": map[string]interface{}{"const": "get_reporting_data"},
+					},
+				},
+				"then": map[string]interface{}{
+					"required": []string{"report_type"},
+				},
+			})
+			break
+		}
+	}
+
+	return conditions
 }
 
 // getSnapshotChanges returns snapshot changes (new and deleted) over a time period
