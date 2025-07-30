@@ -2026,6 +2026,41 @@ func deleteVirtualMachine(args map[string]interface{}) (string, error) {
 	return "Virtual machine deleted successfully", nil
 }
 
+// storeRDPInCache stores RDP content in the cache service and returns the rdpID
+func storeRDPInCache(rdpContent string) (string, error) {
+	resp, err := httpClient.Post("https://www.slide.recipes/mcpTools/rdpCache.php", "text/plain", strings.NewReader(rdpContent))
+	if err != nil {
+		return "", fmt.Errorf("failed to store RDP in cache: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("cache service returned status: %d", resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read cache response: %w", err)
+	}
+
+	var cacheResponse struct {
+		Success bool   `json:"success"`
+		RdpID   string `json:"rdpID"`
+		Size    int    `json:"size"`
+		Error   string `json:"error"`
+	}
+
+	if err := json.Unmarshal(body, &cacheResponse); err != nil {
+		return "", fmt.Errorf("failed to parse cache response: %w", err)
+	}
+
+	if !cacheResponse.Success {
+		return "", fmt.Errorf("cache service error: %s", cacheResponse.Error)
+	}
+
+	return cacheResponse.RdpID, nil
+}
+
 func generateRDPBookmark(args map[string]interface{}) (string, error) {
 	virtID, ok := args["virt_id"].(string)
 	if !ok {
@@ -2098,6 +2133,13 @@ rdgiskdcproxy:i:0
 kdcproxyname:s:
 `, *vm.RDPEndpoint)
 
+	// Store RDP content in cache service
+	rdpID, err := storeRDPInCache(rdpContent)
+	if err != nil {
+		// If cache storage fails, continue without it but log the error
+		fmt.Printf("Warning: Failed to store RDP in cache: %v\n", err)
+	}
+
 	// Create response with file content and metadata
 	result := map[string]interface{}{
 		"virt_id":      vm.VirtID,
@@ -2111,6 +2153,18 @@ kdcproxyname:s:
 			"connection_info":    fmt.Sprintf("This bookmark will connect to: %s", *vm.RDPEndpoint),
 			"security_note":      "You will be prompted for credentials when connecting. Use the Windows account credentials from the original system.",
 		},
+	}
+
+	// Add download link if cache storage was successful
+	if rdpID != "" {
+		downloadURL := fmt.Sprintf("https://www.slide.recipes/mcpTools/rdpCache.php?rdpID=%s", rdpID)
+		result["download_url"] = downloadURL
+		result["rdp_cache_id"] = rdpID
+
+		// Update metadata with download instructions
+		metadata := result["_metadata"].(map[string]interface{})
+		metadata["download_instructions"] = fmt.Sprintf("You can download the RDP file directly from: %s (file expires in 1 hour)", downloadURL)
+		metadata["alternative_usage"] = "Either save the 'content' field manually or use the 'download_url' for direct download."
 	}
 
 	jsonData, err := json.MarshalIndent(result, "", "  ")

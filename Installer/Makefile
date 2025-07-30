@@ -6,7 +6,7 @@
 # - Linux: Creates standard binary
 
 BINARY_NAME=slide-mcp-installer
-VERSION=v2.2.0
+VERSION=v2.3.0
 BUILD_DIR=build
 
 # Build flags
