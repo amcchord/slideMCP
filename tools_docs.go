@@ -275,6 +275,8 @@ func handleDocsTool(args map[string]interface{}) (string, error) {
 		return getDocContent(args)
 	case "get_api_reference":
 		return getAPIReference(args)
+	case "curl_docs":
+		return curlDocs(args)
 	default:
 		return "", fmt.Errorf("invalid operation: %s", operation)
 	}
@@ -444,35 +446,28 @@ func getDocContent(args map[string]interface{}) (string, error) {
 		return string(jsonData), nil
 	}
 
-	// Provide a general template for topics without specific content
-	generalContent := fmt.Sprintf(`# %s
+	// Instead of generic content, suggest using curl_docs operation
+	section := getSectionForTopic(topic)
+	sectionPath := strings.ToLower(strings.ReplaceAll(section, " ", "-"))
+	topicPath := strings.ToLower(strings.ReplaceAll(topic, " ", "-"))
 
-This documentation section covers %s in the Slide backup system.
-
-## Overview
-[Content for this specific topic would be retrieved from docs.slide.tech]
-
-## Key Concepts
-- Feature overview and capabilities
-- Configuration requirements
-- Best practices
-- Common use cases
-
-## Related Topics
-- Check the '%s' section for more related documentation
-- Use the search function to find specific information
-- Refer to the API documentation for programmatic access
-
-For the most up-to-date and detailed information, please visit:
-https://docs.slide.tech`, topic, topic, getSectionForTopic(topic))
+	// Try to construct likely URL paths
+	possiblePaths := []string{
+		fmt.Sprintf("%s/", topicPath),
+		fmt.Sprintf("%s/%s/", sectionPath, topicPath),
+	}
 
 	result := map[string]interface{}{
-		"topic":   topic,
-		"content": generalContent,
+		"topic": topic,
+		"error": "Content not available in local cache",
+		"suggestion": map[string]interface{}{
+			"operation":      "curl_docs",
+			"description":    "Use the curl_docs operation to fetch live content from docs.slide.tech",
+			"possible_paths": possiblePaths,
+			"example":        fmt.Sprintf(`Use: {"operation": "curl_docs", "path": "%s/"}`, topicPath),
+		},
 		"_metadata": map[string]interface{}{
-			"source": "docs.slide.tech",
-			"format": "markdown",
-			"note":   "Generic template - full content available at docs.slide.tech",
+			"note": "Generic content templates have been removed. Use curl_docs to fetch specific pages from docs.slide.tech",
 		},
 	}
 
@@ -583,6 +578,182 @@ func getAPIReferenceFallback(args map[string]interface{}) (string, error) {
 	return string(jsonData), nil
 }
 
+func curlDocs(args map[string]interface{}) (string, error) {
+	path, ok := args["path"].(string)
+	if !ok {
+		return "", fmt.Errorf("path is required")
+	}
+
+	// Validate that the path is for docs.slide.tech domain only
+	baseURL := "https://docs.slide.tech/"
+
+	// Clean the path - remove leading slash if present
+	if strings.HasPrefix(path, "/") {
+		path = strings.TrimPrefix(path, "/")
+	}
+
+	// Construct full URL
+	fullURL := baseURL + path
+
+	// Security check - ensure we're only fetching from docs.slide.tech
+	if !strings.HasPrefix(fullURL, "https://docs.slide.tech/") {
+		return "", fmt.Errorf("invalid path: only docs.slide.tech URLs are allowed")
+	}
+
+	// Create HTTP client with timeout
+	client := &http.Client{
+		Timeout: 15 * time.Second,
+	}
+
+	// Make the request
+	resp, err := client.Get(fullURL)
+	if err != nil {
+		return "", fmt.Errorf("failed to fetch content from %s: %w", fullURL, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("HTTP %d error fetching %s", resp.StatusCode, fullURL)
+	}
+
+	// Read response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	// Clean HTML content to reduce context window usage
+	cleanedContent := cleanHTMLContent(string(body))
+
+	result := map[string]interface{}{
+		"url":     fullURL,
+		"status":  resp.StatusCode,
+		"content": cleanedContent,
+		"_metadata": map[string]interface{}{
+			"source":          "docs.slide.tech",
+			"fetched_at":      time.Now().UTC().Format(time.RFC3339),
+			"content_type":    resp.Header.Get("Content-Type"),
+			"processing_note": "HTML has been cleaned and simplified to reduce context window usage",
+		},
+	}
+
+	jsonData, err := json.MarshalIndent(result, "", "  ")
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal result: %w", err)
+	}
+
+	return string(jsonData), nil
+}
+
+// cleanHTMLContent removes unnecessary HTML tags and content to reduce context window usage
+func cleanHTMLContent(html string) string {
+	// Remove script tags and their content
+	html = removeTagsAndContent(html, "script")
+	html = removeTagsAndContent(html, "style")
+	html = removeTagsAndContent(html, "nav")
+	html = removeTagsAndContent(html, "header")
+	html = removeTagsAndContent(html, "footer")
+
+	// Remove specific classes that add noise
+	html = removeElementsByClass(html, "md-search")
+	html = removeElementsByClass(html, "md-dialog")
+	html = removeElementsByClass(html, "md-sidebar")
+
+	// Extract main content if present
+	if strings.Contains(html, `class="md-content__inner md-typeset"`) {
+		start := strings.Index(html, `class="md-content__inner md-typeset">`)
+		if start != -1 {
+			end := strings.Index(html[start:], "</article>")
+			if end != -1 {
+				html = html[start:start+end] + "</article>"
+			}
+		}
+	}
+
+	// Remove excessive whitespace and newlines
+	html = strings.ReplaceAll(html, "\n\n\n", "\n")
+	html = strings.ReplaceAll(html, "  ", " ")
+
+	return html
+}
+
+// removeTagsAndContent removes specified HTML tags and all their content
+func removeTagsAndContent(html, tag string) string {
+	for {
+		startTag := "<" + tag
+		startIdx := strings.Index(strings.ToLower(html), strings.ToLower(startTag))
+		if startIdx == -1 {
+			break
+		}
+
+		// Find the end of the opening tag
+		openEnd := strings.Index(html[startIdx:], ">")
+		if openEnd == -1 {
+			break
+		}
+		openEnd += startIdx + 1
+
+		// Find the closing tag
+		closeTag := "</" + tag + ">"
+		closeIdx := strings.Index(strings.ToLower(html[openEnd:]), strings.ToLower(closeTag))
+		if closeIdx == -1 {
+			// No closing tag found, remove from start to end
+			html = html[:startIdx] + html[openEnd:]
+			continue
+		}
+		closeIdx += openEnd + len(closeTag)
+
+		// Remove the entire tag and its content
+		html = html[:startIdx] + html[closeIdx:]
+	}
+	return html
+}
+
+// removeElementsByClass removes HTML elements with specific class names
+func removeElementsByClass(html, className string) string {
+	classAttr := `class="` + className
+	for {
+		startIdx := strings.Index(html, classAttr)
+		if startIdx == -1 {
+			break
+		}
+
+		// Find the start of the element
+		elementStart := strings.LastIndex(html[:startIdx], "<")
+		if elementStart == -1 {
+			break
+		}
+
+		// Extract tag name
+		tagEnd := strings.Index(html[elementStart+1:], " ")
+		if tagEnd == -1 {
+			tagEnd = strings.Index(html[elementStart+1:], ">")
+		}
+		if tagEnd == -1 {
+			break
+		}
+		tagName := html[elementStart+1 : elementStart+1+tagEnd]
+
+		// Find the closing tag
+		closeTag := "</" + tagName + ">"
+		closeIdx := strings.Index(html[startIdx:], closeTag)
+		if closeIdx == -1 {
+			// Try to find end of self-closing tag
+			selfCloseEnd := strings.Index(html[startIdx:], "/>")
+			if selfCloseEnd != -1 {
+				html = html[:elementStart] + html[startIdx+selfCloseEnd+2:]
+				continue
+			}
+			break
+		}
+		closeIdx += startIdx + len(closeTag)
+
+		// Remove the entire element
+		html = html[:elementStart] + html[closeIdx:]
+	}
+	return html
+}
+
 // Helper functions
 func getContentPreview(content, query string) string {
 	index := strings.Index(strings.ToLower(content), strings.ToLower(query))
@@ -629,18 +800,29 @@ func getDocsToolInfo() ToolInfo {
 - Documentation sections and topics from docs.slide.tech with disambiguating descriptions
 - Search functionality across all documentation with context-aware results
 - Complete OpenAPI specification from http://api.slide.tech/openapi.json
+- Direct CURL access to fetch live content from docs.slide.tech (NEW)
 
 Key features:
 - Section descriptions help distinguish between similar-sounding sections (e.g., "Networks" in Console vs "Networking" in Product)
 - Topic descriptions clarify ambiguous terms
 - Search results include contextual information to help identify the correct documentation
+- curl_docs operation fetches live content with HTML cleaning to reduce context window usage
 
 Usage patterns:
 - Start with 'list_sections' to explore available documentation with descriptions
 - Use 'search_docs' to find information on specific topics with contextual results
 - Use 'get_api_reference' to retrieve the complete, authoritative OpenAPI spec
+- For specific documentation pages, use 'curl_docs' to fetch live content from docs.slide.tech
+- When get_content returns "Content not available in local cache", use the suggested curl_docs operation
 - For API questions, always fetch the OpenAPI spec rather than relying on summaries
-- Remember to use slide_* tools for actual API calls, not raw HTTP requests`,
+- Remember to use slide_* tools for actual API calls, not raw HTTP requests
+
+curl_docs operation:
+- Fetches live content directly from https://docs.slide.tech/
+- Automatically cleans HTML to reduce context window usage
+- Only allows docs.slide.tech URLs for security
+- Example paths: "getting-started/", "backups/", "api/", "networks/"
+- Use suggested paths from get_content when content is not locally cached`,
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
@@ -653,6 +835,7 @@ Usage patterns:
 						"search_docs",
 						"get_content",
 						"get_api_reference",
+						"curl_docs",
 					},
 				},
 				"section": map[string]interface{}{
@@ -670,6 +853,10 @@ Usage patterns:
 				"endpoint": map[string]interface{}{
 					"type":        "string",
 					"description": "Specific API endpoint to get reference for (optional for get_api_reference) - Note: This parameter is ignored as the full OpenAPI spec is always returned",
+				},
+				"path": map[string]interface{}{
+					"type":        "string",
+					"description": "The path to fetch content from docs.slide.tech (e.g., 'getting-started/', 'backups/', 'networks/', 'api/'). Required for curl_docs operation. Do not include the domain, just the path portion.",
 				},
 			},
 			"required": []string{"operation"},
