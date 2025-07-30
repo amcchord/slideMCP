@@ -340,6 +340,10 @@ func (i *Installer) install() {
 			dialog.ShowError(err, i.window)
 			i.statusLabel.SetText(action + " failed")
 		} else {
+			// Refresh version information after successful update to show current version
+			i.installedVersion = i.getInstalledVersion()
+			i.refreshVersionInfo()
+
 			successMsg := fmt.Sprintf("Slide MCP Server %s completed successfully!\n\nRestart Claude Desktop to use the updated server.", strings.ToLower(action))
 			dialog.ShowInformation("Success", successMsg, i.window)
 			i.statusLabel.SetText(action + " completed successfully")
