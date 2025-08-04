@@ -8,7 +8,7 @@ set -e  # Exit on any error
 
 # Configuration
 BINARY_NAME="slide-mcp-installer"
-VERSION="v2.3.0"
+VERSION="v2.3.1"
 BUILD_DIR="build"
 RELEASE_DIR="releases"
 

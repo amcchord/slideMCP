@@ -137,6 +137,34 @@ var topicDescriptions = map[string]string{
 	"Clients":                      "Managing client organizations and multi-tenancy features in Slide",
 }
 
+// Valid paths available on docs.slide.tech based on navigation structure
+var validDocsPaths = []string{
+	"",                 // Root/home page
+	"getting-started/", // Getting Started section
+	"agents/",          // Protected Systems
+	"devices/",         // Slide Boxes
+	"snapshots/",       // Snapshots
+	"restores/",        // Restores
+	"alerting/",        // Alerts
+	"users/",           // Users
+	"clients/",         // Clients
+	"networks/",        // Networks
+	"settings/",        // My Settings
+	"backups/",         // Backups
+	"agent/",           // Slide Agent
+	"network/",         // Networking
+	"specs/",           // Product Specifications
+	"quotes/",          // Quotes
+	"subscriptions/",   // Subscriptions
+	"invoices/",        // Invoices
+	"payment-methods/", // Payment Methods
+	"faq/",             // FAQ
+	"integrations/",    // Integrations
+	"releases/",        // Releases
+	"glossary/",        // Glossary
+	"contact/",         // Contact us
+}
+
 // Detailed documentation content (simplified for demonstration)
 var docContent = map[string]string{
 	"api_authentication": `# API Authentication
@@ -447,27 +475,53 @@ func getDocContent(args map[string]interface{}) (string, error) {
 	}
 
 	// Instead of generic content, suggest using curl_docs operation
-	section := getSectionForTopic(topic)
-	sectionPath := strings.ToLower(strings.ReplaceAll(section, " ", "-"))
-	topicPath := strings.ToLower(strings.ReplaceAll(topic, " ", "-"))
+	// Map topic names to likely valid paths
+	topicPathMap := map[string][]string{
+		"getting started":        {"getting-started/"},
+		"protected systems":      {"agents/"},
+		"slide boxes":            {"devices/"},
+		"snapshots":              {"snapshots/"},
+		"restores":               {"restores/"},
+		"alerts":                 {"alerting/"},
+		"users":                  {"users/"},
+		"clients":                {"clients/"},
+		"networks":               {"networks/"},
+		"my settings":            {"settings/"},
+		"backups":                {"backups/"},
+		"slide agent":            {"agent/"},
+		"networking":             {"network/"},
+		"product specifications": {"specs/"},
+		"quotes":                 {"quotes/"},
+		"subscriptions":          {"subscriptions/"},
+		"invoices":               {"invoices/"},
+		"payment methods":        {"payment-methods/"},
+		"faq":                    {"faq/"},
+		"integrations":           {"integrations/"},
+		"releases":               {"releases/"},
+		"glossary":               {"glossary/"},
+		"contact":                {"contact/"},
+	}
 
-	// Try to construct likely URL paths
-	possiblePaths := []string{
-		fmt.Sprintf("%s/", topicPath),
-		fmt.Sprintf("%s/%s/", sectionPath, topicPath),
+	topicLower := strings.ToLower(topic)
+	possiblePaths, exists := topicPathMap[topicLower]
+	if !exists {
+		// Fallback to a few common paths if no specific mapping found
+		possiblePaths = []string{"getting-started/", "backups/", "agents/"}
 	}
 
 	result := map[string]interface{}{
 		"topic": topic,
 		"error": "Content not available in local cache",
 		"suggestion": map[string]interface{}{
-			"operation":      "curl_docs",
-			"description":    "Use the curl_docs operation to fetch live content from docs.slide.tech",
-			"possible_paths": possiblePaths,
-			"example":        fmt.Sprintf(`Use: {"operation": "curl_docs", "path": "%s/"}`, topicPath),
+			"operation":       "curl_docs",
+			"description":     "Use the curl_docs operation to fetch live content from docs.slide.tech",
+			"likely_paths":    possiblePaths,
+			"example":         fmt.Sprintf(`Use: {"operation": "curl_docs", "path": "%s"}`, possiblePaths[0]),
+			"all_valid_paths": validDocsPaths,
 		},
 		"_metadata": map[string]interface{}{
-			"note": "Generic content templates have been removed. Use curl_docs to fetch specific pages from docs.slide.tech",
+			"note":       "Generic content templates have been removed. Use curl_docs to fetch specific pages from docs.slide.tech",
+			"validation": "The curl_docs operation only accepts predefined valid paths to prevent 404 errors",
 		},
 	}
 
@@ -584,13 +638,31 @@ func curlDocs(args map[string]interface{}) (string, error) {
 		return "", fmt.Errorf("path is required")
 	}
 
+	// Clean the path - remove leading slash if present
+	path = strings.TrimPrefix(path, "/")
+
+	// Validate path is in the list of valid paths
+	isValidPath := false
+	for _, validDocPath := range validDocsPaths {
+		if path == validDocPath {
+			isValidPath = true
+			break
+		}
+	}
+
+	if !isValidPath {
+		// Create a helpful error message with valid options
+		pathsJSON, _ := json.MarshalIndent(validDocsPaths, "", "  ")
+		return fmt.Sprintf(`{
+  "error": "Invalid path: '%s'",
+  "message": "Path must be one of the valid documentation paths listed below",
+  "valid_paths": %s,
+  "suggestion": "Choose one of the valid paths above. Use empty string \"\" for the home page."
+}`, path, string(pathsJSON)), nil
+	}
+
 	// Validate that the path is for docs.slide.tech domain only
 	baseURL := "https://docs.slide.tech/"
-
-	// Clean the path - remove leading slash if present
-	if strings.HasPrefix(path, "/") {
-		path = strings.TrimPrefix(path, "/")
-	}
 
 	// Construct full URL
 	fullURL := baseURL + path
@@ -820,9 +892,15 @@ Usage patterns:
 curl_docs operation:
 - Fetches live content directly from https://docs.slide.tech/
 - Automatically cleans HTML to reduce context window usage
-- Only allows docs.slide.tech URLs for security
-- Example paths: "getting-started/", "backups/", "api/", "networks/"
-- Use suggested paths from get_content when content is not locally cached`,
+- Only allows predefined valid paths for security and reliability
+- Path validation prevents 404 errors by restricting to known documentation pages
+- If an invalid path is provided, returns the complete list of valid paths
+
+Valid paths (must use exactly these):
+"" (home), "getting-started/", "agents/", "devices/", "snapshots/", "restores/", 
+"alerting/", "users/", "clients/", "networks/", "settings/", "backups/", "agent/", 
+"network/", "specs/", "quotes/", "subscriptions/", "invoices/", "payment-methods/", 
+"faq/", "integrations/", "releases/", "glossary/", "contact/"`,
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
@@ -856,7 +934,7 @@ curl_docs operation:
 				},
 				"path": map[string]interface{}{
 					"type":        "string",
-					"description": "The path to fetch content from docs.slide.tech (e.g., 'getting-started/', 'backups/', 'networks/', 'api/'). Required for curl_docs operation. Do not include the domain, just the path portion.",
+					"description": "The path to fetch content from docs.slide.tech. Required for curl_docs operation. MUST be one of the valid paths: \"\" (home), \"getting-started/\", \"agents/\", \"devices/\", \"snapshots/\", \"restores/\", \"alerting/\", \"users/\", \"clients/\", \"networks/\", \"settings/\", \"backups/\", \"agent/\", \"network/\", \"specs/\", \"quotes/\", \"subscriptions/\", \"invoices/\", \"payment-methods/\", \"faq/\", \"integrations/\", \"releases/\", \"glossary/\", \"contact/\". Invalid paths will return an error with the complete valid paths list.",
 				},
 			},
 			"required": []string{"operation"},
