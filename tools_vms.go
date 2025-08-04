@@ -1,37 +1,16 @@
 package main
 
-import (
-	"fmt"
-)
-
 // handleVMsTool handles all virtual machine-related operations through a single meta-tool
 func handleVMsTool(args map[string]interface{}) (string, error) {
-	operation, ok := args["operation"].(string)
-	if !ok {
-		return "", fmt.Errorf("operation parameter is required")
-	}
 
-	// Check if operation is allowed in current tools mode
-	if !isOperationAllowed("slide_vms", operation) {
-		return "", fmt.Errorf("operation '%s' not available for slide_vms in '%s' mode", operation, toolsMode)
-	}
-
-	switch operation {
-	case "list":
-		return listVirtualMachines(args)
-	case "get":
-		return getVirtualMachine(args)
-	case "create":
-		return createVirtualMachine(args)
-	case "update":
-		return updateVirtualMachine(args)
-	case "delete":
-		return deleteVirtualMachine(args)
-	case "get_rdp_bookmark":
-		return generateRDPBookmark(args)
-	default:
-		return "", fmt.Errorf("unknown operation: %s", operation)
-	}
+	return HandleToolWithOperations(CreateToolConfig("slide_vms", ToolOperations{
+		"list":             listVirtualMachines,
+		"get":              getVirtualMachine,
+		"create":           createVirtualMachine,
+		"update":           updateVirtualMachine,
+		"delete":           deleteVirtualMachine,
+		"get_rdp_bookmark": generateRDPBookmark,
+	}), args)
 }
 
 // getVMsToolInfo returns the tool definition for the VMs meta-tool

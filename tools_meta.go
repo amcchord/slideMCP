@@ -19,13 +19,13 @@ func handleMetaTool(args map[string]interface{}) (string, error) {
 		return listAllClientsDevicesAndAgents(args)
 	case "get_snapshot_changes":
 		// Check if reporting or presentation tools are enabled
-		if !enableReports && !enablePresentation {
+		if !config.EnableReports && !config.EnablePresentation {
 			return "", fmt.Errorf("get_snapshot_changes operation requires reporting or presentation tools to be enabled")
 		}
 		return getSnapshotChanges(args)
 	case "get_reporting_data":
 		// Check if reporting or presentation tools are enabled
-		if !enableReports && !enablePresentation {
+		if !config.EnableReports && !config.EnablePresentation {
 			return "", fmt.Errorf("get_reporting_data operation requires reporting or presentation tools to be enabled")
 		}
 		return getReportingData(args)
@@ -40,7 +40,7 @@ func getMetaToolInfo() ToolInfo {
 	baseOperations := []string{"list_all_clients_devices_and_agents"}
 
 	// Add reporting operations only if reporting or presentation tools are enabled
-	if enableReports || enablePresentation {
+	if config.EnableReports || config.EnablePresentation {
 		baseOperations = append(baseOperations, "get_snapshot_changes", "get_reporting_data")
 	}
 

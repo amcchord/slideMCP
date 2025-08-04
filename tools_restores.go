@@ -12,8 +12,8 @@ func handleRestoresTool(args map[string]interface{}) (string, error) {
 	}
 
 	// Check if operation is allowed in current tools mode
-	if !isOperationAllowed("slide_restores", operation) {
-		return "", fmt.Errorf("operation '%s' not available for slide_restores in '%s' mode", operation, toolsMode)
+	if !config.IsOperationAllowed("slide_restores", operation) {
+		return "", fmt.Errorf("operation '%s' not available for slide_restores in '%s' mode", operation, config.ToolsMode)
 	}
 
 	switch operation {

@@ -1,39 +1,16 @@
 package main
 
-import (
-	"fmt"
-)
-
 // handleAgentsTool handles all agent-related operations through a single meta-tool
 func handleAgentsTool(args map[string]interface{}) (string, error) {
-	operation, ok := args["operation"].(string)
-	if !ok {
-		return "", fmt.Errorf("operation parameter is required")
-	}
-
-	// Check if operation is allowed in current tools mode
-	if !isOperationAllowed("slide_agents", operation) {
-		return "", fmt.Errorf("operation '%s' not available for slide_agents in '%s' mode", operation, toolsMode)
-	}
-
-	switch operation {
-	case "list":
-		return listAgents(args)
-	case "get":
-		return getAgent(args)
-	case "create":
-		return createAgent(args)
-	case "pair":
-		return pairAgent(args)
-	case "update":
-		return updateAgent(args)
-	case "add_passphrase":
-		return addAgentPassphrase(args)
-	case "delete_passphrase":
-		return deleteAgentPassphrase(args)
-	default:
-		return "", fmt.Errorf("unknown operation: %s", operation)
-	}
+	return HandleToolWithOperations(CreateToolConfig("slide_agents", ToolOperations{
+		"list":              listAgents,
+		"get":               getAgent,
+		"create":            createAgent,
+		"pair":              pairAgent,
+		"update":            updateAgent,
+		"add_passphrase":    addAgentPassphrase,
+		"delete_passphrase": deleteAgentPassphrase,
+	}), args)
 }
 
 // getAgentsToolInfo returns the tool definition for the agents meta-tool

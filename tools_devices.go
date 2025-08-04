@@ -1,36 +1,14 @@
 package main
 
-import (
-	"fmt"
-)
-
 // handleDevicesTool handles all device-related operations through a single meta-tool
 func handleDevicesTool(args map[string]interface{}) (string, error) {
-	operation, ok := args["operation"].(string)
-	if !ok {
-		return "", fmt.Errorf("operation parameter is required")
-	}
-
-	// Check if operation is allowed in current tools mode
-	if !isOperationAllowed("slide_devices", operation) {
-		return "", fmt.Errorf("operation '%s' not available for slide_devices in '%s' mode", operation, toolsMode)
-	}
-
-	switch operation {
-	// Device operations
-	case "list":
-		return listDevices(args)
-	case "get":
-		return getDevice(args)
-	case "update":
-		return updateDevice(args)
-	case "poweroff":
-		return powerOffDevice(args)
-	case "reboot":
-		return rebootDevice(args)
-	default:
-		return "", fmt.Errorf("unknown operation: %s", operation)
-	}
+	return HandleToolWithOperations(CreateToolConfig("slide_devices", ToolOperations{
+		"list":     listDevices,
+		"get":      getDevice,
+		"update":   updateDevice,
+		"poweroff": powerOffDevice,
+		"reboot":   rebootDevice,
+	}), args)
 }
 
 // getDevicesToolInfo returns the tool definition for the devices meta-tool

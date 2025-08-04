@@ -1,31 +1,12 @@
 package main
 
-import (
-	"fmt"
-)
-
 // handleAlertsTool handles all alert-related operations through a single meta-tool
 func handleAlertsTool(args map[string]interface{}) (string, error) {
-	operation, ok := args["operation"].(string)
-	if !ok {
-		return "", fmt.Errorf("operation parameter is required")
-	}
-
-	// Check if operation is allowed in current tools mode
-	if !isOperationAllowed("slide_alerts", operation) {
-		return "", fmt.Errorf("operation '%s' not available for slide_alerts in '%s' mode", operation, toolsMode)
-	}
-
-	switch operation {
-	case "list":
-		return listAlerts(args)
-	case "get":
-		return getAlert(args)
-	case "update":
-		return updateAlert(args)
-	default:
-		return "", fmt.Errorf("unknown operation: %s", operation)
-	}
+	return HandleToolWithOperations(CreateToolConfig("slide_alerts", ToolOperations{
+		"list":   listAlerts,
+		"get":    getAlert,
+		"update": updateAlert,
+	}), args)
 }
 
 // getAlertsToolInfo returns the tool definition for the alerts meta-tool

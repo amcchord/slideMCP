@@ -1,31 +1,13 @@
 package main
 
-import (
-	"fmt"
-)
-
 // handleSnapshotsTool handles all snapshot-related operations through a single meta-tool
 func handleSnapshotsTool(args map[string]interface{}) (string, error) {
-	operation, ok := args["operation"].(string)
-	if !ok {
-		return "", fmt.Errorf("operation parameter is required")
-	}
 
-	// Check if operation is allowed in current tools mode
-	if !isOperationAllowed("slide_snapshots", operation) {
-		return "", fmt.Errorf("operation '%s' not available for slide_snapshots in '%s' mode", operation, toolsMode)
-	}
-
-	switch operation {
-	case "list":
-		return listSnapshots(args)
-	case "list_deleted":
-		return listDeletedSnapshots(args)
-	case "get":
-		return getSnapshot(args)
-	default:
-		return "", fmt.Errorf("unknown operation: %s", operation)
-	}
+	return HandleToolWithOperations(CreateToolConfig("slide_snapshots", ToolOperations{
+		"list":         listSnapshots,
+		"list_deleted": listDeletedSnapshots,
+		"get":          getSnapshot,
+	}), args)
 }
 
 // listDeletedSnapshots lists deleted snapshots by calling listSnapshots with deleted location filters

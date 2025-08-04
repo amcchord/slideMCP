@@ -1,31 +1,12 @@
 package main
 
-import (
-	"fmt"
-)
-
 // handleBackupsTool handles all backup-related operations through a single meta-tool
 func handleBackupsTool(args map[string]interface{}) (string, error) {
-	operation, ok := args["operation"].(string)
-	if !ok {
-		return "", fmt.Errorf("operation parameter is required")
-	}
-
-	// Check if operation is allowed in current tools mode
-	if !isOperationAllowed("slide_backups", operation) {
-		return "", fmt.Errorf("operation '%s' not available for slide_backups in '%s' mode", operation, toolsMode)
-	}
-
-	switch operation {
-	case "list":
-		return listBackups(args)
-	case "get":
-		return getBackup(args)
-	case "start":
-		return startBackup(args)
-	default:
-		return "", fmt.Errorf("unknown operation: %s", operation)
-	}
+	return HandleToolWithOperations(CreateToolConfig("slide_backups", ToolOperations{
+		"list":  listBackups,
+		"get":   getBackup,
+		"start": startBackup,
+	}), args)
 }
 
 // getBackupsToolInfo returns the tool definition for the backups meta-tool

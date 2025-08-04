@@ -15,8 +15,8 @@ func handlePresentationTool(args map[string]interface{}) (string, error) {
 	}
 
 	// Check if operation is allowed in current tools mode
-	if !isOperationAllowed("slide_presentation", operation) {
-		return "", fmt.Errorf("operation '%s' not available for slide_presentation in '%s' mode", operation, toolsMode)
+	if !config.IsOperationAllowed("slide_presentation", operation) {
+		return "", fmt.Errorf("operation '%s' not available for slide_presentation in '%s' mode", operation, config.ToolsMode)
 	}
 
 	switch operation {

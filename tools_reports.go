@@ -126,8 +126,8 @@ func handleReportsTool(args map[string]interface{}) (string, error) {
 	}
 
 	// Check if operation is allowed in current tools mode
-	if !isOperationAllowed("slide_reports", operation) {
-		return "", fmt.Errorf("operation '%s' not available for slide_reports in '%s' mode", operation, toolsMode)
+	if !config.IsOperationAllowed("slide_reports", operation) {
+		return "", fmt.Errorf("operation '%s' not available for slide_reports in '%s' mode", operation, config.ToolsMode)
 	}
 
 	switch operation {

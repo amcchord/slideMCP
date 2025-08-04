@@ -12,8 +12,8 @@ func handleUserManagementTool(args map[string]interface{}) (string, error) {
 	}
 
 	// Check if operation is allowed in current tools mode
-	if !isOperationAllowed("slide_user_management", operation) {
-		return "", fmt.Errorf("operation '%s' not available for slide_user_management in '%s' mode", operation, toolsMode)
+	if !config.IsOperationAllowed("slide_user_management", operation) {
+		return "", fmt.Errorf("operation '%s' not available for slide_user_management in '%s' mode", operation, config.ToolsMode)
 	}
 
 	switch operation {
