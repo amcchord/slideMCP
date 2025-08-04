@@ -8,7 +8,7 @@ An MCP server implementation that integrates with the Slide API, providing compr
 - **Low memory usage**: 10-20MB memory footprint
 - **Cross-platform**: Linux, macOS, Windows binaries
 - **Zero Installation Hassle**: Simple download and configure
-- **Streamlined Interface**: 14 meta-tools instead of 52+ individual tools for better LLM interaction
+- **Streamlined Interface**: 13 meta-tools instead of 52+ individual tools for better LLM interaction
 - **Enhanced Performance**: Initial context loading eliminates first API call delays
 
 ---
@@ -17,7 +17,7 @@ For quick setup instructions with Claude Desktop, see the installation section b
 
 ## 🎯 Major Architecture Improvement
 
-**Meta-Tools Design**: This MCP server uses an innovative meta-tools architecture that consolidates 52+ individual API operations into just **14 focused meta-tools**. This design significantly reduces complexity for LLMs while maintaining full functionality.
+**Meta-Tools Design**: This MCP server uses an innovative meta-tools architecture that consolidates 52+ individual API operations into just **13 focused meta-tools**. This design significantly reduces complexity for LLMs while maintaining full functionality.
 
 Each meta-tool accepts an `operation` parameter that specifies the action to perform, along with the relevant parameters for that operation.
 
@@ -74,21 +74,17 @@ Each meta-tool accepts an `operation` parameter that specifies the action to per
    - Multiple network modes and disk bus types
 
 ### 👥 Administration
-8. **`slide_users`** - User management
-   - Operations: `list`, `get`
-   - User account information and permissions
+8. **`slide_user_management`** - User and account management
+   - **Users**: `list_users`, `get_user` - User account information and permissions
+   - **Accounts**: `list_accounts`, `get_account`, `update_account` - Account settings and alert email configuration
+   - **Clients**: `list_clients`, `get_client`, `create_client`, `update_client`, `delete_client` - Client organization and resource management
 
 9. **`slide_alerts`** - Alert monitoring
    - Operations: `list`, `get`, `update` (resolve)
    - System alert management and resolution
 
-10. **`slide_accounts`** - Account & client organization
-    - **Accounts**: `list_accounts`, `get_account`, `update_account` (alert emails)
-    - **Clients**: `list_clients`, `get_client`, `create_client`, `update_client`, `delete_client`
-    - Organize resources by client, manage alert notifications
-
 ### 📊 Data Presentation & Reporting
-11. **`slide_presentation`** - Professional data formatting and documentation
+10. **`slide_presentation`** - Professional data formatting and documentation
     - **Operations**: `get_card`, `get_runbook_template`, `get_daily_report_template`, `get_monthly_report_template`
     - **Card Types**: Individual item cards (agent, client, device, snapshot) and table cards (agents_table, clients_table, etc.)
     - **Report Templates**: Runbook procedures, daily activity summaries, monthly analysis reports
@@ -97,14 +93,14 @@ Each meta-tool accepts an `operation` parameter that specifies the action to per
     - **⚠️ DISABLED BY DEFAULT**: Must be explicitly enabled with `--enable-presentation` flag or `SLIDE_ENABLE_PRESENTATION=true`
 **⚠️ IMPORTANT**: If you are building your own presentation logic or custom formatting, you may want to disable the `slide_presentation` tool to avoid conflicts with your custom implementation. To disable just the `slide_presentation` tool, add it to the `DISABLED_TOOLS` environment variable or in the --disabled-tools part of the CLI
 
-12. **`slide_meta`** - Meta tools for reporting and aggregated data views
+11. **`slide_meta`** - Meta tools for reporting and aggregated data views
     - **Operations**: `list_all_clients_devices_and_agents`, `get_snapshot_changes`, `get_reporting_data`
     - **list_all_clients_devices_and_agents**: Complete hierarchical view of infrastructure
     - **get_snapshot_changes**: Track new and deleted snapshots over time periods (day, week, month)
     - **get_reporting_data**: Pre-formatted data for populating report templates
     - Perfect for generating reports with accurate, pre-calculated metrics
 
-13. **`slide_reports`** - Pre-calculated statistics and reports for backup/snapshot analysis
+12. **`slide_reports`** - Pre-calculated statistics and reports for backup/snapshot analysis
     - **⚠️ DISABLED BY DEFAULT**: Must be explicitly enabled with `--enable-reports` flag or `SLIDE_ENABLE_REPORTS=true`
     - **Operations**: `daily_backup_snapshot`, `weekly_backup_snapshot`, `monthly_backup_snapshot`
     - **Daily Reports**: Single day statistics with backup success rates and failure reasons
@@ -114,7 +110,7 @@ Each meta-tool accepts an `operation` parameter that specifies the action to per
     - **Formats**: JSON (structured data) or Markdown (human-readable)
     - **Performance**: Use verbose mode to track progress on large reports
 
-14. **`slide_docs`** - Access to official Slide documentation
+13. **`slide_docs`** - Access to official Slide documentation
     - **Operations**: `list_sections`, `get_topics`, `search_docs`, `get_content`, `get_api_reference`
     - **Documentation Access**: Browse and search docs.slide.tech content directly
     - **Contextual Help**: Get best practices, troubleshooting guidance, and feature explanations
@@ -244,18 +240,18 @@ Choose the right presentation format based on your needs:
 
 ## 🎯 Quick Setup with Claude Desktop
 
-### 🖥️ GUI Installer (Windows & macOS)
+### 🖥️ GUI Installer (Recommended)
 
-For the easiest installation experience, use our GUI installer:
+For the easiest installation experience, use our cross-platform GUI installer with native desktop integration:
 
 #### macOS
 1. **Download the installer**: From the [latest release](https://github.com/amcchord/slideMCP/releases/latest)
-   - **Apple Silicon (M1/M2/M3/M4)**: `slide-mcp-installer-v2.3.0-darwin-arm64-signed.tar.gz`
-   - **Intel Mac**: `slide-mcp-installer-v2.3.0-darwin-amd64-signed.tar.gz`
+   - **Apple Silicon (M1/M2/M3/M4)**: `slide-mcp-installer-v2.3.2-darwin-arm64-signed.tar.gz`
+   - **Intel Mac**: `slide-mcp-installer-v2.3.2-darwin-amd64-signed.tar.gz`
 
 2. **Extract and run**: 
    ```bash
-   tar -xzf slide-mcp-installer-v2.3.0-darwin-[arch]-signed.tar.gz
+   tar -xzf slide-mcp-installer-v2.3.2-darwin-[arch]-signed.tar.gz
    open slide-mcp-installer.app
    ```
 3. **Enter your API key**: Input your Slide API key when prompted
@@ -264,8 +260,7 @@ For the easiest installation experience, use our GUI installer:
 
 #### Windows
 1. **Download the installer**: From the [latest release](https://github.com/amcchord/slideMCP/releases/latest)
-   - **64-bit**: `slide-mcp-installer-v2.3.0-windows-amd64.zip`
-   - **32-bit**: `slide-mcp-installer-v2.3.0-windows-386.zip`
+   - **64-bit**: `slide-mcp-installer-v2.3.2-windows-amd64.zip`
 
 2. **Extract and run**: 
    - Extract the ZIP file
@@ -274,50 +269,54 @@ For the easiest installation experience, use our GUI installer:
 4. **Install**: Click "Install Slide MCP Server"
 5. **Restart Claude Desktop**: The installer will configure everything automatically
 
-The GUI installer will:
-- ✅ Check if Claude Desktop is installed
-- ✅ Download the latest slide-mcp-server binary
-- ✅ Install it to the correct location
-- ✅ Update your Claude Desktop configuration
-- ✅ Provide easy uninstall option
+The GUI installer provides:
+- ✅ **Smart Detection**: Automatically detects Claude Desktop installation and existing configurations
+- ✅ **Native Integration**: Proper `.app` bundle on macOS with icon support, no terminal windows
+- ✅ **Automatic Download**: Fetches the latest slide-mcp-server binary for your platform
+- ✅ **Intelligent Installation**: Installs to the correct location with proper permissions
+- ✅ **Configuration Management**: Updates Claude Desktop configuration seamlessly
+- ✅ **API Key Management**: Shows current API key status and allows easy updates
+- ✅ **Progress Tracking**: Visual progress bar and status updates during installation  
+- ✅ **Clean Uninstall**: Complete removal of server and configuration when needed
+- ✅ **Cross-Platform**: Available for Windows, macOS (Intel & Apple Silicon), and Linux
 
 ### Manual Installation
 
-#### Download Pre-built Binary (v2.3.0)
+#### Download Pre-built Binary (v2.3.2)
 
 For **macOS ARM64** (Apple Silicon):
 ```bash
-curl -L -o slide-mcp-server-v2.3.0-macos-arm64.tar.gz https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.3.0-macos-arm64.tar.gz
-tar -xzf slide-mcp-server-v2.3.0-macos-arm64.tar.gz
-chmod +x slide-mcp-server-v2.3.0-macos-arm64
-mv slide-mcp-server-v2.3.0-macos-arm64 slide-mcp-server
+curl -L -o slide-mcp-server-v2.3.2-macos-arm64.tar.gz https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.3.2-macos-arm64.tar.gz
+tar -xzf slide-mcp-server-v2.3.2-macos-arm64.tar.gz
+chmod +x slide-mcp-server-v2.3.2-macos-arm64
+mv slide-mcp-server-v2.3.2-macos-arm64 slide-mcp-server
 ```
 For **macOS x64**:
 ```bash
-curl -L -o slide-mcp-server-v2.3.0-macos-x64.tar.gz https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.3.0-macos-x64.tar.gz
-tar -xzf slide-mcp-server-v2.3.0-macos-x64.tar.gz
-chmod +x slide-mcp-server-v2.3.0-macos-x64
-mv slide-mcp-server-v2.3.0-macos-x64 slide-mcp-server
+curl -L -o slide-mcp-server-v2.3.2-macos-x64.tar.gz https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.3.2-macos-x64.tar.gz
+tar -xzf slide-mcp-server-v2.3.2-macos-x64.tar.gz
+chmod +x slide-mcp-server-v2.3.2-macos-x64
+mv slide-mcp-server-v2.3.2-macos-x64 slide-mcp-server
 ```
 For **Linux x64**:
 ```bash
-curl -L -o slide-mcp-server-v2.3.0-linux-x64.tar.gz https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.3.0-linux-x64.tar.gz
-tar -xzf slide-mcp-server-v2.3.0-linux-x64.tar.gz
-chmod +x slide-mcp-server-v2.3.0-linux-x64
-mv slide-mcp-server-v2.3.0-linux-x64 slide-mcp-server
+curl -L -o slide-mcp-server-v2.3.2-linux-x64.tar.gz https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.3.2-linux-x64.tar.gz
+tar -xzf slide-mcp-server-v2.3.2-linux-x64.tar.gz
+chmod +x slide-mcp-server-v2.3.2-linux-x64
+mv slide-mcp-server-v2.3.2-linux-x64 slide-mcp-server
 ```
 For **Linux ARM64**:
 ```bash
-curl -L -o slide-mcp-server-v2.3.0-linux-arm64.tar.gz https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.3.0-linux-arm64.tar.gz
-tar -xzf slide-mcp-server-v2.3.0-linux-arm64.tar.gz
-chmod +x slide-mcp-server-v2.3.0-linux-arm64
-mv slide-mcp-server-v2.3.0-linux-arm64 slide-mcp-server
+curl -L -o slide-mcp-server-v2.3.2-linux-arm64.tar.gz https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.3.2-linux-arm64.tar.gz
+tar -xzf slide-mcp-server-v2.3.2-linux-arm64.tar.gz
+chmod +x slide-mcp-server-v2.3.2-linux-arm64
+mv slide-mcp-server-v2.3.2-linux-arm64 slide-mcp-server
 ```
 For **Windows x64**:
 ```cmd
-curl -L -o slide-mcp-server-v2.3.0-windows-x64.zip https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.3.0-windows-x64.zip
-unzip slide-mcp-server-v2.3.0-windows-x64.zip
-mv slide-mcp-server-v2.3.0-windows-x64.exe slide-mcp-server.exe
+curl -L -o slide-mcp-server-v2.3.2-windows-x64.zip https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.3.2-windows-x64.zip
+unzip slide-mcp-server-v2.3.2-windows-x64.zip
+mv slide-mcp-server-v2.3.2-windows-x64.exe slide-mcp-server.exe
 ```
 
 #### Build from Source
@@ -454,7 +453,7 @@ export SLIDE_TOOLS="full"
 
 # Show version
 ./slide-mcp-server --version
-# Output: slide-mcp-server version 2.3.0
+# Output: slide-mcp-server version 2.3.2
 ```
 
 ### 🚫 Disabling Specific Tools
@@ -776,14 +775,14 @@ With custom configuration and disabled tools:
 }
 ```
 
-## 🆕 What's New in v2.3.0
+## 🆕 What's New in v2.3.2
 
 ### 🚀 Performance Enhancements
-- **Initial Context Loading**: The MCP server now loads client/device/agent hierarchy data at startup, eliminating typical first API call delays and providing immediate access to infrastructure overview
+- **Initial Context Loading**: The MCP server loads client/device/agent hierarchy data at startup, eliminating typical first API call delays and providing immediate access to infrastructure overview
 - **Faster Response Times**: Initial context provides instant availability of system data for better user experience
 
 ### 🖥️ Enhanced VM Management  
-- **RDP Bookmark Generation**: New `get_rdp_bookmark` operation in `slide_vms` tool
+- **RDP Bookmark Generation**: `get_rdp_bookmark` operation in `slide_vms` tool
   - Generate downloadable Windows Remote Desktop (.rdp) files
   - One-click access to virtual machines via standard RDP clients  
   - Compatible with Windows Remote Desktop, macOS Remote Desktop, and other RDP clients
@@ -795,6 +794,14 @@ With custom configuration and disabled tools:
 - **Built-in Documentation Access**: The `slide_docs` tool provides direct access to official Slide documentation
 - **Contextual Help**: Get best practices, troubleshooting guidance, and API reference information
 - **Search Capabilities**: Find relevant documentation without leaving your MCP client
+- **Improved Context**: Enhanced documentation access with better navigation and search capabilities
+
+### 🛠️ GUI Installer
+- **Cross-Platform GUI**: Native desktop installer for Windows, macOS, and Linux
+- **Smart Detection**: Automatically detects Claude Desktop installation and existing configurations
+- **One-Click Installation**: Download, install, and configure with a single click
+- **API Key Management**: Easy API key updates and configuration management
+- **Clean Uninstall**: Complete removal of server and configuration when needed
 
 ### Start Backup Job
 ```json
