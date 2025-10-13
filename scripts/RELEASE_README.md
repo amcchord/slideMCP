@@ -4,22 +4,26 @@ This document describes how to use the automated release script for Slide MCP Se
 
 ## Quick Start
 
-First, set your Apple credentials as environment variables:
+First, set your Apple credentials. **Option 1 (Recommended)**: Use the credentials file:
+
+```bash
+# One-time setup (credentials are saved securely and gitignored)
+cp scripts/release-env.template scripts/release-env.sh
+# Edit scripts/release-env.sh with your actual credentials
+nano scripts/release-env.sh  # or use your preferred editor
+
+# Then, before each release:
+source scripts/release-env.sh
+```
+
+**Option 2**: Set environment variables manually each time:
 
 ```bash
 export APPLE_ID='your-apple-id@example.com'
 export APP_SPECIFIC_PASSWORD='your-app-specific-password'
 ```
 
-Or use the provided template:
-
-```bash
-# Copy and customize the template
-cp scripts/release-env.template scripts/release-env.sh
-# Edit scripts/release-env.sh with your credentials
-# Source the environment
-source scripts/release-env.sh
-```
+The credentials file (`scripts/release-env.sh`) is automatically gitignored, so your credentials stay secure on your local machine.
 
 To create a new release with auto-incremented version:
 

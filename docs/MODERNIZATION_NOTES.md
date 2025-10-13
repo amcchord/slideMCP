@@ -97,10 +97,11 @@ Created `scripts/release-all-in-one.sh` that consolidates the entire release wor
 - Version file updates (Makefile, config.go)
 - Optional test execution
 - Complete build pipeline
-- macOS signing and notarization
+- **Mandatory macOS signing and notarization** (enforced for releases)
 - Package creation and checksums
 - Git operations (commit, tag, push)
 - GitHub release creation and asset upload
+- Signature verification before release
 
 **Benefits:**
 - Single command for complete release
@@ -111,11 +112,35 @@ Created `scripts/release-all-in-one.sh` that consolidates the entire release wor
 
 **Options:**
 ```bash
---dry-run      # Test without changes
---skip-tests   # Skip test execution
---no-push      # Local build only
---help         # Show usage
+--dry-run              # Test without changes
+--skip-tests           # Skip test execution
+--no-push              # Local build only
+--skip-macos-signing   # Skip signing (TESTING ONLY, requires --no-push)
+--help                 # Show usage
 ```
+
+**macOS Code Signing (MANDATORY):**
+
+The release script enforces mandatory code signing and notarization for all macOS binaries:
+
+- **Why Required**: Unsigned binaries won't run on user systems due to macOS Gatekeeper
+- **Enforcement**: Script fails if Apple credentials not provided for GitHub releases
+- **Verification**: Signatures are verified before creating GitHub release
+- **Testing Mode**: Use `--no-push --skip-macos-signing` for local testing only
+
+**Required Environment Variables:**
+```bash
+export APPLE_ID='your-apple-id@example.com'
+export APP_SPECIFIC_PASSWORD='xxxx-xxxx-xxxx-xxxx'
+```
+
+The script will:
+1. Check for macOS environment
+2. Validate Apple credentials
+3. Sign binaries with Developer ID Application certificate
+4. Submit for notarization (may take several minutes)
+5. Verify signatures before proceeding
+6. Fail release if any signing step fails
 
 ### 5. Code Quality Improvements
 

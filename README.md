@@ -955,6 +955,9 @@ The `release-all-in-one.sh` script automates the entire release workflow:
 
 # Build locally without pushing to GitHub
 ./scripts/release-all-in-one.sh --no-push
+
+# Re-release existing version (overwrite tag and GitHub release)
+./scripts/release-all-in-one.sh --force v2.5.0
 ```
 
 **What it does:**
@@ -972,14 +975,43 @@ The `release-all-in-one.sh` script automates the entire release workflow:
 12. Pushes to GitHub
 13. Creates GitHub release with all assets
 
-**Environment Variables:**
-- `APPLE_ID`: Apple ID for macOS notarization (optional)
-- `APP_SPECIFIC_PASSWORD`: App-specific password for notarization (optional)
+**Environment Variables (REQUIRED for releases):**
+- `APPLE_ID`: Apple ID for macOS notarization
+- `APP_SPECIFIC_PASSWORD`: App-specific password for notarization
+
+⚠️ **Important**: macOS binaries MUST be signed and notarized to work on user systems. The script enforces this requirement and will fail if credentials are not provided. For local testing only, use `--no-push --skip-macos-signing`.
+
+**Setting Up Credentials (One-Time Setup):**
+
+```bash
+# Option 1: Use credentials file (Recommended - saves credentials locally)
+# File is already created at scripts/release-env.sh and gitignored for security
+source scripts/release-env.sh
+
+# Option 2: Set manually each time
+export APPLE_ID='your-apple-id@example.com'
+export APP_SPECIFIC_PASSWORD='xxxx-xxxx-xxxx-xxxx'
+```
+
+**Getting Apple Credentials:**
+1. **Apple ID**: Your Apple Developer account email
+2. **App-Specific Password**:
+   - Go to [appleid.apple.com](https://appleid.apple.com)
+   - Sign in and navigate to Security section
+   - Click "Generate Password" under App-Specific Passwords
+   - Copy the generated password (format: xxxx-xxxx-xxxx-xxxx)
+3. **Developer ID Certificate**: Install from Apple Developer account
+   - Required for code signing
+   - Must be "Developer ID Application" certificate
+
+**Security Note**: The `scripts/release-env.sh` file is gitignored and will never be committed to the repository.
 
 **Options:**
 - `--dry-run`: Simulate without making changes
 - `--skip-tests`: Skip running tests
 - `--no-push`: Build locally without GitHub operations
+- `--skip-macos-signing`: Skip signing (TESTING ONLY, must use with --no-push)
+- `--force` or `-f`: Force overwrite existing release (deletes tag and GitHub release)
 - `--help`: Show detailed help
 
 ### Manual Release (Legacy)
