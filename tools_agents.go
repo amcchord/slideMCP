@@ -17,7 +17,7 @@ func handleAgentsTool(args map[string]interface{}) (string, error) {
 func getAgentsToolInfo() ToolInfo {
 	return ToolInfo{
 		Name:        "slide_agents",
-		Description: "Manage agents - software installed on computers that get backed up to Slide devices. Supports list, get, create, pair, update, add_passphrase, and delete_passphrase operations. Includes support for VSS writer configuration and passphrase management.",
+		Description: "Manage backup agents installed on protected systems. Operations: list, get, create, pair, update, add_passphrase, delete_passphrase. Configure VSS writers and manage encryption passphrases. Use for agent deployment, monitoring, and configuration.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{

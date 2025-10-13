@@ -58,7 +58,7 @@ func handleNetworksTool(args map[string]interface{}) (string, error) {
 func getNetworksToolInfo() ToolInfo {
 	return ToolInfo{
 		Name:        "slide_networks",
-		Description: "Manage networks and their configurations including IPSec connections, port forwards, and WireGuard peers. Networks enable virtual machines to communicate with each other and external networks.",
+		Description: "Manage disaster recovery networks and connectivity. Operations: list, get, create, update, delete. Configure IPSec connections, port forwarding, and WireGuard VPN peers. Use for VM networking, site-to-site VPN, and remote access setup.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{

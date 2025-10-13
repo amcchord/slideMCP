@@ -49,7 +49,7 @@ func handleUserManagementTool(args map[string]interface{}) (string, error) {
 func getUserManagementToolInfo() ToolInfo {
 	return ToolInfo{
 		Name:        "slide_user_management",
-		Description: "Comprehensive user, account, and client management tool. Manage user accounts, organizational accounts, and clients - organizational structures for managing devices and services.",
+		Description: "Manage users, accounts, and clients. Operations: list_users, get_user, list_accounts, get_account, update_account, list_clients, get_client, create_client, update_client, delete_client. Use for user administration, account settings, and client organization management.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{

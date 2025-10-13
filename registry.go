@@ -45,7 +45,7 @@ func getAllTools() []ToolInfo {
 		// Special tools (kept for backward compatibility)
 		{
 			Name:        "list_all_clients_devices_and_agents",
-			Description: "Get a complete hierarchical view of all clients, their devices, and the agents on those devices. Use this tool when answers questions about how many agents, devices, or clients",
+			Description: "Get hierarchical view of all clients, devices, and agents. Use when answering questions about infrastructure counts and organization. Returns complete system overview with relationship data.",
 			InputSchema: map[string]interface{}{
 				"type":       "object",
 				"properties": map[string]interface{}{},

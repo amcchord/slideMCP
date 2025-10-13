@@ -126,7 +126,9 @@ func handleRequest(request MCPRequest) MCPResponse {
 			Result: map[string]interface{}{
 				"protocolVersion": "2024-11-05",
 				"capabilities": map[string]interface{}{
-					"tools": map[string]interface{}{},
+					"tools": map[string]interface{}{
+						"listChanged": false,
+					},
 				},
 				"serverInfo": map[string]interface{}{
 					"name":    ServerName,
@@ -135,10 +137,13 @@ func handleRequest(request MCPRequest) MCPResponse {
 				"initialContext": map[string]interface{}{
 					"clients_devices_agents": initialContext,
 					"_metadata": map[string]interface{}{
-						"description": "Initial overview of all clients, devices, and agents loaded at startup for improved performance",
-						"source_tool": "list_all_clients_devices_and_agents",
-						"usage_note":  "This data is also available via the list_all_clients_devices_and_agents tool and should be refreshed if needed",
-						"timestamp":   fmt.Sprintf("%d", time.Now().Unix()),
+						"description":   "Initial overview of all clients, devices, and agents loaded at startup for improved performance",
+						"source_tool":   "list_all_clients_devices_and_agents",
+						"usage_note":    "This data is cached and refreshed at startup. Use list_all_clients_devices_and_agents tool for live data",
+						"timestamp":     fmt.Sprintf("%d", time.Now().Unix()),
+						"cache_age_sec": 0,
+						"tools_mode":    config.ToolsMode,
+						"api_base_url":  config.BaseURL,
 					},
 				},
 			},

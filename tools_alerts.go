@@ -13,7 +13,7 @@ func handleAlertsTool(args map[string]interface{}) (string, error) {
 func getAlertsToolInfo() ToolInfo {
 	return ToolInfo{
 		Name:        "slide_alerts",
-		Description: "Manage system alerts and notifications. Supports list, get, and update (resolve/unresolve) operations.",
+		Description: "Manage system alerts and notifications. Operations: list, get, update. Monitor device and agent alerts, filter by resolution status, and resolve/unresolve alerts. Use for system monitoring and alert management.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{

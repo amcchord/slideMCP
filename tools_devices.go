@@ -15,7 +15,7 @@ func handleDevicesTool(args map[string]interface{}) (string, error) {
 func getDevicesToolInfo() ToolInfo {
 	return ToolInfo{
 		Name:        "slide_devices",
-		Description: "Manage physical devices (Slide appliances). Devices are the physical hardware that run the Slide backup software and store backups.",
+		Description: "Manage physical Slide backup appliances. Operations: list, get, update, poweroff, reboot. Control device power state, configure hostnames, and manage client assignments. Use for device monitoring and administration.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{

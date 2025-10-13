@@ -867,40 +867,8 @@ func getSectionForTopic(topic string) string {
 
 func getDocsToolInfo() ToolInfo {
 	return ToolInfo{
-		Name: "slide_docs",
-		Description: `Access Slide documentation and API reference with enhanced contextual information. This tool provides comprehensive access to:
-- Documentation sections and topics from docs.slide.tech with disambiguating descriptions
-- Search functionality across all documentation with context-aware results
-- Complete OpenAPI specification from http://api.slide.tech/openapi.json
-- Direct CURL access to fetch live content from docs.slide.tech (NEW)
-
-Key features:
-- Section descriptions help distinguish between similar-sounding sections (e.g., "Networks" in Console vs "Networking" in Product)
-- Topic descriptions clarify ambiguous terms
-- Search results include contextual information to help identify the correct documentation
-- curl_docs operation fetches live content with HTML cleaning to reduce context window usage
-
-Usage patterns:
-- Start with 'list_sections' to explore available documentation with descriptions
-- Use 'search_docs' to find information on specific topics with contextual results
-- Use 'get_api_reference' to retrieve the complete, authoritative OpenAPI spec
-- For specific documentation pages, use 'curl_docs' to fetch live content from docs.slide.tech
-- When get_content returns "Content not available in local cache", use the suggested curl_docs operation
-- For API questions, always fetch the OpenAPI spec rather than relying on summaries
-- Remember to use slide_* tools for actual API calls, not raw HTTP requests
-
-curl_docs operation:
-- Fetches live content directly from https://docs.slide.tech/
-- Automatically cleans HTML to reduce context window usage
-- Only allows predefined valid paths for security and reliability
-- Path validation prevents 404 errors by restricting to known documentation pages
-- If an invalid path is provided, returns the complete list of valid paths
-
-Valid paths (must use exactly these):
-"" (home), "getting-started/", "agents/", "devices/", "snapshots/", "restores/", 
-"alerting/", "users/", "clients/", "networks/", "settings/", "backups/", "agent/", 
-"network/", "specs/", "quotes/", "subscriptions/", "invoices/", "payment-methods/", 
-"faq/", "integrations/", "releases/", "glossary/", "contact/"`,
+		Name:        "slide_docs",
+		Description: "Access Slide documentation and API reference. Search docs.slide.tech content, retrieve OpenAPI spec, and fetch live documentation pages. Operations: list_sections, get_topics, search_docs, get_content, get_api_reference, curl_docs. Use for troubleshooting guidance, API reference, and best practices.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{

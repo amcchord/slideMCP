@@ -17,7 +17,7 @@ func handleVMsTool(args map[string]interface{}) (string, error) {
 func getVMsToolInfo() ToolInfo {
 	return ToolInfo{
 		Name:        "slide_vms",
-		Description: "Manage virtual machines created from snapshots. Virtual machines allow you to boot and interact with backed-up systems for testing, recovery, or migration purposes. Includes RDP bookmark generation for easy desktop access.",
+		Description: "Manage virtual machines created from snapshots. Operations: list, get, create, update, delete, get_rdp_bookmark. Boot backed-up systems for testing, recovery, or migration. Configure CPU, memory, networking. Access via VNC console or RDP.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{

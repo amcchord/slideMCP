@@ -48,7 +48,7 @@ func handleRestoresTool(args map[string]interface{}) (string, error) {
 func getRestoresToolInfo() ToolInfo {
 	return ToolInfo{
 		Name:        "slide_restores",
-		Description: "Manage restore operations - both file restores (for browsing/downloading individual files) and image exports (for downloading full disk images). Supports operations for both file restores and image exports.",
+		Description: "Manage data recovery operations. File restores: browse and download individual files from snapshots. Image exports: export full disk images in VHD, VHDX, VMDK, QCOW2, or RAW formats. Use for file-level recovery or disk image creation for external virtualization.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{

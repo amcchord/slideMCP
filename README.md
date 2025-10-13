@@ -775,33 +775,31 @@ With custom configuration and disabled tools:
 }
 ```
 
-## 🆕 What's New in v2.3.2
+## 🆕 What's New in v2.4.0
 
-### 🚀 Performance Enhancements
-- **Initial Context Loading**: The MCP server loads client/device/agent hierarchy data at startup, eliminating typical first API call delays and providing immediate access to infrastructure overview
-- **Faster Response Times**: Initial context provides instant availability of system data for better user experience
+### 🎯 LLM Optimization
+- **Streamlined Tool Descriptions**: All tool descriptions optimized for modern LLMs with concise, action-oriented language
+- **Consistent Format**: Standardized description format across all 13 meta-tools for better LLM comprehension
+- **Reduced Verbosity**: Tool descriptions reduced by 60-80% while maintaining clarity
+- **Faster Tool Selection**: LLMs can now select the right tool more quickly with clearer, more focused descriptions
 
-### 🖥️ Enhanced VM Management  
-- **RDP Bookmark Generation**: `get_rdp_bookmark` operation in `slide_vms` tool
-  - Generate downloadable Windows Remote Desktop (.rdp) files
-  - One-click access to virtual machines via standard RDP clients  
-  - Compatible with Windows Remote Desktop, macOS Remote Desktop, and other RDP clients
-  - Includes optimized settings for compression, audio, clipboard, and display
-  - Automatic validation of RDP endpoint availability
-  - User-friendly filename suggestions and clear usage instructions
+### 🔧 MCP Protocol Enhancements
+- **Enhanced Capabilities**: Added MCP protocol capabilities metadata for better client integration
+- **Richer Initial Context**: Startup context now includes tools mode, API base URL, and cache metadata
+- **Better Performance**: Initial context loading provides immediate infrastructure overview at startup
 
-### 📚 Documentation Integration
-- **Built-in Documentation Access**: The `slide_docs` tool provides direct access to official Slide documentation
-- **Contextual Help**: Get best practices, troubleshooting guidance, and API reference information
-- **Search Capabilities**: Find relevant documentation without leaving your MCP client
-- **Improved Context**: Enhanced documentation access with better navigation and search capabilities
+### 🚀 Unified Release Automation
+- **One-Command Release**: New `release-all-in-one.sh` script handles complete release workflow
+- **Automated Version Management**: Auto-increment patch version or specify custom version
+- **Integrated Workflow**: Commits, builds, signs, packages, and publishes to GitHub in one step
+- **Dry-Run Mode**: Test release process without making changes
+- **Flexible Options**: Skip tests, local-only builds, and more
 
-### 🛠️ GUI Installer
-- **Cross-Platform GUI**: Native desktop installer for Windows, macOS, and Linux
-- **Smart Detection**: Automatically detects Claude Desktop installation and existing configurations
-- **One-Click Installation**: Download, install, and configure with a single click
-- **API Key Management**: Easy API key updates and configuration management
-- **Clean Uninstall**: Complete removal of server and configuration when needed
+### 📚 Previous Features (v2.3.x)
+- Initial Context Loading for faster startup
+- RDP Bookmark Generation for VM access
+- Built-in Documentation Access via `slide_docs` tool
+- Cross-Platform GUI Installer
 
 ### Start Backup Job
 ```json
@@ -938,6 +936,55 @@ make release
 # View available commands
 make help
 ```
+
+## Release Process
+
+### Unified Release Script (Recommended)
+
+The `release-all-in-one.sh` script automates the entire release workflow:
+
+```bash
+# Auto-increment patch version and create release
+./scripts/release-all-in-one.sh
+
+# Release specific version
+./scripts/release-all-in-one.sh v2.5.0
+
+# Test release process without making changes
+./scripts/release-all-in-one.sh --dry-run v2.5.0
+
+# Build locally without pushing to GitHub
+./scripts/release-all-in-one.sh --no-push
+```
+
+**What it does:**
+1. Checks prerequisites (Go, GitHub CLI, jq)
+2. Validates git status (clean working directory, on main branch)
+3. Updates version numbers in Makefile and config.go
+4. Runs tests (optional with `--skip-tests`)
+5. Commits version changes
+6. Builds binaries for all platforms
+7. Signs and notarizes macOS binaries (if credentials provided)
+8. Creates release packages (.tar.gz for Unix, .zip for Windows)
+9. Generates SHA256 checksums
+10. Creates release notes from git history
+11. Tags the release
+12. Pushes to GitHub
+13. Creates GitHub release with all assets
+
+**Environment Variables:**
+- `APPLE_ID`: Apple ID for macOS notarization (optional)
+- `APP_SPECIFIC_PASSWORD`: App-specific password for notarization (optional)
+
+**Options:**
+- `--dry-run`: Simulate without making changes
+- `--skip-tests`: Skip running tests
+- `--no-push`: Build locally without GitHub operations
+- `--help`: Show detailed help
+
+### Manual Release (Legacy)
+
+For manual control, use the existing `automated-release.sh` script (see `scripts/RELEASE_README.md`).
 
 ## Architecture Benefits
 

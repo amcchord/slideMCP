@@ -13,7 +13,7 @@ func handleBackupsTool(args map[string]interface{}) (string, error) {
 func getBackupsToolInfo() ToolInfo {
 	return ToolInfo{
 		Name:        "slide_backups",
-		Description: "Manage backup operations - view backup status and start new backups. Supports list, get, and start operations.",
+		Description: "Manage backup operations. Operations: list, get, start. Monitor backup job status, view success/failure details, and initiate new backup jobs. Use for backup monitoring and on-demand backup initiation.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{

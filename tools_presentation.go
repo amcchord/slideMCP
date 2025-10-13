@@ -306,13 +306,13 @@ CARD CONTENT:
 func getPresentationToolInfo() ToolInfo {
 	return ToolInfo{
 		Name:        "slide_presentation",
-		Description: "**USE THIS TOOL ANYTIME YOU'RE PRESENTING DATA TO THE USER** - This is your primary tool for ALL data presentation, formatting, and documentation needs. **Always consider this tool first** before displaying any structured information.\n\n**WHEN TO USE:** Anytime you're about to show the user:\n• System status or monitoring data\n• Lists of items (agents, clients, devices, snapshots)\n• Individual item details\n• Reports or summaries\n• Documentation or procedures\n• Any data that could benefit from professional formatting\n\n**TWO MAIN CAPABILITIES:**\n\n**📋 REPORT TEMPLATES** (comprehensive documents):\n• Runbook templates: Operational procedures, troubleshooting guides, step-by-step instructions\n• Daily reports: Activity summaries, status updates, end-of-day reports\n• Monthly reports: Comprehensive analysis, trends, monthly summaries\n• Perfect for: Incident reports, documentation, analysis, troubleshooting guides\n\n**📊 CARDS** (structured data display):\n• Agent cards: Backup agent status, system info, recent backup history\n• Client cards: Client information, device assignments, agent counts, overview stats\n• Device cards: Backup device details, capacity, assignments, storage information\n• Snapshot cards: Backup snapshot details, dates, sizes, status, retention info\n• Table cards: Multiple items in organized tables for quick comparison and dashboards\n• Perfect for: Status displays, dashboards, system monitoring, data visualization\n\n**💡 DECISION GUIDE:**\n• Need to show ONE item in detail? → Use single cards (agent, client, device, snapshot)\n• Need to show MULTIPLE items? → Use table cards (agents_table, clients_table, etc.)\n• Need comprehensive documentation? → Use report templates\n• Unsure? → Start here anyway - this tool provides professional formatting for any data!",
+		Description: "Format data professionally for user display. Use whenever showing system status, lists, reports, or documentation. Provides report templates (runbooks, daily/monthly reports) and display cards (individual items or tables). Supports HTML, Markdown, and HAML output. Operations: get_card (display agents, clients, devices, snapshots), get_runbook_template (procedures), get_daily_report_template (summaries), get_monthly_report_template (analysis).",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
 				"operation": map[string]interface{}{
 					"type":        "string",
-					"description": "Choose based on what you're presenting: 'get_card' for displaying backup system data (agents, clients, devices, snapshots) - USE THIS for most data presentation needs; 'get_runbook_template' for operational procedures and troubleshooting; 'get_daily_report_template' for daily summaries; 'get_monthly_report_template' for monthly analysis",
+					"description": "Operation to perform: get_card (display data), get_runbook_template (procedures), get_daily_report_template (daily summary), get_monthly_report_template (monthly analysis)",
 					"enum":        []string{"get_runbook_template", "get_daily_report_template", "get_monthly_report_template", "get_card"},
 				},
 				"format": map[string]interface{}{
@@ -323,7 +323,7 @@ func getPresentationToolInfo() ToolInfo {
 				},
 				"card_type": map[string]interface{}{
 					"type":        "string",
-					"description": "REQUIRED for 'get_card' operation. Choose based on data type:\n\n**SINGLE ITEM CARDS** (for individual records):\n• 'agent' - Individual backup agent: hostname, OS, status, recent backups, client assignment\n• 'client' - Individual client: name, agent count, device assignments, overview stats\n• 'device' - Individual backup device: name, capacity, client assignments, storage info\n• 'snapshot' - Individual backup snapshot: date, size, status, retention, source info\n\n**TABLE CARDS** (for multiple records overview):\n• 'agents_table' - Multiple agents comparison: status overview, last seen, client assignments\n• 'clients_table' - Multiple clients summary: agent counts, device assignments, status\n• 'devices_table' - Multiple devices overview: capacity, assignments, utilization\n• 'snapshots_table' - Multiple snapshots listing: chronological backup history, sizes, status\n\nUse single cards for detailed views, table cards for dashboards and overviews.",
+					"description": "Required for get_card operation. Single item cards: agent, client, device, snapshot. Table cards for multiple items: agents_table, clients_table, devices_table, snapshots_table.",
 					"enum":        []string{"agent", "agents_table", "client", "clients_table", "device", "devices_table", "snapshot", "snapshot_table"},
 				},
 			},

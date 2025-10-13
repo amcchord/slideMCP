@@ -23,7 +23,7 @@ func listDeletedSnapshots(args map[string]interface{}) (string, error) {
 func getSnapshotsToolInfo() ToolInfo {
 	return ToolInfo{
 		Name:        "slide_snapshots",
-		Description: "Manage snapshots - completed backup data that can be used for restores and virtual machines. Supports list, list_deleted, and get operations.",
+		Description: "Manage backup snapshots (point-in-time recovery points). Operations: list, get. Filter by location (local/cloud), date ranges, and deletion status. Use for finding recovery points, monitoring retention, and restore preparation.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{

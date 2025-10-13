@@ -8,7 +8,7 @@ import (
 // Server configuration constants
 const (
 	ServerName = "slide-mcp-server"
-	Version    = "2.3.0"
+	Version    = "2.4.0"
 )
 
 // Tools filtering modes

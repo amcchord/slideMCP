@@ -1,6 +1,17 @@
 # Slide MCP Server v2.4.0
 
-## Changes
+## Major Refactor Release
+
+This is a **major refactor** release that introduces significant improvements to the codebase architecture and performance. 
+
+### Key Changes
+
+- **Major code refactoring** for improved maintainability and performance
+- **Enhanced architecture** with better separation of concerns  
+- **Code cleanup and optimization** across all modules
+- **Improved documentation** and README updates
+
+### Commit Details
 
 - 22a7924 Tidyfy Readme
 - ab7a846 OMG WTF BBQ Refactor
