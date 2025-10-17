@@ -167,6 +167,17 @@ type FileRestoreEntry struct {
 	SymlinkTargetPath *string       `json:"symlink_target_path,omitempty"`
 }
 
+type FileRestorePush struct {
+	FileRestorePushID string  `json:"file_restore_push_id"`
+	FileRestoreID     string  `json:"file_restore_id"`
+	StartTime         string  `json:"start_time"`
+	EndTime           *string `json:"end_time,omitempty"`
+	State             string  `json:"state"`
+	SourceFilePath    string  `json:"source_file_path"`
+	DestinationFolder string  `json:"destination_folder"`
+	Size              *int64  `json:"size,omitempty"`
+}
+
 type ImageExport struct {
 	ImageExportID string `json:"image_export_id"`
 	DeviceID      string `json:"device_id"`
@@ -1169,10 +1180,13 @@ func listSnapshots(args map[string]interface{}) (string, error) {
 			params.Set("agent_id", aid)
 		}
 	}
+	// Default to location_any if not specified
 	if snapshotLocation, ok := args["snapshot_location"]; ok {
 		if sl, ok := snapshotLocation.(string); ok {
 			params.Set("snapshot_location", sl)
 		}
+	} else {
+		params.Set("snapshot_location", "location_any")
 	}
 	if sortAsc, ok := args["sort_asc"]; ok {
 		if sa, ok := sortAsc.(bool); ok {
@@ -1451,6 +1465,189 @@ func browseFileRestore(args map[string]interface{}) (string, error) {
 	}
 
 	jsonData, err := json.MarshalIndent(enhancedResult, "", "  ")
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal result: %w", err)
+	}
+
+	return string(jsonData), nil
+}
+
+// File restore push API functions
+func listFileRestorePushes(args map[string]interface{}) (string, error) {
+	fileRestoreID, ok := args["file_restore_id"].(string)
+	if !ok {
+		return "", fmt.Errorf("file_restore_id is required")
+	}
+
+	params := url.Values{}
+
+	if limit, ok := args["limit"]; ok {
+		if l, ok := limit.(float64); ok {
+			params.Set("limit", strconv.Itoa(int(l)))
+		}
+	}
+	if offset, ok := args["offset"]; ok {
+		if o, ok := offset.(float64); ok {
+			params.Set("offset", strconv.Itoa(int(o)))
+		}
+	}
+	if sortAsc, ok := args["sort_asc"]; ok {
+		if sa, ok := sortAsc.(bool); ok {
+			params.Set("sort_asc", strconv.FormatBool(sa))
+		}
+	}
+	if sortBy, ok := args["sort_by"]; ok {
+		if sb, ok := sortBy.(string); ok {
+			params.Set("sort_by", sb)
+		}
+	} else {
+		params.Set("sort_by", "start_time")
+	}
+
+	endpoint := fmt.Sprintf("/v1/restore/file/%s/push", fileRestoreID)
+	if len(params) > 0 {
+		endpoint += "?" + params.Encode()
+	}
+
+	data, err := makeAPIRequest("GET", endpoint, nil)
+	if err != nil {
+		return "", err
+	}
+
+	var result PaginatedResponse[FileRestorePush]
+	if err := json.Unmarshal(data, &result); err != nil {
+		return "", fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	enhancedResult := map[string]interface{}{
+		"pagination": result.Pagination,
+		"data":       result.Data,
+		"_metadata": map[string]interface{}{
+			"primary_identifier":    "file_restore_push_id",
+			"presentation_guidance": "Push operations restore files directly to the protected system.",
+			"workflow_guidance":     "Create push operations to restore files to C:\\SlideRestore (or other drive letter). Monitor state for progress.",
+		},
+	}
+
+	jsonData, err := json.MarshalIndent(enhancedResult, "", "  ")
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal result: %w", err)
+	}
+
+	return string(jsonData), nil
+}
+
+func createFileRestorePush(args map[string]interface{}) (string, error) {
+	fileRestoreID, ok := args["file_restore_id"].(string)
+	if !ok {
+		return "", fmt.Errorf("file_restore_id is required")
+	}
+	sourceFilePath, ok := args["source_file_path"].(string)
+	if !ok {
+		return "", fmt.Errorf("source_file_path is required")
+	}
+	destinationFolder, ok := args["destination_folder"].(string)
+	if !ok {
+		return "", fmt.Errorf("destination_folder is required")
+	}
+
+	// Validate destination folder format
+	if !strings.HasSuffix(destinationFolder, "\\SlideRestore") {
+		return "", fmt.Errorf("destination_folder must be in the format 'X:\\SlideRestore' where X is a drive letter (e.g., 'C:\\SlideRestore'). Security restriction: files can only be restored to the SlideRestore folder")
+	}
+
+	if len(destinationFolder) < 3 || destinationFolder[1] != ':' || destinationFolder[2] != '\\' {
+		return "", fmt.Errorf("destination_folder must start with a drive letter followed by ':\\' (e.g., 'C:\\SlideRestore')")
+	}
+
+	driveLetter := destinationFolder[0]
+	if driveLetter < 'A' || driveLetter > 'Z' {
+		return "", fmt.Errorf("destination_folder must start with a valid drive letter A-Z (e.g., 'C:\\SlideRestore')")
+	}
+
+	payload := map[string]interface{}{
+		"source_file_path":   sourceFilePath,
+		"destination_folder": destinationFolder,
+	}
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	endpoint := fmt.Sprintf("/v1/restore/file/%s/push", fileRestoreID)
+	data, err := makeAPIRequest("POST", endpoint, body)
+	if err != nil {
+		return "", err
+	}
+
+	var result FileRestorePush
+	if err := json.Unmarshal(data, &result); err != nil {
+		return "", fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	// Add helpful metadata to response
+	enhancedResult := map[string]interface{}{
+		"file_restore_push_id": result.FileRestorePushID,
+		"file_restore_id":      result.FileRestoreID,
+		"start_time":           result.StartTime,
+		"end_time":             result.EndTime,
+		"state":                result.State,
+		"source_file_path":     result.SourceFilePath,
+		"destination_folder":   result.DestinationFolder,
+		"size":                 result.Size,
+		"_metadata": map[string]interface{}{
+			"primary_identifier":    "file_restore_push_id",
+			"presentation_guidance": "Push operation created successfully. File will be restored to the protected system.",
+			"state_guidance":        "Monitor the 'state' field: created -> in_progress -> completed or failed. You can cancel with update operation.",
+		},
+	}
+
+	jsonData, err := json.MarshalIndent(enhancedResult, "", "  ")
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal result: %w", err)
+	}
+
+	return string(jsonData), nil
+}
+
+func updateFileRestorePush(args map[string]interface{}) (string, error) {
+	fileRestoreID, ok := args["file_restore_id"].(string)
+	if !ok {
+		return "", fmt.Errorf("file_restore_id is required")
+	}
+	fileRestorePushID, ok := args["file_restore_push_id"].(string)
+	if !ok {
+		return "", fmt.Errorf("file_restore_push_id is required")
+	}
+	state, ok := args["state"].(string)
+	if !ok {
+		return "", fmt.Errorf("state is required")
+	}
+
+	if state != "canceled" {
+		return "", fmt.Errorf("state can only be updated to 'canceled'")
+	}
+
+	payload := map[string]interface{}{
+		"state": state,
+	}
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	endpoint := fmt.Sprintf("/v1/restore/file/%s/push/%s", fileRestoreID, fileRestorePushID)
+	data, err := makeAPIRequest("PATCH", endpoint, body)
+	if err != nil {
+		return "", err
+	}
+
+	var result FileRestorePush
+	if err := json.Unmarshal(data, &result); err != nil {
+		return "", fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	jsonData, err := json.MarshalIndent(result, "", "  ")
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal result: %w", err)
 	}

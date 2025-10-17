@@ -8,7 +8,7 @@ import (
 // Server configuration constants
 const (
 	ServerName = "slide-mcp-server"
-	Version    = "2.5.0"
+	Version    = "2.6.0"
 )
 
 // Tools filtering modes
@@ -189,6 +189,7 @@ func isRestoreManagementOperation(toolName, operation string) bool {
 		return operation == "create" || operation == "update" || operation == "delete"
 	case "slide_restores":
 		return operation == "create_file" || operation == "delete_file" || operation == "browse_file" ||
+			operation == "create_push" || operation == "update_push" || operation == "list_pushes" ||
 			operation == "create_image" || operation == "delete_image" || operation == "browse_image"
 	case "slide_networks":
 		return operation == "create" || operation == "update" || operation == "delete" ||

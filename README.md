@@ -62,6 +62,7 @@ Each meta-tool accepts an `operation` parameter that specifies the action to per
 
 6. **`slide_restores`** - File & image restoration
    - **File Restores**: `list_files`, `get_file`, `create_file`, `delete_file`, `browse_file`
+   - **Push Restores**: `list_pushes`, `create_push`, `update_push` - Restore files directly to protected systems (destination must be `X:\SlideRestore`)
    - **Image Exports**: `list_images`, `get_image`, `create_image`, `delete_image`, `browse_image`
    - Support for VHD, VHDX (dynamic/fixed), and Raw disk formats
    - Optional boot modifications (passwordless admin user)

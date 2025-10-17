@@ -28,6 +28,13 @@ func handleRestoresTool(args map[string]interface{}) (string, error) {
 		return deleteFileRestore(args)
 	case "browse_file":
 		return browseFileRestore(args)
+	// Push restore operations
+	case "list_pushes":
+		return listFileRestorePushes(args)
+	case "create_push":
+		return createFileRestorePush(args)
+	case "update_push":
+		return updateFileRestorePush(args)
 	// Image export operations
 	case "list_images":
 		return listImageExports(args)
@@ -48,14 +55,14 @@ func handleRestoresTool(args map[string]interface{}) (string, error) {
 func getRestoresToolInfo() ToolInfo {
 	return ToolInfo{
 		Name:        "slide_restores",
-		Description: "Manage data recovery operations. File restores: browse and download individual files from snapshots. Image exports: export full disk images in VHD, VHDX, VMDK, QCOW2, or RAW formats. Use for file-level recovery or disk image creation for external virtualization.",
+		Description: "Manage data recovery operations. File restores: browse and download individual files from snapshots. Push restores: restore files directly to protected systems (destination must be X:\\SlideRestore where X is drive letter). Image exports: export full disk images in VHD, VHDX, VMDK, QCOW2, or RAW formats. Use for file-level recovery, push to system, or disk image creation for external virtualization.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
 				"operation": map[string]interface{}{
 					"type":        "string",
 					"description": "The operation to perform",
-					"enum":        []string{"list_files", "get_file", "create_file", "delete_file", "browse_file", "list_images", "get_image", "create_image", "delete_image", "browse_image"},
+					"enum":        []string{"list_files", "get_file", "create_file", "delete_file", "browse_file", "list_pushes", "create_push", "update_push", "list_images", "get_image", "create_image", "delete_image", "browse_image"},
 				},
 				// Common parameters for list operations
 				"limit": map[string]interface{}{
@@ -78,11 +85,29 @@ func getRestoresToolInfo() ToolInfo {
 				// Parameters for file restore operations
 				"file_restore_id": map[string]interface{}{
 					"type":        "string",
-					"description": "ID of the file restore - required for get_file, delete_file, and browse_file operations",
+					"description": "ID of the file restore - required for get_file, delete_file, browse_file, list_pushes, and create_push operations",
 				},
 				"path": map[string]interface{}{
 					"type":        "string",
 					"description": "Path to browse within the restore - required for browse_file operation",
+				},
+				// Parameters for push restore operations
+				"file_restore_push_id": map[string]interface{}{
+					"type":        "string",
+					"description": "ID of the file restore push - required for update_push operation",
+				},
+				"source_file_path": map[string]interface{}{
+					"type":        "string",
+					"description": "Path of the file in the file restore to push - required for create_push operation",
+				},
+				"destination_folder": map[string]interface{}{
+					"type":        "string",
+					"description": "Destination folder on the protected system - MUST be 'X:\\SlideRestore' where X is a drive letter (e.g., 'C:\\SlideRestore') - required for create_push operation",
+				},
+				"state": map[string]interface{}{
+					"type":        "string",
+					"description": "State of the push operation - for update_push, only 'canceled' is allowed",
+					"enum":        []string{"canceled"},
 				},
 				// Parameters for image export operations
 				"image_export_id": map[string]interface{}{
@@ -151,6 +176,36 @@ func getRestoresToolInfo() ToolInfo {
 					},
 					"then": map[string]interface{}{
 						"required": []string{"file_restore_id", "path"},
+					},
+				},
+				{
+					"if": map[string]interface{}{
+						"properties": map[string]interface{}{
+							"operation": map[string]interface{}{"const": "list_pushes"},
+						},
+					},
+					"then": map[string]interface{}{
+						"required": []string{"file_restore_id"},
+					},
+				},
+				{
+					"if": map[string]interface{}{
+						"properties": map[string]interface{}{
+							"operation": map[string]interface{}{"const": "create_push"},
+						},
+					},
+					"then": map[string]interface{}{
+						"required": []string{"file_restore_id", "source_file_path", "destination_folder"},
+					},
+				},
+				{
+					"if": map[string]interface{}{
+						"properties": map[string]interface{}{
+							"operation": map[string]interface{}{"const": "update_push"},
+						},
+					},
+					"then": map[string]interface{}{
+						"required": []string{"file_restore_id", "file_restore_push_id", "state"},
 					},
 				},
 				{

@@ -2,7 +2,9 @@
 
 ## Changes
 
-- Various improvements and bug fixes
+- d54f00e Add --force flag to release script for overwriting existing releases
+- 48489e5 Release v2.5.0
+- 9dda06c Update tools, configuration, and documentation
 
 ## Installation
 

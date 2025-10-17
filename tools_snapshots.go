@@ -47,8 +47,8 @@ func getSnapshotsToolInfo() ToolInfo {
 				},
 				"snapshot_location": map[string]interface{}{
 					"type":        "string",
-					"description": "Filter by snapshot location - used with 'list' operation (automatically set for 'list_deleted')",
-					"enum":        []string{"exists_local", "exists_cloud", "exists_deleted", "exists_deleted_retention", "exists_deleted_manual", "exists_deleted_other"},
+					"description": "Filter by snapshot location - used with 'list' operation (automatically set for 'list_deleted'). Defaults to 'location_any' which includes all locations.",
+					"enum":        []string{"exists_local", "exists_cloud", "exists_deleted", "exists_deleted_retention", "exists_deleted_manual", "exists_deleted_other", "location_any"},
 				},
 				"sort_asc": map[string]interface{}{
 					"type":        "boolean",
