@@ -41,8 +41,6 @@ fi
 
 export SLIDE_API_KEY
 export SLIDE_TOOLS="$TOOLS_MODE"
-export SLIDE_ENABLE_PRESENTATION="${SLIDE_ENABLE_PRESENTATION:-true}"
-export SLIDE_ENABLE_REPORTS="${SLIDE_ENABLE_REPORTS:-true}"
 
 TOTAL=0
 PASSED=0
@@ -95,22 +93,35 @@ run_one_shot() {
 }
 
 echo -e "${BLUE}Core list operations${NC}"
-run_one_shot "slide_devices list"          "slide_devices"         '{"operation":"list","limit":3}'
-run_one_shot "slide_agents list"           "slide_agents"          '{"operation":"list","limit":3}'
-run_one_shot "slide_backups list"          "slide_backups"         '{"operation":"list","limit":3}'
-run_one_shot "slide_snapshots list"        "slide_snapshots"       '{"operation":"list","limit":3}'
-run_one_shot "slide_alerts list"           "slide_alerts"          '{"operation":"list","limit":3}'
-run_one_shot "slide_networks list"         "slide_networks"        '{"operation":"list","limit":3}'
-run_one_shot "slide_vms list"              "slide_vms"             '{"operation":"list","limit":3}'
-run_one_shot "slide_user_management list"  "slide_user_management" '{"operation":"list_users","limit":3}'
-run_one_shot "slide_meta overview"         "slide_meta"            '{"operation":"list_all_clients_devices_and_agents"}'
+run_one_shot "slide_devices list"           "slide_devices"   '{"operation":"list","limit":3}'
+run_one_shot "slide_agents list"            "slide_agents"    '{"operation":"list","limit":3}'
+run_one_shot "slide_backups list"           "slide_backups"   '{"operation":"list","limit":3}'
+run_one_shot "slide_snapshots list"         "slide_snapshots" '{"operation":"list","limit":3}'
+run_one_shot "slide_alerts list"            "slide_alerts"    '{"operation":"list","limit":3}'
+run_one_shot "slide_clients list"           "slide_clients"   '{"operation":"list","limit":3}'
+run_one_shot "slide_admin list_users"       "slide_admin"     '{"operation":"list_users","limit":3}'
+run_one_shot "slide_recovery list_vms"      "slide_recovery"  '{"operation":"list_vms","limit":3}'
+run_one_shot "slide_recovery list_images"   "slide_recovery"  '{"operation":"list_images","limit":3}'
+run_one_shot "slide_recovery list_networks" "slide_recovery"  '{"operation":"list_networks","limit":3}'
+
+echo
+echo -e "${BLUE}v4 task-oriented operations${NC}"
+run_one_shot "slide_overview health"        "slide_overview"  '{"operation":"health"}'
+run_one_shot "slide_overview inventory"     "slide_overview"  '{"operation":"inventory"}'
+run_one_shot "slide_audit recent"           "slide_audit"     '{"operation":"recent","hours":24}'
+run_one_shot "slide_audit actions"          "slide_audit"     '{"operation":"actions","limit":5}'
+run_one_shot "slide_alerts triage"          "slide_alerts"    '{"operation":"triage"}'
+run_one_shot "slide_files restores"         "slide_files"     '{"operation":"list_restores","limit":3}'
 
 echo
 echo -e "${BLUE}Validation paths (expected errors)${NC}"
-run_one_shot "slide_agents missing arg"    "slide_agents"  '{"operation":"get"}'                    "agent_id is required"
-run_one_shot "slide_devices missing arg"   "slide_devices" '{"operation":"get_network"}'            "device_id is required"
-run_one_shot "slide_snapshots missing arg" "slide_snapshots" '{"operation":"get_service_verification"}' "snapshot_id is required"
-run_one_shot "slide_user_management avatar" "slide_user_management" '{"operation":"get_user_avatar"}' "user_id is required"
+run_one_shot "slide_agents missing arg"     "slide_agents"   '{"operation":"get"}'                                  "agent_id is required"
+run_one_shot "slide_devices missing arg"    "slide_devices"  '{"operation":"get_network"}'                          "device_id is required"
+run_one_shot "slide_snapshots missing arg"  "slide_snapshots" '{"operation":"get_service_verification"}'            "snapshot_id is required"
+run_one_shot "slide_admin avatar missing"   "slide_admin"    '{"operation":"get_user_avatar"}'                      "user_id is required"
+run_one_shot "slide_files search missing"   "slide_files"    '{"operation":"search"}'                                "agent_id is required"
+run_one_shot "slide_audit get missing"      "slide_audit"    '{"operation":"get"}'                                   "audit_id is required"
+run_one_shot "slide_overview for_client"    "slide_overview" '{"operation":"for_client"}'                            "client_id is required"
 
 echo
 echo -e "${BLUE}MCP stdio handshake${NC}"
@@ -120,12 +131,18 @@ HANDSHAKE_OUT=$(printf '%s\n' \
     '{"jsonrpc":"2.0","method":"notifications/initialized"}' \
     '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' \
     '{"jsonrpc":"2.0","id":3,"method":"resources/list"}' \
+    '{"jsonrpc":"2.0","id":4,"method":"resources/templates/list"}' \
+    '{"jsonrpc":"2.0","id":5,"method":"prompts/list"}' \
     | "$SERVER_BINARY" 2>/dev/null || true)
 
 if echo "$HANDSHAKE_OUT" | grep -q 'slide-mcp-server' \
-   && echo "$HANDSHAKE_OUT" | grep -q 'slide_agents' \
-   && echo "$HANDSHAKE_OUT" | grep -q 'slide://context/clients-devices-agents'; then
-    echo -e "  initialize/tools/list/resources/list ${GREEN}PASS${NC}"
+   && echo "$HANDSHAKE_OUT" | grep -q 'slide_overview' \
+   && echo "$HANDSHAKE_OUT" | grep -q 'slide_files' \
+   && echo "$HANDSHAKE_OUT" | grep -q 'slide_audit' \
+   && echo "$HANDSHAKE_OUT" | grep -q 'slide://overview/inventory' \
+   && echo "$HANDSHAKE_OUT" | grep -q 'slide.daily-status' \
+   && echo "$HANDSHAKE_OUT" | grep -q 'slide.restore-file'; then
+    echo -e "  initialize/tools/list/resources/list/templates/prompts ${GREEN}PASS${NC}"
     PASSED=$((PASSED + 1))
 else
     echo -e "  ${RED}FAIL${NC} (missing expected fields in handshake)"

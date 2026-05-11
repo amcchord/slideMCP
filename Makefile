@@ -6,7 +6,7 @@
 # amd64) and is selected at runtime via the manifest's platform_overrides.
 
 BINARY_NAME = slide-mcp-server
-VERSION     = v3.1.0
+VERSION     = v4.0.0
 BUILD_DIR   = build
 DXT_STAGE   = $(BUILD_DIR)/dxt-stage
 MCPB_FILE   = $(BUILD_DIR)/$(BINARY_NAME).mcpb

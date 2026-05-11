@@ -10,30 +10,36 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 )
 
-// ToolHandler is the legacy in-process handler signature shared by every
+// ToolHandler is the in-process handler signature shared by every
 // tools_*.go file. It returns a JSON string body plus an error.
 type ToolHandler func(map[string]interface{}) (string, error)
 
 // toolRegistry maps tool names to their in-process handlers. The SDK server
-// calls these via adaptToolHandler(); the one-shot --tool CLI mode also calls
-// them directly without any MCP transport.
+// calls these via adaptToolHandler(); the one-shot --tool CLI mode also
+// calls them directly without any MCP transport.
+//
+// The v4.0.0 surface is task-oriented: ten meta-tools an MSP tech can
+// reach for naturally, plus the bare list_all shim that older Desktop
+// installs may still call.
 var toolRegistry = map[string]ToolHandler{
-	"slide_agents":          handleAgentsTool,
-	"slide_backups":         handleBackupsTool,
-	"slide_snapshots":       handleSnapshotsTool,
-	"slide_restores":        handleRestoresTool,
-	"slide_networks":        handleNetworksTool,
-	"slide_user_management": handleUserManagementTool,
-	"slide_alerts":          handleAlertsTool,
-	"slide_devices":         handleDevicesTool,
-	"slide_vms":             handleVMsTool,
-	"slide_presentation":    handlePresentationTool,
-	"slide_reports":         handleReportsTool,
-	"slide_meta":            handleMetaTool,
-	"slide_docs":            handleDocsTool,
+	// New v4 task-oriented tools
+	"slide_overview": handleOverviewTool,
+	"slide_files":    handleFilesTool,
+	"slide_recovery": handleRecoveryTool,
+	"slide_audit":    handleAuditTool,
+	"slide_clients":  handleClientsTool,
+	"slide_admin":    handleAdminTool,
+
+	// Refined v4 versions of v3 tools
+	"slide_devices":   handleDevicesTool,
+	"slide_agents":    handleAgentsTool,
+	"slide_snapshots": handleSnapshotsTool,
+	"slide_backups":   handleBackupsTool,
+	"slide_alerts":    handleAlertsTool,
+
+	// Backward-compat shim (delegates to slide_overview inventory)
 	"list_all_clients_devices_and_agents": func(args map[string]interface{}) (string, error) {
-		args["operation"] = "list_all_clients_devices_and_agents"
-		return handleMetaTool(args)
+		return listAllClientsDevicesAndAgents(args)
 	},
 }
 
@@ -41,22 +47,20 @@ var toolRegistry = map[string]ToolHandler{
 // later (in the SDK tool filter) so the descriptors here are unconditional.
 func allToolInfos() []ToolInfo {
 	return []ToolInfo{
-		getAgentsToolInfo(),
-		getBackupsToolInfo(),
-		getSnapshotsToolInfo(),
-		getRestoresToolInfo(),
-		getNetworksToolInfo(),
-		getUserManagementToolInfo(),
-		getAlertsToolInfo(),
+		getOverviewToolInfo(),
+		getFilesToolInfo(),
+		getRecoveryToolInfo(),
+		getAuditToolInfo(),
+		getClientsToolInfo(),
+		getAdminToolInfo(),
 		getDevicesToolInfo(),
-		getVMsToolInfo(),
-		getPresentationToolInfo(),
-		getReportsToolInfo(),
-		getMetaToolInfo(),
-		getDocsToolInfo(),
+		getAgentsToolInfo(),
+		getSnapshotsToolInfo(),
+		getBackupsToolInfo(),
+		getAlertsToolInfo(),
 		{
 			Name:        "list_all_clients_devices_and_agents",
-			Description: "Get hierarchical view of all clients, devices, and agents. Use when answering questions about infrastructure counts and organization. Returns complete system overview with relationship data.",
+			Description: "Backward-compat alias for `slide_overview operation=inventory`. New conversations should call `slide_overview` directly.",
 			InputSchema: map[string]interface{}{
 				"type":       "object",
 				"properties": map[string]interface{}{},
@@ -67,22 +71,28 @@ func allToolInfos() []ToolInfo {
 
 // toolInfoToSDKTool converts a legacy ToolInfo descriptor into an mcp.Tool
 // using NewToolWithRawSchema, preserving the original JSON Schema (including
-// conditional allOf/if/then/required blocks).
+// conditional allOf/if/then/required blocks). Adds tool annotations
+// (readOnlyHint / destructiveHint / idempotentHint / openWorldHint) so
+// Claude Desktop renders confirmation prompts only when actually needed.
 func toolInfoToSDKTool(info ToolInfo) (mcp.Tool, error) {
 	schemaBytes, err := json.Marshal(info.InputSchema)
 	if err != nil {
 		return mcp.Tool{}, fmt.Errorf("marshal schema for %s: %w", info.Name, err)
 	}
 	desc := info.Description
-	if config != nil && config.ToolsMode == ToolsReporting {
-		desc += " (Read-only mode: only list/get operations available)"
+	if config != nil && config.ToolsMode == ToolsReadOnly {
+		desc += " (Read-only mode: only list/get/search operations available.)"
 	}
-	return mcp.NewToolWithRawSchema(info.Name, desc, schemaBytes), nil
+	t := mcp.NewToolWithRawSchema(info.Name, desc, schemaBytes)
+	t.Annotations = annotationsForTool(info.Name)
+	if outSchema := outputSchemaForTool(info.Name); len(outSchema) > 0 {
+		t.RawOutputSchema = outSchema
+	}
+	return t, nil
 }
 
-// adaptToolHandler wraps a legacy ToolHandler so it satisfies the SDK's
-// ToolHandlerFunc shape. Permission checks mirror the original handleToolCall()
-// dispatcher in server.go.
+// adaptToolHandler wraps an in-process ToolHandler so it satisfies the SDK's
+// ToolHandlerFunc shape. Permission checks mirror handleToolCall().
 func adaptToolHandler(name string, handler ToolHandler) server.ToolHandlerFunc {
 	return func(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		if config.IsToolDisabled(name) {
@@ -104,8 +114,6 @@ func adaptToolHandler(name string, handler ToolHandler) server.ToolHandlerFunc {
 }
 
 // registerTools wires every tool descriptor + handler onto the SDK server.
-// Tool filtering (per current ToolsMode / disabled list) happens in
-// toolFilterForMode() so tools/list always reflects the live configuration.
 func registerTools(s *server.MCPServer) error {
 	infos := allToolInfos()
 	sort.Slice(infos, func(i, j int) bool { return infos[i].Name < infos[j].Name })

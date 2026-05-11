@@ -1,32 +1,55 @@
 # Slide MCP Server
 
-An MCP server implementation that integrates with the Slide API, providing
-comprehensive device and infrastructure management capabilities through a
-streamlined meta-tools architecture.
+An MCP server implementation that integrates with the Slide API, designed
+around the questions an MSP technician actually asks Claude Desktop -
+"are all my Slide boxes healthy?", "did backups run last night for ACME?",
+"find Q4-budget.xlsx on Bob's laptop and restore Tuesday's version".
 
-## What's new in v3.1.0
+## What's new in v4.0.0
 
-- **Drag-and-drop install for Claude Desktop**. One signed, notarized
-  `slide-mcp-server.mcpb` works on every platform - the right binary
-  (macOS universal / Linux amd64 + arm64 / Windows amd64) is selected at
-  runtime via the manifest's `platform_overrides`.
-- **Retired the legacy Fyne GUI installer.** The `.mcpb` bundle plus a
-  one-line `claude mcp add` does everything the GUI did, with less to
-  download and no CGO/OpenGL build hell.
-- **Slide API token is owned by Claude Desktop's `user_config` UI**, not
-  written into `claude_desktop_config.json` by us anymore. Power users
-  / CI / Cursor still get `SLIDE_API_KEY` env + `--api-key` flag.
-- See v3.0.0 for the previous big release (SDK migration + Slide API v1.27.0
-  coverage). Full history in [CHANGELOG.md](CHANGELOG.md).
+- **Headline new capability: `slide_files`**. Search filenames across every
+  snapshot for an agent, list snapshot versions of a path, then create a
+  restore, browse it, or push files back to the protected system - all
+  through one task-oriented tool. Wraps the previously-unexposed Slide
+  API v1.27.0 `FileSearch` + `PathVersion` endpoints.
+- **`slide_audit`** for compliance / "what changed in the last 24h?" -
+  wraps the previously-unexposed `/v1/audit*` endpoint family.
+- **Task-oriented tool surface**. New `slide_overview` (inventory +
+  health + per-client/per-device summaries), `slide_recovery` (boot
+  VMs + export images + DR networks), `slide_clients`, `slide_admin`.
+- **5 MCP Prompts** in Claude Desktop's slash-command UI:
+  `/slide.daily-status`, `/slide.triage-alerts`, `/slide.restore-file`,
+  `/slide.boot-recovery-vm`, `/slide.dr-runbook`.
+- **9 MCP Resources** (up from 1) including URI-templated
+  `slide://client/{id}`, `slide://device/{id}`, `slide://agent/{id}`,
+  plus static `slide://overview/health`, `slide://alerts/unresolved`,
+  `slide://audit/recent`, and a live-cached `slide://docs/openapi`.
+- **Token-conscious responses**. Every list op defaults to
+  `format=summary` (one-line entries) instead of v3's full JSON dump;
+  opt up to `compact` or `detailed` when you need more, plus
+  `fields=a,b,c` projection.
+- **Tool annotations** (`readOnlyHint`/`destructiveHint`/`idempotentHint`)
+  so Claude Desktop skips confirmation prompts on safe reads.
+- **Reliability**: HTTP client now honours `Retry-After` on 429s,
+  retries transient 5xx once, and surfaces structured `APIError`s with
+  per-status hints.
+- **Permission tiers collapsed** from four to three (`read-only`/`safe`/
+  `full`). Legacy names (`reporting`/`restores`/`full-safe`) are
+  silently aliased.
+- **Retired ~3K LoC** of dead-weight tooling (`slide_docs`,
+  `slide_presentation`, `slide_reports`, `slide_meta`) that the LLM
+  can compose from raw data + the new prompts.
+
+Full migration table and per-file detail in [CHANGELOG.md](CHANGELOG.md).
 
 ## 🚀 Go Binary Implementation ⚡
 - **Single binary**: No dependencies, just download and run
 - **Fast startup**: ~50ms startup time
 - **Low memory usage**: 10-20MB memory footprint
 - **Cross-platform**: Linux, macOS (Apple Silicon + Intel), Windows
-- **Streamlined Interface**: 13 meta-tools instead of 70+ individual tools for better LLM interaction
-- **Initial Context Resource**: Cached `slide://context/clients-devices-agents` resource
-  for fast first-turn answers
+- **Task-oriented surface**: 11 meta-tools designed around real MSP workflows
+- **MCP Resources + Prompts**: pre-baked context and slash-command workflows
+  (`slide://overview`, `/slide.daily-status`, etc.)
 
 ---
 
@@ -130,114 +153,135 @@ see [`AGENTS.md`](AGENTS.md).
 For more setup detail (CLI flags, environment variables, manual JSON snippets),
 see the installation section further down.
 
-## 🎯 Major Architecture Improvement
+## 🎯 Architecture
 
-**Meta-Tools Design**: This MCP server uses an innovative meta-tools architecture that consolidates 52+ individual API operations into just **13 focused meta-tools**. This design significantly reduces complexity for LLMs while maintaining full functionality.
+**Task-oriented meta-tools**: 11 focused meta-tools designed around the
+questions an MSP technician actually asks Claude Desktop, not the raw API
+endpoint surface. Each accepts an `operation` parameter that selects the
+action; conditional `allOf`/`if`/`then` schemas validate per-operation
+required parameters before the call ever leaves Claude.
 
-Each meta-tool accepts an `operation` parameter that specifies the action to perform, along with the relevant parameters for that operation.
+Plus **MCP Prompts** (slash-command workflows in Claude Desktop) and
+**URI-templated Resources** (cheap pre-baked context the LLM can pull
+without a tool call).
 
 ### Example Usage Pattern
+
 ```json
 {
-  "name": "slide_devices",
+  "name": "slide_files",
   "arguments": {
-    "operation": "list",
-    "limit": 10,
-    "client_id": "client-123"
+    "operation": "search",
+    "agent_id": "a_0123456789ab",
+    "search_term": "Q4-budget"
   }
 }
 ```
 
-## Available Meta-Tools
+## Available Meta-Tools (v4.0.0)
 
-### 🔧 Core Infrastructure
-1. **`slide_devices`** - Physical device management
-   - Operations: `list`, `get`, `update`, `poweroff`, `reboot`
-   - Power control, hostname/display name updates, client assignment
+### 🧭 Overview & inventory
 
-2. **`slide_agents`** - Backup agent management  
-   - Operations: `list`, `get`, `create`, `pair`, `update`
-   - Agent creation, pairing with devices, display name management
+1. **`slide_overview`** — top-level inventory + health
+   - Operations: `inventory`, `health`, `for_client`, `for_device`
+   - One-screen answer to "what do we have?" and "is everything OK?"
+   - Read-only; safe to call at the start of any conversation.
 
-3. **`slide_networks`** - Network infrastructure
-   - Operations: `list`, `get`, `create`, `update`, `delete`
-   - Network creation with DHCP, VPN support, client isolation
-   - **IPSec**: `create_ipsec`, `update_ipsec`, `delete_ipsec`
-   - **Port Forwarding**: `create_port_forward`, `update_port_forward`, `delete_port_forward`  
-   - **WireGuard VPN**: `create_wg_peer`, `update_wg_peer`, `delete_wg_peer`
+### 🔎 Files (the headline v4 capability)
 
-### 💾 Data Management
-4. **`slide_backups`** - Backup operations
-   - Operations: `list`, `get`, `start`
-   - Initiate and monitor backup jobs
+2. **`slide_files`** — search filenames + restore + push back
+   - Operations: `search`, `versions`, `list_restores`, `get_restore`,
+     `create_restore`, `delete_restore`, `browse`, `list_pushes`,
+     `create_push`, `update_push`, `get_push_status`
+   - `search` finds a filename across every snapshot for an agent
+     (Slide API v1.27.0 `FileSearch`); `versions` lists snapshots that
+     contain a path. The whole "find Q4-budget.xlsx and restore Tuesday's
+     copy" flow lives in this one tool.
 
-5. **`slide_snapshots`** - Snapshot management
-   - Operations: `list`, `get`
-   - Browse and access point-in-time snapshots with advanced filtering
+### 🛟 Recovery
 
-6. **`slide_restores`** - File & image restoration
-   - **File Restores**: `list_files`, `get_file`, `create_file`, `delete_file`, `browse_file`
-   - **Push Restores**: `list_pushes`, `create_push`, `update_push` - Restore files directly to protected systems (destination must be `X:\SlideRestore`)
-   - **Image Exports**: `list_images`, `get_image`, `create_image`, `delete_image`, `browse_image`
-   - Support for VHD, VHDX (dynamic/fixed), and Raw disk formats
-   - Optional boot modifications (passwordless admin user)
+3. **`slide_recovery`** — boot VMs, export images, manage DR networks
+   - VM operations: `list_vms`, `get_vm`, `boot_vm`, `update_vm`,
+     `delete_vm`, `get_rdp_bookmark`
+   - Image exports: `list_images`, `get_image`, `export_image`
+     (VHD/VHDX/VMDK/QCOW2/RAW), `delete_image`, `browse_image`
+   - DR networks: `list_networks`, `get_network`, `create_network`,
+     `update_network`, `delete_network` plus IPSec / port-forward /
+     WireGuard peer CRUD
+   - The "I need to actually recover something" toolkit.
 
-### ☁️ Virtual Infrastructure  
-7. **`slide_vms`** - Virtual machine management
-   - Operations: `list`, `get`, `create`, `update`, `delete`, `get_rdp_bookmark`
-   - Browser-based VNC console access and downloadable RDP bookmarks
-   - Configurable CPU (1-16 cores) and RAM (1-12GB)
-   - Multiple network modes and disk bus types
+### 📜 Audit (compliance / "what changed?")
 
-### 👥 Administration
-8. **`slide_user_management`** - User and account management
-   - **Users**: `list_users`, `get_user` - User account information and permissions
-   - **Accounts**: `list_accounts`, `get_account`, `update_account` - Account settings and alert email configuration
-   - **Clients**: `list_clients`, `get_client`, `create_client`, `update_client`, `delete_client` - Client organization and resource management
+4. **`slide_audit`** — account audit log
+   - Operations: `list`, `get`, `actions`, `resources`, `recent`
+   - `recent` defaults to a 24h window for "what just changed?"
 
-9. **`slide_alerts`** - Alert monitoring
-   - Operations: `list`, `get`, `update` (resolve)
-   - System alert management and resolution
+### 🗂️ Snapshots, backups, alerts, agents, devices
 
-### 📊 Data Presentation & Reporting
-10. **`slide_presentation`** - Professional data formatting and documentation
-    - **Operations**: `get_card`, `get_runbook_template`, `get_daily_report_template`, `get_monthly_report_template`
-    - **Card Types**: Individual item cards (agent, client, device, snapshot) and table cards (agents_table, clients_table, etc.)
-    - **Report Templates**: Runbook procedures, daily activity summaries, monthly analysis reports
-    - **Formats**: HTML, Markdown, HAML support for multiple output needs
-    - Perfect for status displays, dashboards, documentation, and professional reporting
-    - **⚠️ DISABLED BY DEFAULT**: Must be explicitly enabled with `--enable-presentation` flag or `SLIDE_ENABLE_PRESENTATION=true`
-**⚠️ IMPORTANT**: If you are building your own presentation logic or custom formatting, you may want to disable the `slide_presentation` tool to avoid conflicts with your custom implementation. To disable just the `slide_presentation` tool, add it to the `DISABLED_TOOLS` environment variable or in the --disabled-tools part of the CLI
+5. **`slide_snapshots`** — `list`, `list_deleted`, `get`,
+   `get_service_verification`, `recent_for_agent` (one-call "last N days
+   of restore points for X").
+6. **`slide_backups`** — `list`, `get`, `start`, plus the v4
+   `status_for_client` / `status_for_device` / `recent_for_agent` ops
+   that answer "did backups run last night for X?" in one call.
+7. **`slide_alerts`** — `list`, `get`, `update`, plus v4 `triage` that
+   sorts unresolved alerts by severity hint.
+8. **`slide_agents`** — full v1.27.0 surface (services, schedule,
+   retention, restore-defaults, volumes, alert configs).
+9. **`slide_devices`** — `list`, `get`, `update`, `poweroff`, `reboot`
+   plus device network + per-device VLAN CRUD.
 
-11. **`slide_meta`** - Meta tools for reporting and aggregated data views
-    - **Operations**: `list_all_clients_devices_and_agents`, `get_snapshot_changes`, `get_reporting_data`
-    - **list_all_clients_devices_and_agents**: Complete hierarchical view of infrastructure
-    - **get_snapshot_changes**: Track new and deleted snapshots over time periods (day, week, month)
-    - **get_reporting_data**: Pre-formatted data for populating report templates
-    - Perfect for generating reports with accurate, pre-calculated metrics
+### 👥 Clients & admin
 
-12. **`slide_reports`** - Pre-calculated statistics and reports for backup/snapshot analysis
-    - **⚠️ DISABLED BY DEFAULT**: Must be explicitly enabled with `--enable-reports` flag or `SLIDE_ENABLE_REPORTS=true`
-    - **Operations**: `daily_backup_snapshot`, `weekly_backup_snapshot`, `monthly_backup_snapshot`
-    - **Daily Reports**: Single day statistics with backup success rates and failure reasons
-    - **Weekly Reports**: 7-day breakdown with daily agent counts and success metrics
-    - **Monthly Reports**: Full month analysis with visual calendar view (in markdown format)
-    - **Filtering**: By agent_id, device_id, or client_id for targeted reporting
-    - **Formats**: JSON (structured data) or Markdown (human-readable)
-    - **Performance**: Use verbose mode to track progress on large reports
+10. **`slide_clients`** — client CRUD (`list`, `get`, `create`,
+    `update`, `delete`).
+11. **`slide_admin`** — users + accounts + user avatar
+    (`list_users`, `get_user`, `get_user_avatar`, `list_accounts`,
+    `get_account`, `update_account`).
 
-13. **`slide_docs`** - Access to official Slide documentation
-    - **Operations**: `list_sections`, `get_topics`, `search_docs`, `get_content`, `get_api_reference`
-    - **Documentation Access**: Browse and search docs.slide.tech content directly
-    - **Contextual Help**: Get best practices, troubleshooting guidance, and feature explanations
-    - **API Reference**: Quick access to API endpoint documentation
-    - **Integration**: Complements other tools by providing context and guidance
+### 🔁 Backward-compat shim
 
-### 🔍 Special Tools
-- **`list_all_clients_devices_and_agents`** - Hierarchical overview (now part of `slide_meta`)
-  - Get complete view of all clients, their devices, and agents in one call
-  - Perfect for answering questions about infrastructure scale and organization
-  - Can be called directly or via `slide_meta` with operation `list_all_clients_devices_and_agents`
+- **`list_all_clients_devices_and_agents`** still works; it forwards to
+  `slide_overview operation=inventory`.
+
+## MCP Prompts (slash-command workflows)
+
+Claude Desktop surfaces these in its slash-command UI:
+
+- **`/slide.daily-status [client?] [hours?]`** — daily ops summary
+- **`/slide.triage-alerts`** — prioritised unresolved-alert review
+- **`/slide.restore-file [filename?] [agent?]`** — guided file recovery
+- **`/slide.boot-recovery-vm [agent?]`** — guided VM recovery
+- **`/slide.dr-runbook [device?]`** — DR runbook generated from the
+  device's real agents and snapshots
+
+## MCP Resources (cheap pre-baked context)
+
+Claude can read these without burning a tool call:
+
+- `slide://overview/inventory` — clients → devices → agents tree
+- `slide://overview/health` — one-line-per-device-and-agent summary
+- `slide://alerts/unresolved` — open alerts, prioritised
+- `slide://audit/recent` — last 24h of audit log
+- `slide://docs/openapi` — live Slide OpenAPI spec (cached 1h)
+- `slide://client/{client_id}` — single client detail
+- `slide://device/{device_id}` — single device detail
+- `slide://agent/{agent_id}` — single agent detail
+- `slide://agent/{agent_id}/snapshots/recent` — recent snapshots
+
+The legacy `slide://context/clients-devices-agents` URI keeps working
+as an alias for `slide://overview/inventory`.
+
+## Token-conscious response shape
+
+Every list/get operation accepts these cross-cutting parameters:
+
+- `format` — `summary` (default for lists; one-line entries),
+  `compact` (full payload, no indentation), or `detailed` (full
+  payload, indented — equivalent to v3 behaviour).
+- `fields` — comma-separated JSON projection, e.g.
+  `fields=id,hostname,last_seen` drops everything else.
+- All list responses include `pagination.next_offset` and `count`.
 
 ## Key Features
 
@@ -274,77 +318,9 @@ Each meta-tool accepts an `operation` parameter that specifies the action to per
 - **Dashboard Ready**: Pre-formatted cards perfect for status displays and monitoring
 - **Documentation Support**: Professional templates for operational procedures and troubleshooting
 
-All meta-tools support pagination (`limit`, `offset`) and sorting options where applicable.
-
-## 📊 Data Presentation Tool Guide
-
-The **`slide_presentation`** tool is your primary resource for professional data formatting and documentation. It provides pre-built templates and smart cards that transform raw data into polished, readable formats.
-
-### 🎯 When to Use the Presentation Tool
-
-**Always consider this tool first** when you need to:
-- Display system status or monitoring data to users
-- Show lists of items (agents, clients, devices, snapshots)
-- Present individual item details in a structured format
-- Create reports or summaries
-- Generate documentation or procedures
-- Format any data that could benefit from professional presentation
-
-### 📋 Report Templates
-
-Perfect for comprehensive documentation and analysis:
-
-#### **Runbook Templates** (`get_runbook_template`)
-- **Purpose**: Operational procedures, troubleshooting guides, step-by-step instructions
-- **Use Cases**: Incident response, maintenance procedures, troubleshooting guides
-- **Formats**: HTML, Markdown, HAML
-
-#### **Daily Report Templates** (`get_daily_report_template`)
-- **Purpose**: Activity summaries, status updates, end-of-day reports
-- **Use Cases**: Daily operational summaries, status briefings, activity tracking
-- **Formats**: HTML (default), Markdown, HAML
-
-#### **Monthly Report Templates** (`get_monthly_report_template`)
-- **Purpose**: Comprehensive analysis, trends, monthly summaries
-- **Use Cases**: Executive summaries, trend analysis, performance reviews
-- **Formats**: HTML (default), Markdown, HAML
-
-### 📊 Smart Cards
-
-Perfect for status displays, dashboards, and data visualization:
-
-#### **Single Item Cards** - Detailed Views
-- **`agent`**: Individual backup agent with hostname, OS, status, recent backups
-- **`client`**: Individual client with name, agent count, device assignments, stats
-- **`device`**: Individual backup device with capacity, assignments, storage info
-- **`snapshot`**: Individual backup snapshot with date, size, status, retention
-
-#### **Table Cards** - Overview Dashboards
-- **`agents_table`**: Multiple agents comparison with status overview and assignments
-- **`clients_table`**: Multiple clients summary with agent counts and status
-- **`devices_table`**: Multiple devices overview with capacity and utilization
-- **`snapshots_table`**: Chronological backup history with sizes and status
-
-### 💡 Decision Guide
-
-Choose the right presentation format based on your needs:
-
-| Need | Recommendation | Example |
-|------|----------------|---------|
-| Show ONE item in detail | Single item cards | `agent`, `client`, `device`, `snapshot` |
-| Show MULTIPLE items overview | Table cards | `agents_table`, `clients_table`, `devices_table` |
-| Create documentation | Report templates | `get_runbook_template` |
-| Generate status reports | Daily/Monthly templates | `get_daily_report_template` |
-| Dashboard display | Table cards | `agents_table`, `devices_table` |
-| Troubleshooting guide | Runbook template | `get_runbook_template` |
-
-### 🚀 Best Practices
-
-1. **Start with Presentation**: Always consider using the presentation tool before displaying raw data
-2. **Choose the Right Card**: Use single cards for details, table cards for overviews
-3. **Format for Purpose**: Use HTML for web displays, Markdown for documentation
-4. **Professional Output**: Let the tool handle formatting instead of manual formatting
-5. **Consistent Experience**: Use cards for a consistent look and feel across all data displays
+All meta-tools support pagination (`limit`, `offset`), sort options where
+applicable, and the cross-cutting `format` / `fields` parameters described
+above.
 
 ## 📦 Detailed installation reference
 
@@ -409,8 +385,8 @@ With non-default tool mode and disabled tools:
       "command": "/path/to/slide-mcp-server",
       "env": {
         "SLIDE_API_KEY": "YOUR_API_KEY_HERE",
-        "SLIDE_TOOLS": "reporting",
-        "SLIDE_DISABLED_TOOLS": "slide_presentation"
+        "SLIDE_TOOLS": "read-only",
+        "SLIDE_DISABLED_TOOLS": "slide_recovery"
       }
     }
   }
@@ -468,10 +444,10 @@ The Slide MCP Server supports several command-line arguments for flexible config
 |------|-------------|---------------------|---------|
 | `--api-key` | Slide API key for authentication | `SLIDE_API_KEY` | Required |
 | `--base-url` | Base URL for Slide API endpoint | `SLIDE_BASE_URL` | `https://api.slide.tech` |
-| `--tools` | Permission mode for tool access | `SLIDE_TOOLS` | `full-safe` |
+| `--tools` | Permission mode (`read-only` / `safe` / `full`; legacy aliases `reporting`/`restores`/`full-safe` still work) | `SLIDE_TOOLS` | `safe` |
 | `--disabled-tools` | Comma-separated list of tools to disable | `SLIDE_DISABLED_TOOLS` | None |
-| `--enable-presentation` | Enable the `slide_presentation` tool | `SLIDE_ENABLE_PRESENTATION` | `false` |
-| `--enable-reports` | Enable the `slide_reports` tool | `SLIDE_ENABLE_REPORTS` | `false` |
+| `--tool` | Run a single tool then exit (one-shot mode) | - | - |
+| `--args` | JSON arguments for `--tool` | - | - |
 | `--version` | Show version information and exit | - | - |
 
 **Priority**: CLI flags take precedence over environment variables.
@@ -479,31 +455,30 @@ The Slide MCP Server supports several command-line arguments for flexible config
 ### Examples
 
 ```bash
-# Using CLI flags
-./slide-mcp-server --api-key sk_test_123 --base-url https://custom.api.endpoint --tools reporting
+# Using CLI flags (default 'safe' mode)
+./slide-mcp-server --api-key sk_test_123 --base-url https://custom.api.endpoint
+
+# Read-only mode (only list/get/search/browse)
+./slide-mcp-server --api-key sk_test_123 --tools read-only
 
 # Using environment variables
 export SLIDE_API_KEY="sk_test_123"
-export SLIDE_BASE_URL="https://custom.api.endpoint" 
-export SLIDE_TOOLS="reporting"
+export SLIDE_TOOLS="read-only"
 ./slide-mcp-server
 
 # Mixed usage (CLI overrides environment)
 export SLIDE_TOOLS="full"
-./slide-mcp-server --api-key sk_test_123 --tools reporting  # Uses reporting mode
+./slide-mcp-server --api-key sk_test_123 --tools read-only
 
 # Disable specific tools
-./slide-mcp-server --api-key sk_test_123 --disabled-tools "slide_agents,slide_backups"
+./slide-mcp-server --api-key sk_test_123 --disabled-tools "slide_recovery,slide_files"
 
-# Enable presentation and reports tools (disabled by default)
-./slide-mcp-server --api-key sk_test_123 --enable-presentation --enable-reports
-
-# Enable only the presentation tool
-./slide-mcp-server --api-key sk_test_123 --enable-presentation
+# One-shot tool invocation (handy for scripts / smoke tests)
+./slide-mcp-server --api-key sk_test_123 --tool slide_overview --args '{"operation":"health"}'
 
 # Show version
 ./slide-mcp-server --version
-# Output: slide-mcp-server version 2.3.2
+# Output: slide-mcp-server version 4.0.0
 ```
 
 ### 🚫 Disabling Specific Tools
@@ -527,21 +502,16 @@ export SLIDE_DISABLED_TOOLS="slide_devices,slide_users"
 ./slide-mcp-server --api-key YOUR_KEY --disabled-tools " slide_agents , slide_backups , slide_devices "
 ```
 
-#### Available Tool Names
-- `slide_agents` - Agent management
-- `slide_backups` - Backup operations  
-- `slide_snapshots` - Snapshot management
-- `slide_restores` - File and image restoration
-- `slide_networks` - Network management
-- `slide_user_management` - User and account management
-- `slide_alerts` - Alert monitoring
-- `slide_devices` - Device management
-- `slide_vms` - Virtual machine management
-- `slide_presentation` - Data presentation and reporting
-- `slide_meta` - Meta tools for reporting and aggregated data views
-- `slide_reports` - Pre-calculated backup/snapshot statistics and reports
-- `slide_docs` - Access to official Slide documentation
-- `list_all_clients_devices_and_agents` - Hierarchical overview (legacy, use slide_meta instead)
+#### Available Tool Names (v4.0.0)
+
+- `slide_overview` — inventory + health + per-client/per-device summaries
+- `slide_files` — file search + restore + push
+- `slide_recovery` — VMs + image exports + DR networks
+- `slide_audit` — account audit log
+- `slide_clients` — client CRUD
+- `slide_admin` — users + accounts
+- `slide_agents`, `slide_devices`, `slide_snapshots`, `slide_backups`, `slide_alerts` — lower-level CRUD with v4 task-oriented additions
+- `list_all_clients_devices_and_agents` — backward-compat alias for `slide_overview operation=inventory`
 
 #### Key Features
 
@@ -554,14 +524,14 @@ export SLIDE_DISABLED_TOOLS="slide_devices,slide_users"
 #### Use Cases
 
 ```bash
-# Create a read-only server that can't access sensitive data
-./slide-mcp-server --tools reporting --disabled-tools "slide_accounts,slide_users"
+# Read-only server (only list/get/search/browse operations)
+./slide-mcp-server --tools read-only --disabled-tools "slide_admin"
 
-# Allow restores but prevent network changes
-./slide-mcp-server --tools restores --disabled-tools "slide_networks"
+# Allow restores but hide the recovery tool entirely
+./slide-mcp-server --tools safe --disabled-tools "slide_recovery"
 
-# Monitoring setup that excludes VM management
-./slide-mcp-server --tools reporting --disabled-tools "slide_vms,slide_networks"
+# Monitoring-only setup
+./slide-mcp-server --tools read-only --disabled-tools "slide_recovery,slide_files"
 ```
 
 When a disabled tool is called, the server returns:
@@ -574,100 +544,53 @@ When a disabled tool is called, the server returns:
 }
 ```
 
-### 🎯 Enabling Presentation & Reports Tools
-
-The `slide_presentation` and `slide_reports` tools are **disabled by default** and must be explicitly enabled using CLI flags or environment variables. This design prevents accidental exposure of potentially sensitive reporting capabilities.
-
-#### Why These Tools Are Disabled by Default
-
-- **`slide_presentation`**: Provides advanced formatting and templating capabilities that could potentially be misused for data extraction or system information gathering
-- **`slide_reports`**: Generates comprehensive system reports that may contain sensitive operational data
-
-#### Enabling These Tools
-
-```bash
-# Enable both tools via CLI flags
-./slide-mcp-server --api-key YOUR_KEY --enable-presentation --enable-reports
-
-# Enable only presentation tool
-./slide-mcp-server --api-key YOUR_KEY --enable-presentation  
-
-# Enable only reports tool
-./slide-mcp-server --api-key YOUR_KEY --enable-reports
-
-# Enable via environment variables
-export SLIDE_ENABLE_PRESENTATION=true
-export SLIDE_ENABLE_REPORTS=true
-./slide-mcp-server --api-key YOUR_KEY
-
-# CLI flags take precedence over environment variables
-export SLIDE_ENABLE_PRESENTATION=false
-./slide-mcp-server --api-key YOUR_KEY --enable-presentation  # Presentation tool will be enabled
-```
-
-#### Combined with Other Options
-
-```bash
-# Enable with specific tools mode
-./slide-mcp-server --api-key YOUR_KEY --tools reporting --enable-presentation --enable-reports
-
-# Enable while disabling other tools
-./slide-mcp-server --api-key YOUR_KEY --enable-reports --disabled-tools "slide_agents,slide_backups"
-```
-
 ## 🔒 Permission Modes
 
-The server includes a sophisticated permission system with four distinct access levels:
+v4.0.0 collapsed the permission system from four tiers down to three.
+Legacy mode names (`reporting`, `restores`, `full-safe`) are silently
+aliased so existing CLI flags / Claude Desktop user configs keep
+working.
 
 ### Permission Levels
 
-#### `reporting` - Read-Only Access
-**Use Case**: Monitoring, reporting, and dashboard integrations
-- ✅ **Allowed**: All read operations (`list`, `get`, `browse`)
-- ❌ **Blocked**: All create, update, delete operations
-- ❌ **Blocked**: Power control operations
+#### `read-only` — Pure read access
+
+**Use Case**: monitoring dashboards, on-call sanity checks, anything
+that should never accidentally mutate state.
+
+- ✅ **Allowed**: every list/get/search/browse op, every Resource
+  read, every Prompt
+- ❌ **Blocked**: every create/update/delete/start/restore/etc.
+- Legacy alias: `reporting`
 
 ```bash
-./slide-mcp-server --api-key YOUR_KEY --tools reporting
+./slide-mcp-server --api-key YOUR_KEY --tools read-only
 ```
 
-#### `restores` - Data Recovery & VM Management  
-**Use Case**: IT support teams performing data recovery and VM management
-- ✅ **Allowed**: All reporting operations
-- ✅ **Allowed**: VM management (create, update, delete)
-- ✅ **Allowed**: File restore operations
-- ✅ **Allowed**: Image export operations  
-- ✅ **Allowed**: Network management
-- ✅ **Allowed**: Device management (updates only)
-- ✅ **Allowed**: Agent management (create, pair, update)
-- ✅ **Allowed**: Backup management
-- ❌ **Blocked**: Device power control (poweroff, reboot)
-- ❌ **Blocked**: Account/client management
-- ❌ **Blocked**: Alert resolution
-- ❌ **Blocked**: Agent deletion
-- ❌ **Blocked**: Snapshot deletion
+#### `safe` — Default; everything except destructive ops
+
+**Use Case**: general MSP / IT admin workflows including restores,
+agent settings, backup launches, alert resolution.
+
+- ✅ **Allowed**: read-only + create/update for restores, agents,
+  devices, networks, alerts, settings, backup launch
+- ❌ **Blocked**: deletes (`delete`, `delete_vm`, `delete_image`,
+  `delete_network`, `delete_restore`, `delete_vlan`, ...) and device
+  power control (`poweroff`, `reboot`)
+- Legacy aliases: `restores`, `full-safe`
 
 ```bash
-./slide-mcp-server --api-key YOUR_KEY --tools restores
+./slide-mcp-server --api-key YOUR_KEY --tools safe
+# (this is the default; the flag is optional)
 ```
 
-#### `full-safe` - Comprehensive Access (Default)
-**Use Case**: General administration with safety guardrails
-- ✅ **Allowed**: All operations except dangerous ones
-- ❌ **Blocked**: Agent deletion (prevents accidental backup disruption)
-- ❌ **Blocked**: Snapshot deletion (prevents data loss)
-- ❌ **Blocked**: Device power control (prevents accidental shutdowns)
+#### `full` — Complete access
 
-```bash
-./slide-mcp-server --api-key YOUR_KEY --tools full-safe
-# OR simply (default mode)
-./slide-mcp-server --api-key YOUR_KEY
-```
+**Use Case**: advanced admins who need to delete agents, delete
+snapshots, or remotely power-cycle a device.
 
-#### `full` - Complete Access
-**Use Case**: Advanced administrators who need unrestricted access
-- ✅ **Allowed**: All operations including dangerous ones
-- ⚠️ **Warning**: Includes agent and snapshot deletion
+- ✅ **Allowed**: every operation, including the irreversible ones
+- ⚠️ Includes agent deletion, snapshot deletion, device poweroff/reboot
 
 ```bash
 ./slide-mcp-server --api-key YOUR_KEY --tools full
@@ -675,27 +598,23 @@ The server includes a sophisticated permission system with four distinct access 
 
 ### Permission Matrix
 
-| Operation Category | `reporting` | `restores` | `full-safe` | `full` |
-|--------------------|-------------|------------|-------------|--------|
-| List/Get/Browse | ✅ | ✅ | ✅ | ✅ |
-| Device Power Control | ❌ | ❌ | ❌ | ✅ |
-| VM Management | ❌ | ✅ | ✅ | ✅ |
-| Network Management | ❌ | ✅ | ✅ | ✅ |
-| File Restores | ❌ | ✅ | ✅ | ✅ |
-| Image Exports | ❌ | ✅ | ✅ | ✅ |
-| Backup Jobs | ❌ | ✅ | ✅ | ✅ |
-| Account Management | ❌ | ❌ | ✅ | ✅ |
-| Alert Resolution | ❌ | ❌ | ✅ | ✅ |
-| Agent Creation/Updates | ❌ | ✅ | ✅ | ✅ |
-| Agent Deletion | ❌ | ❌ | ❌ | ✅ |
-| Snapshot Deletion | ❌ | ❌ | ❌ | ✅ |
+| Operation category                | `read-only` | `safe` | `full` |
+|-----------------------------------|-------------|--------|--------|
+| List / get / search / browse      | ✅          | ✅     | ✅     |
+| File search + restore + push      | ❌          | ✅     | ✅     |
+| Boot recovery VMs / export images | ❌          | ✅     | ✅     |
+| DR network create / update        | ❌          | ✅     | ✅     |
+| Agent / device settings updates   | ❌          | ✅     | ✅     |
+| Alert resolution                  | ❌          | ✅     | ✅     |
+| Backup launch                     | ❌          | ✅     | ✅     |
+| **Deletes** (agents, snapshots, VMs, networks, port-forwards, ...)  | ❌ | ❌ | ✅ |
+| **Device poweroff / reboot**      | ❌          | ❌     | ✅     |
 
 ### Security Recommendations
 
-- **Production Monitoring**: Use `reporting` mode for read-only dashboards and monitoring systems
-- **Support Teams**: Use `restores` mode for IT support staff performing data recovery
-- **General Administration**: Use `full-safe` mode (default) for most administrative tasks
-- **Advanced Users Only**: Use `full` mode only when agent or snapshot deletion is specifically required
+- **Production monitoring**: `read-only`
+- **Day-to-day MSP admin**: `safe` (default)
+- **Cleanup / decommissioning workflows**: `full`
 
 ### Usage with VS Code
 
@@ -745,8 +664,8 @@ With custom configuration and disabled tools:
         "command": "/path/to/slide-mcp-server",
         "env": {
           "SLIDE_API_KEY": "${input:slide_api_key}",
-          "SLIDE_TOOLS": "reporting",
-          "SLIDE_DISABLED_TOOLS": "slide_accounts,slide_users"
+          "SLIDE_TOOLS": "read-only",
+          "SLIDE_DISABLED_TOOLS": "slide_admin"
         }
       }
     }
@@ -756,219 +675,122 @@ With custom configuration and disabled tools:
 
 ## 💡 Usage Examples
 
-### List All Devices
+### Health summary
+
 ```json
 {
-  "name": "slide_devices",
-  "arguments": {
-    "operation": "list",
-    "limit": 20,
-    "client_id": "client-123"
-  }
+  "name": "slide_overview",
+  "arguments": {"operation": "health"}
 }
 ```
 
-### Create a Network with VPN
-```json
-{
-  "name": "slide_networks",
-  "arguments": {
-    "operation": "create",
-    "name": "Development Network",
-    "type": "standard",
-    "router_prefix": "192.168.100.1/24",
-    "dhcp": true,
-    "dhcp_range_start": "192.168.100.10",
-    "dhcp_range_end": "192.168.100.200",
-    "wg": true,
-    "wg_prefix": "10.100.0.0/24",
-    "client_id": "client-123"
-  }
-}
-```
+### "Did backups run last night for ACME?"
 
-### Create VM from Snapshot
-```json
-{
-  "name": "slide_vms",
-  "arguments": {
-    "operation": "create",
-    "snapshot_id": "snapshot-456",
-    "device_id": "device-789",
-    "cpu_count": 4,
-    "memory_in_mb": 8192,
-    "network_type": "network-id",
-    "network_source": "network-123"
-  }
-}
-```
-
-### Generate RDP Bookmark for VM
-```json
-{
-  "name": "slide_vms",
-  "arguments": {
-    "operation": "get_rdp_bookmark",
-    "virt_id": "vm-123"
-  }
-}
-```
-
-### Search Documentation
-```json
-{
-  "name": "slide_docs",
-  "arguments": {
-    "operation": "search_docs",
-    "query": "backup retention policies"
-  }
-}
-```
-
-## 🆕 What's New in v2.4.0
-
-### 🎯 LLM Optimization
-- **Streamlined Tool Descriptions**: All tool descriptions optimized for modern LLMs with concise, action-oriented language
-- **Consistent Format**: Standardized description format across all 13 meta-tools for better LLM comprehension
-- **Reduced Verbosity**: Tool descriptions reduced by 60-80% while maintaining clarity
-- **Faster Tool Selection**: LLMs can now select the right tool more quickly with clearer, more focused descriptions
-
-### 🔧 MCP Protocol Enhancements
-- **Enhanced Capabilities**: Added MCP protocol capabilities metadata for better client integration
-- **Richer Initial Context**: Startup context now includes tools mode, API base URL, and cache metadata
-- **Better Performance**: Initial context loading provides immediate infrastructure overview at startup
-
-### 🚀 Unified Release Automation
-- **One-Command Release**: New `release-all-in-one.sh` script handles complete release workflow
-- **Automated Version Management**: Auto-increment patch version or specify custom version
-- **Integrated Workflow**: Commits, builds, signs, packages, and publishes to GitHub in one step
-- **Dry-Run Mode**: Test release process without making changes
-- **Flexible Options**: Skip tests, local-only builds, and more
-
-### 📚 Previous Features (v2.3.x)
-- Initial Context Loading for faster startup
-- RDP Bookmark Generation for VM access
-- Built-in Documentation Access via `slide_docs` tool
-- Cross-Platform GUI Installer
-
-### Start Backup Job
 ```json
 {
   "name": "slide_backups",
   "arguments": {
-    "operation": "start",
-    "agent_id": "agent-456"
+    "operation": "status_for_client",
+    "client_id": "c_0123456789ab",
+    "hours": 24
   }
 }
 ```
 
-### Export Snapshot as VHD Image
+### Find a file across every snapshot for an agent
+
 ```json
 {
-  "name": "slide_restores",
+  "name": "slide_files",
   "arguments": {
-    "operation": "create_image",
-    "snapshot_id": "snapshot-789",
-    "device_id": "device-123",
-    "image_type": "vhd-dynamic",
-    "boot_remove_passwords": true
+    "operation": "search",
+    "agent_id": "a_0123456789ab",
+    "search_term": "Q4-budget"
   }
 }
 ```
 
-### Display Agent Status Card
+### Find every snapshot that contains a specific path
+
 ```json
 {
-  "name": "slide_presentation",
+  "name": "slide_files",
   "arguments": {
-    "operation": "get_card",
-    "card_type": "agent"
+    "operation": "versions",
+    "agent_id": "a_0123456789ab",
+    "path": "C:\\Users\\bob\\Documents\\Q4-budget.xlsx"
   }
 }
 ```
 
-### Generate Multiple Devices Overview
+### Boot a recovery VM
+
 ```json
 {
-  "name": "slide_presentation",
+  "name": "slide_recovery",
   "arguments": {
-    "operation": "get_card",
-    "card_type": "devices_table"
+    "operation": "boot_vm",
+    "snapshot_id": "s_0123456789ab",
+    "device_id": "d_0123456789ab",
+    "cpu_count": 4,
+    "memory_in_mb": 8192,
+    "network_type": "network-id",
+    "network_source": "n_0123456789ab"
   }
 }
 ```
 
-### Create Runbook Template
+### Generate an RDP bookmark for a running VM
+
 ```json
 {
-  "name": "slide_presentation",
+  "name": "slide_recovery",
   "arguments": {
-    "operation": "get_runbook_template",
-    "format": "markdown"
+    "operation": "get_rdp_bookmark",
+    "virt_id": "v_0123456789ab"
   }
 }
 ```
 
-### Generate Daily Report Template
+### Audit log: what changed in the last 24 hours?
+
 ```json
 {
-  "name": "slide_presentation",
-  "arguments": {
-    "operation": "get_daily_report_template",
-    "format": "html"
-  }
+  "name": "slide_audit",
+  "arguments": {"operation": "recent", "hours": 24}
 }
 ```
 
-### Generate Backup Reports
+### Triage open alerts (sorted worst-first)
+
 ```json
 {
-  "name": "slide_reports",
-  "arguments": {
-    "operation": "daily_backup_snapshot",
-    "agent_id": "agent-123",
-    "format": "markdown"
-  }
+  "name": "slide_alerts",
+  "arguments": {"operation": "triage"}
 }
 ```
 
-### Search Documentation
+### Start a backup
+
 ```json
 {
-  "name": "slide_docs",
-  "arguments": {
-    "operation": "search_docs",
-    "query": "backup retention policies"
-  }
+  "name": "slide_backups",
+  "arguments": {"operation": "start", "agent_id": "a_0123456789ab"}
 }
 ```
 
-## Documentation System
+### Export a snapshot as a VHDX image
 
-The MCP server includes a comprehensive documentation access system through the `slide_docs` tool. The documentation system has been enhanced with contextual descriptions to help LLMs make better choices when navigating between similar-sounding sections.
-
-### Enhanced Context Features
-
-1. **Section Descriptions**: Each documentation section now includes a detailed description explaining its purpose
-   - Example: "Slide Console > Networks" is clarified as "managing virtual networks on Slide devices/cloud"
-   - Example: "Product > Networking" is clarified as "network infrastructure requirements and prerequisites"
-
-2. **Topic Descriptions**: Ambiguous topic names include contextual descriptions
-   - Topics like "Networks (Managing Networks)" vs "Networking (Requirements)" are clearly differentiated
-
-3. **Context-Aware Search**: Search results include section and topic descriptions to help identify the correct documentation
-
-4. **Improved Navigation**: The LLM can now better distinguish between:
-   - Configuration vs Requirements documentation
-   - Console UI features vs System prerequisites
-   - User management vs Client organization management
-
-### Testing Documentation Context
-
-Run the test script to verify the context improvements:
-
-```bash
-./test_scripts/test_docs_context.sh
+```json
+{
+  "name": "slide_recovery",
+  "arguments": {
+    "operation": "export_image",
+    "snapshot_id": "s_0123456789ab",
+    "device_id": "d_0123456789ab",
+    "image_type": "vhdx"
+  }
+}
 ```
 
 ## Build

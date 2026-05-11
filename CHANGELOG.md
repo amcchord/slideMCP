@@ -1,5 +1,189 @@
 # Slide MCP Changes
 
+## 2026-05-11 - v4.0.0 - Ground-up overhaul for Claude Desktop end users
+
+### Headline
+
+v4.0.0 reshapes the entire tool surface around the actual questions
+an MSP technician asks Claude Desktop ("did backups run last night for
+ACME?", "find Q4-budget.xlsx on Bob's laptop and restore it",
+"are all my Slide boxes healthy?"), adopts modern MCP primitives
+(Prompts, URI-templated Resources, structured outputs, tool
+annotations), plugs the highest-value Slide API gaps (file search and
+audit logs were not exposed in v3), and trims ~3,000 LoC of legacy
+docs/reports/presentation tooling that the LLM can compose from raw
+data anyway.
+
+### New capabilities
+
+- **`slide_files`** - the headline new tool. Search filenames across
+  every snapshot for an agent (Slide API v1.27.0 `FileSearch`), list
+  snapshot versions of a path (`PathVersion`), then create a restore,
+  browse it, or push files back to the protected system. Single tool
+  covers the entire "find and recover X" workflow.
+- **`slide_audit`** - account audit log queries (Slide API v1.27.0
+  `Audits` / `AuditByID` / `AuditActions` / `AuditResources`). Includes
+  a `recent` convenience op for "what changed in the last N hours?".
+- **`slide_overview`** - inventory + per-account health summary, plus
+  `for_client` and `for_device` deep views that join devices, agents,
+  and open alerts in one call. Replaces the v3
+  `list_all_clients_devices_and_agents` top-level tool (the old name
+  still works as a backward-compat alias).
+- **`slide_recovery`** - consolidates v3's `slide_vms`, image-export
+  surface from `slide_restores`, and `slide_networks` into one
+  task-oriented tool. `boot_vm`, `export_image`, `create_network`,
+  `create_wg_peer`, and friends.
+- **`slide_clients`** + **`slide_admin`** - splits the v3
+  `slide_user_management` mega-tool into the two halves an MSP
+  actually thinks about: client CRUD vs user/account admin.
+- **`slide_backups status_for_client` / `status_for_device` /
+  `recent_for_agent`** - one-call answers to "did backups run for X?".
+- **`slide_alerts triage`** - groups unresolved alerts by severity hint
+  and returns the worst-first list for prioritised remediation.
+- **`slide_snapshots recent_for_agent`** - one-call "what restore
+  points do I have for X?".
+
+### Modern MCP primitives
+
+- **5 MCP Prompts** wired via `srv.AddPrompt`. Surface in Claude
+  Desktop's slash-command UI:
+  - `/slide.daily-status [client] [hours]` - daily ops summary
+  - `/slide.triage-alerts` - prioritised unresolved alert review
+  - `/slide.restore-file [filename] [agent]` - guided file recovery
+  - `/slide.boot-recovery-vm [agent]` - guided VM recovery
+  - `/slide.dr-runbook [device]` - generates a tailored DR runbook
+    grounded in the device's real agents and snapshots.
+- **9 MCP Resources** (up from 1), including URI-templated
+  `slide://client/{client_id}`, `slide://device/{device_id}`,
+  `slide://agent/{agent_id}`, plus static `slide://overview`,
+  `slide://overview/health`, `slide://alerts/unresolved`,
+  `slide://audit/recent`, and a live-cached `slide://docs/openapi`.
+  The legacy `slide://context/clients-devices-agents` URI keeps
+  working as an alias.
+- **Tool annotations** on every tool: `readOnlyHint`,
+  `destructiveHint`, `idempotentHint`, `openWorldHint`. Claude Desktop
+  uses these to skip confirmation prompts on safe reads.
+- **Output schemas** on every tool. Permissive but signal "structured
+  object response" to clients that render `outputSchema`.
+- **Token-conscious response shape**. Every list/get op accepts:
+  - `format=summary|compact|detailed` - default `summary` for lists
+    (one-line entries) and `compact` for single-object responses.
+    `detailed` is the v3 `MarshalIndent` behaviour.
+  - `fields=a,b,c` - JSON projection. Drops everything else from each
+    entry / from the response object.
+  - Lists always include `pagination.next_offset` and `count`.
+
+### Reliability
+
+- Reworked HTTP client (in [`api.go`](api.go)):
+  - Honours `Retry-After` header on 429s (header preferred,
+    exponential backoff fallback).
+  - Single retry on transient 5xx (502 / 503 / 504).
+  - Sets `User-Agent: slide-mcp-server/4.0.0` and `Accept:
+    application/json` on every request.
+  - Errors return a structured `*APIError` with `method`, `endpoint`,
+    `status`, body, and a per-status hint (e.g. "check that
+    SLIDE_API_KEY is valid" on 401/403).
+
+### Permission tiers
+
+Collapsed from four (`reporting`/`restores`/`full-safe`/`full`) to
+three (`read-only`/`safe`/`full`). Legacy mode names are silently
+mapped:
+
+  - `reporting` -> `read-only`
+  - `restores` -> `safe`
+  - `full-safe` -> `safe`
+  - `full` -> unchanged
+
+`safe` is the new default. `slide-mcp-server --tools <legacy-name>`
+keeps working unchanged.
+
+### Retired (~3,000 LoC removed)
+
+- **`slide_docs`** ([`tools_docs.go`](tools_docs.go), 911 LoC) was a
+  hardcoded fake doc index. Replaced by the live-cached
+  `slide://docs/openapi` resource.
+- **`slide_presentation`** ([`tools_presentation.go`](tools_presentation.go),
+  333 LoC) - GitHub-fetched runbook templates. Replaced by the
+  `/slide.dr-runbook` and `/slide.daily-status` prompts that ground in
+  the user's own data.
+- **`slide_reports`** ([`tools_reports.go`](tools_reports.go), 1033
+  LoC) - power-user pre-baked reports. The LLM composes these from
+  `slide_overview` + `slide_backups status_for_*` now.
+- **`slide_meta`** ([`tools_meta.go`](tools_meta.go), 746 LoC) -
+  fully absorbed into `slide_overview` + Resources. The old
+  `listAllClientsDevicesAndAgents` helper is preserved in
+  [`overview_helpers.go`](overview_helpers.go) and reachable via the
+  backward-compat `list_all_clients_devices_and_agents` tool name.
+- **`slide_vms`**, **`slide_restores`** (image export bits),
+  **`slide_networks`** - merged into `slide_recovery`.
+- **`slide_user_management`** - split into `slide_clients` +
+  `slide_admin`.
+- The `--enable-reports` and `--enable-presentation` CLI flags +
+  `SLIDE_ENABLE_REPORTS` / `SLIDE_ENABLE_PRESENTATION` env vars are
+  gone (the tools they gated are gone). The flags being absent
+  silently no-ops; nobody's `claude_desktop_config.json` will fail to
+  start because of it.
+
+### Migration table (old -> new)
+
+| v3 tool / op                                  | v4 equivalent                                               |
+|-----------------------------------------------|-------------------------------------------------------------|
+| `list_all_clients_devices_and_agents`         | `slide_overview operation=inventory` (legacy name still works) |
+| `slide_meta operation=get_snapshot_changes`   | compose via `slide_snapshots recent_for_agent`              |
+| `slide_meta operation=get_reporting_data`     | compose via `slide_backups status_for_client`               |
+| `slide_user_management list_clients/...`      | `slide_clients list/...`                                    |
+| `slide_user_management list_users/get_account/...` | `slide_admin list_users/get_account/...`               |
+| `slide_vms ...`                               | `slide_recovery list_vms/boot_vm/...`                       |
+| `slide_restores list_images/create_image/...` | `slide_recovery list_images/export_image/...`               |
+| `slide_restores list_files/create_file/...`   | `slide_files list_restores/create_restore/...` *(new file-search ops added on top)* |
+| `slide_networks ...`                          | `slide_recovery list_networks/create_network/...`           |
+| `slide_docs ...`                              | resource read of `slide://docs/openapi` (or just ask)       |
+| `slide_presentation get_runbook_template`     | `/slide.dr-runbook` MCP prompt                              |
+| `slide_reports get_daily_report`              | `/slide.daily-status` MCP prompt                            |
+
+### Tests
+
+- New [`server_test.go`](server_test.go) covers: every v4 tool +
+  operation is registered, prompts/list and resources/list advertise
+  the v4 surface, legacy permission-tier names are aliased correctly,
+  `slide_files search` end-to-end against an httptest server,
+  `slide_audit recent` end-to-end against an httptest server,
+  `parseRetryAfter` handles delta-seconds and HTTP-date forms,
+  one-shot CLI rejects disabled and unknown tools.
+
+### Files touched
+
+- Added: [`tools_overview.go`](tools_overview.go),
+  [`tools_files.go`](tools_files.go),
+  [`tools_recovery.go`](tools_recovery.go),
+  [`tools_audit.go`](tools_audit.go),
+  [`tools_clients.go`](tools_clients.go),
+  [`tools_admin.go`](tools_admin.go),
+  [`api_files.go`](api_files.go), [`api_audit.go`](api_audit.go),
+  [`format.go`](format.go), [`annotations.go`](annotations.go),
+  [`output_schemas.go`](output_schemas.go),
+  [`prompts.go`](prompts.go), [`resources.go`](resources.go),
+  [`overview_helpers.go`](overview_helpers.go).
+- Rewritten: [`registry.go`](registry.go), [`server.go`](server.go),
+  [`config.go`](config.go), [`main.go`](main.go),
+  [`tools_alerts.go`](tools_alerts.go),
+  [`tools_backups.go`](tools_backups.go),
+  [`tools_snapshots.go`](tools_snapshots.go),
+  [`server_test.go`](server_test.go).
+- Updated HTTP client: [`api.go`](api.go) (Retry-After + 5xx retry +
+  structured `APIError`).
+- Bumped: [`Makefile`](Makefile) `VERSION = v4.0.0`,
+  [`dxt/manifest.json`](dxt/manifest.json) version + long_description
+  + tools_mode default + description, [`config.go`](config.go)
+  `Version = "4.0.0"`.
+- Deleted: `tools_docs.go`, `tools_presentation.go`,
+  `tools_reports.go`, `tools_meta.go`, `tools_restores.go`,
+  `tools_vms.go`, `tools_networks.go`, `tools_user_management.go`.
+
+---
+
 ## 2026-05-10 - v3.1.0 - Drag-and-drop install + retire Fyne installer
 
 ### Headline

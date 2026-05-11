@@ -62,15 +62,35 @@ stapled:      no (Apple can't staple raw Mach-O; online verification works)
 `stapled: no` is **expected and correct** for raw Mach-O - see
 SIGNING.md section 3.6. Do not "fix" it.
 
-### 3. Tool architecture: meta-tools, not one-tool-per-endpoint
+### 3. Tool architecture: task-oriented meta-tools, not one-tool-per-endpoint
 
-The server exposes ~13 meta-tools (`slide_devices`, `slide_agents`,
-etc.), each with an `operation` parameter that selects the action. Do
-not add new top-level tools when you can add a new operation to an
+The server exposes 11 task-oriented meta-tools designed around real MSP
+workflows (not raw API endpoints). Each takes an `operation` parameter
+that selects the action.
+
+The v4.0.0 surface:
+
+- **`slide_overview`** - inventory + health + per-client/per-device summaries
+- **`slide_files`** - file search + restore + push (the headline v4 capability)
+- **`slide_recovery`** - boot VMs, export images, manage DR networks
+- **`slide_audit`** - account audit log queries
+- **`slide_clients`** / **`slide_admin`** - client + user/account management
+- **`slide_devices`** / **`slide_agents`** / **`slide_snapshots`** /
+  **`slide_backups`** / **`slide_alerts`** - lower-level CRUD with v4
+  task-oriented additions (`triage`, `status_for_client`, `recent_for_agent`)
+
+Plus `list_all_clients_devices_and_agents` as a backward-compat shim.
+
+Do not add new top-level tools when you can add a new operation to an
 existing meta-tool. See [registry.go](registry.go) and the
 `tools_*.go` files for the pattern. Conditional `allOf` / `if` /
 `then` / `required` blocks in each tool's schema enforce per-operation
 parameter requirements.
+
+The server also ships **MCP Prompts** (in [`prompts.go`](prompts.go))
+and URI-templated **Resources** (in [`resources.go`](resources.go)) -
+prefer adding a Prompt or Resource over a tool when the workflow is
+template-driven or read-only context that should be cheap to load.
 
 ### 4. SDK migration is done, do not undo it
 
@@ -109,12 +129,14 @@ whether the new use case is actually distinct from these three.
 
 ### 7. Permission tiers are real - respect them
 
-`config.go` defines four `--tools` modes: `reporting` (read-only),
-`restores` (read + restore/VM/network), `full-safe` (default,
-everything except dangerous ops), `full` (unrestricted). Every new
-tool operation must be classified in `isReadOperation` /
-`isRestoreManagementOperation` / `isDangerousOperation`. New
-destructive ops (delete-style) default to `full` only.
+`config.go` defines three `--tools` modes (collapsed from four in
+v4.0.0): `read-only` (only list/get/search/browse), `safe` (default;
+everything except deletes / poweroff / reboot), `full` (unrestricted).
+Legacy aliases `reporting`/`restores`/`full-safe` are silently mapped
+to the new names so existing CLI flags / Claude Desktop user configs
+keep working. Every new tool operation must be classified in
+`isReadOperation` / `isDestructiveOperation`. New destructive ops
+(delete-style, poweroff, reboot) default to `full` only.
 
 ### 8. Tests + smoke
 

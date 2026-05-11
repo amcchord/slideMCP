@@ -2,9 +2,9 @@
   "manifest_version": "0.3",
   "name": "slide-mcp-server",
   "display_name": "Slide Backup",
-  "version": "3.1.0",
-  "description": "Manage Slide backup appliances, agents, snapshots, restores, and DR networks from Claude.",
-  "long_description": "Slide MCP Server connects Claude Desktop directly to your Slide account. Once installed, Claude can list and manage every backup device and agent, browse snapshots, drive file/image/push restores, spin up disaster-recovery VMs, configure DR networks (including device-level VLANs and per-device network settings), tune backup schedules and retention, pause/resume backups and alerts, run service verification on backup snapshots, and pull live documentation from docs.slide.tech.\n\nThis bundle includes signed and notarized binaries for macOS (Apple Silicon + Intel), Linux (amd64 + arm64), and Windows (amd64); the right binary is launched automatically for your machine.\n\nGenerate an API token at console.slide.tech under My Settings -> API Tokens. The token is stored by Claude Desktop and only sent to the slide-mcp-server process; it is never written into any project file.",
+  "version": "4.0.0",
+  "description": "Find files, restore data, boot recovery VMs, and triage Slide backup alerts from Claude.",
+  "long_description": "Slide MCP Server v4.0.0 connects Claude Desktop directly to your Slide account with a task-oriented toolkit designed for MSP technicians and IT admins.\n\nClaude can search files across every snapshot ('find Q4-budget.xlsx on Bob's laptop'), restore individual files or push them back to a protected system, boot recovery VMs from snapshots, query the audit log for compliance, triage open alerts by severity, and answer 'are all my Slide boxes healthy?' with a one-screen summary.\n\nNew in v4.0.0: file search + audit log surfaces (previously missing), task-oriented tool families (slide_overview / slide_files / slide_recovery / slide_audit), 5 templated workflows in the slash-command UI (/slide.daily-status, /slide.triage-alerts, /slide.restore-file, /slide.boot-recovery-vm, /slide.dr-runbook), URI-templated resources for per-client / per-device / per-agent context, and a token-conscious response shape that defaults to summary view (with format=detailed available when you need the full payload).\n\nThis bundle includes signed and notarized binaries for macOS (Apple Silicon + Intel), Linux (amd64 + arm64), and Windows (amd64); the right binary is launched automatically for your machine.\n\nGenerate an API token at console.slide.tech under My Settings -> API Tokens. The token is stored by Claude Desktop and only sent to the slide-mcp-server process; it is never written into any project file.",
   "author": {
     "name": "Slide",
     "email": "hey@slide.tech",
@@ -67,8 +67,8 @@
     "tools_mode": {
       "type": "string",
       "title": "Tool permissions",
-      "description": "reporting (read-only), restores (read + restore/VM/network management), full-safe (everything except dangerous ops, default), full (unrestricted including delete operations).",
-      "default": "full-safe",
+      "description": "read-only (only list/get/search/browse), safe (default; everything except deletes / poweroff / reboot), full (unrestricted). Legacy aliases reporting/restores/full-safe still accepted.",
+      "default": "safe",
       "required": false
     }
   },

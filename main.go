@@ -8,21 +8,23 @@ import (
 	"os"
 )
 
-// Global configuration instance
+// Global configuration instance. Plumbed through tools_*.go via package
+// scope rather than DI because slide-mcp-server is a single-process,
+// single-tenant binary; the indirection cost outweighs the cleanliness
+// benefit and would touch every handler signature.
 var config *ServerConfig
 
 func main() {
 	var (
-		cliAPIKey             = flag.String("api-key", "", "API key for Slide service (overrides SLIDE_API_KEY environment variable)")
-		cliBaseURL            = flag.String("base-url", "", "Base URL for Slide API (overrides SLIDE_BASE_URL environment variable)")
-		cliTools              = flag.String("tools", "", "Tools mode: reporting, restores, full-safe, full (overrides SLIDE_TOOLS environment variable)")
-		cliDisabledTools      = flag.String("disabled-tools", "", "Comma-separated list of tool names to disable (overrides SLIDE_DISABLED_TOOLS environment variable)")
-		cliEnablePresentation = flag.Bool("enable-presentation", false, "Enable the slide_presentation tool (overrides SLIDE_ENABLE_PRESENTATION environment variable)")
-		cliEnableReports      = flag.Bool("enable-reports", false, "Enable the slide_reports tool (overrides SLIDE_ENABLE_REPORTS environment variable)")
-		showVersion           = flag.Bool("version", false, "Show version information and exit")
+		cliAPIKey        = flag.String("api-key", "", "API key for the Slide API (overrides SLIDE_API_KEY environment variable)")
+		cliBaseURL       = flag.String("base-url", "", "Base URL for the Slide API (overrides SLIDE_BASE_URL environment variable)")
+		cliTools         = flag.String("tools", "", "Tools mode: read-only, safe, full (overrides SLIDE_TOOLS environment variable). Legacy aliases reporting/restores/full-safe still work.")
+		cliDisabledTools = flag.String("disabled-tools", "", "Comma-separated list of tool names to disable (overrides SLIDE_DISABLED_TOOLS environment variable)")
+		showVersion      = flag.Bool("version", false, "Show version information and exit")
+
 		// One-shot tool execution flags
-		cliOneShotTool = flag.String("tool", "", "Run a single tool then exit (e.g. --tool slide_reports)")
-		cliToolArgs    = flag.String("args", "", "JSON string with arguments for --tool (e.g. '{\"operation\":\"daily_backup_snapshot\"}')")
+		cliOneShotTool = flag.String("tool", "", "Run a single tool then exit (e.g. --tool slide_overview)")
+		cliToolArgs    = flag.String("args", "", "JSON string with arguments for --tool (e.g. '{\"operation\":\"health\"}')")
 	)
 	flag.Parse()
 
@@ -46,18 +48,6 @@ func main() {
 		disabledToolsStr = envDisabledTools
 	}
 	config.SetDisabledTools(disabledToolsStr)
-
-	if *cliEnablePresentation {
-		config.EnablePresentation = true
-	} else if envEnablePresentation := os.Getenv("SLIDE_ENABLE_PRESENTATION"); envEnablePresentation != "" {
-		config.EnablePresentation = envEnablePresentation == "true" || envEnablePresentation == "1"
-	}
-
-	if *cliEnableReports {
-		config.EnableReports = true
-	} else if envEnableReports := os.Getenv("SLIDE_ENABLE_REPORTS"); envEnableReports != "" {
-		config.EnableReports = envEnableReports == "true" || envEnableReports == "1"
-	}
 
 	if *cliBaseURL != "" {
 		config.BaseURL = *cliBaseURL
@@ -85,12 +75,6 @@ func main() {
 	if len(config.DisabledTools) > 0 {
 		log.Printf("Disabled tools: %v", config.DisabledTools)
 	}
-	if config.EnablePresentation {
-		log.Printf("Presentation tool enabled")
-	}
-	if config.EnableReports {
-		log.Printf("Reports tool enabled")
-	}
 
 	if *cliOneShotTool != "" {
 		argsMap := map[string]interface{}{}
@@ -105,7 +89,7 @@ func main() {
 		return
 	}
 
-	log.Println("Slide MCP Server starting...")
+	log.Printf("Slide MCP Server v%s starting (mode=%s)...", Version, config.ToolsMode)
 
 	if err := runStdioServer(); err != nil {
 		log.Fatalf("Server error: %v", err)

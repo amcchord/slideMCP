@@ -586,36 +586,71 @@ func enrichWithClientName(data interface{}) interface{} {
 	}
 }
 
-// API client helper with 429 retry logic
+// makeAPIRequest is the shared Slide API helper. Handles:
+//   - Retry-After-aware 429 backoff (header preferred, exponential fallback).
+//   - Single retry on transient 5xx (502, 503, 504).
+//   - Structured APIError with status + endpoint + truncated body so the
+//     LLM can reason about the failure instead of getting a wall of HTML.
 func makeAPIRequest(method, endpoint string, body []byte) ([]byte, error) {
-	maxRetries := 3
+	const maxRetries = 3
 
 	for attempt := 0; attempt <= maxRetries; attempt++ {
-		responseBody, statusCode, err := performSingleAPIRequest(method, endpoint, body)
-
-		// If no HTTP error occurred, return the response
+		responseBody, statusCode, retryAfter, err := performSingleAPIRequest(method, endpoint, body)
 		if err == nil {
 			return responseBody, nil
 		}
 
-		// Check if this is a 429 error and we have retries left
-		if statusCode == 429 && attempt < maxRetries {
-			// Calculate wait time: 1s, 2s, 4s for attempts 0, 1, 2
-			waitSeconds := 1 << attempt // 2^attempt: 1, 2, 4
-			time.Sleep(time.Duration(waitSeconds) * time.Second)
+		switch {
+		case statusCode == 429 && attempt < maxRetries:
+			wait := retryAfter
+			if wait <= 0 {
+				wait = time.Duration(1<<attempt) * time.Second
+			}
+			time.Sleep(wait)
+			continue
+		case (statusCode == 502 || statusCode == 503 || statusCode == 504) && attempt < 1:
+			time.Sleep(500 * time.Millisecond)
 			continue
 		}
 
-		// For non-429 errors or when max retries reached, return the error
 		return nil, err
 	}
-
-	// This should never be reached, but added for completeness
 	return nil, fmt.Errorf("unexpected error in retry logic")
 }
 
-// performSingleAPIRequest performs a single API request without retry logic
-func performSingleAPIRequest(method, endpoint string, body []byte) ([]byte, int, error) {
+// APIError is the typed error returned by performSingleAPIRequest.
+// It carries enough structured detail that handlers can decide whether to
+// surface "your token is invalid" vs "Slide is having a bad day" to the LLM.
+type APIError struct {
+	Method     string
+	Endpoint   string
+	StatusCode int
+	Body       string
+}
+
+func (e *APIError) Error() string {
+	hint := ""
+	switch e.StatusCode {
+	case 401, 403:
+		hint = " (check that SLIDE_API_KEY is valid and has access to this resource)"
+	case 404:
+		hint = " (the referenced ID does not exist or has been deleted)"
+	case 429:
+		hint = " (rate limited; the server retried per Retry-After but still failed)"
+	case 500, 502, 503, 504:
+		hint = " (Slide API server-side error; consider retrying)"
+	}
+	body := e.Body
+	if len(body) > 300 {
+		body = body[:300] + "..."
+	}
+	return fmt.Sprintf("Slide API %s %s -> %d%s: %s", e.Method, e.Endpoint, e.StatusCode, hint, body)
+}
+
+// performSingleAPIRequest performs a single API request without retry logic.
+// Returns (body, statusCode, retryAfter, err). retryAfter is parsed from the
+// Retry-After header when present so the caller can honor it precisely.
+func performSingleAPIRequest(method, endpoint string, body []byte) ([]byte, int, time.Duration, error) {
 	url := APIBaseURL + endpoint
 
 	var req *http.Request
@@ -628,28 +663,57 @@ func performSingleAPIRequest(method, endpoint string, body []byte) ([]byte, int,
 	}
 
 	if err != nil {
-		return nil, 0, fmt.Errorf("failed to create request: %w", err)
+		return nil, 0, 0, fmt.Errorf("failed to create request: %w", err)
 	}
 
 	req.Header.Set("Authorization", "Bearer "+apiKey)
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("User-Agent", ServerName+"/"+Version)
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return nil, 0, fmt.Errorf("request failed: %w", err)
+		return nil, 0, 0, fmt.Errorf("request failed: %w", err)
 	}
 	defer resp.Body.Close()
 
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, resp.StatusCode, fmt.Errorf("failed to read response: %w", err)
+		return nil, resp.StatusCode, 0, fmt.Errorf("failed to read response: %w", err)
 	}
+
+	retryAfter := parseRetryAfter(resp.Header.Get("Retry-After"))
 
 	if resp.StatusCode >= 400 {
-		return nil, resp.StatusCode, fmt.Errorf("API error %d: %s", resp.StatusCode, string(responseBody))
+		return nil, resp.StatusCode, retryAfter, &APIError{
+			Method:     method,
+			Endpoint:   endpoint,
+			StatusCode: resp.StatusCode,
+			Body:       string(responseBody),
+		}
 	}
 
-	return responseBody, resp.StatusCode, nil
+	return responseBody, resp.StatusCode, retryAfter, nil
+}
+
+// parseRetryAfter accepts either a delta-seconds integer or an HTTP-date and
+// returns a duration. Returns 0 on parse failure (caller falls back to
+// exponential backoff).
+func parseRetryAfter(h string) time.Duration {
+	if h == "" {
+		return 0
+	}
+	if secs, err := strconv.Atoi(strings.TrimSpace(h)); err == nil && secs >= 0 {
+		return time.Duration(secs) * time.Second
+	}
+	if t, err := http.ParseTime(h); err == nil {
+		d := time.Until(t)
+		if d < 0 {
+			return 0
+		}
+		return d
+	}
+	return 0
 }
 
 // API implementations
