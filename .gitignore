@@ -51,6 +51,7 @@ Installer/setup-signing.sh
 # Build and release artifacts
 Installer/build/
 Installer/releases/
+release/
 *.app
 *.dmg
 *.pkg
