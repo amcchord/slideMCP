@@ -146,6 +146,11 @@ func getNetworksToolInfo() ToolInfo {
 					"type":        "string",
 					"description": "WireGuard network prefix - must not overlap with other networks",
 				},
+				// Slide API v1.27.0: bind a bridge-lan network to a specific VLAN tag on the bridge device.
+				"vlan_tag": map[string]interface{}{
+					"type":        "number",
+					"description": "VLAN tag (802.1Q) on the bridge device this network should be bound to - used with 'create' (bridge-lan only) and 'update'.",
+				},
 				// IPSec connection parameters
 				"ipsec_id": map[string]interface{}{
 					"type":        "string",

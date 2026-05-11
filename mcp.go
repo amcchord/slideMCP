@@ -4,27 +4,19 @@ import (
 	"fmt"
 )
 
-// MCP Protocol structures
-type MCPRequest struct {
-	JSONRPC string      `json:"jsonrpc"`
-	ID      interface{} `json:"id"`
-	Method  string      `json:"method"`
-	Params  interface{} `json:"params,omitempty"`
-}
-
-type MCPResponse struct {
-	JSONRPC string      `json:"jsonrpc"`
-	ID      interface{} `json:"id"`
-	Result  interface{} `json:"result,omitempty"`
-	Error   interface{} `json:"error,omitempty"`
-}
-
+// ToolInfo is the legacy tool descriptor used by the per-tool getXxxToolInfo()
+// helpers. The SDK migration adapts these into mcp.Tool values via
+// toolInfoToSDKTool() in registry.go, so each tool file can keep its existing
+// rich JSON Schema (with allOf / if / then / required) untouched.
 type ToolInfo struct {
 	Name        string      `json:"name"`
 	Description string      `json:"description"`
 	InputSchema interface{} `json:"inputSchema"`
 }
 
+// ToolResult / ToolContent are kept for legacy callers (one-shot --tool mode
+// and any in-process callers) that want a JSON-RPC-shaped result rather than
+// the SDK's *mcp.CallToolResult.
 type ToolResult struct {
 	Content []ToolContent `json:"content"`
 	IsError bool          `json:"isError"`
@@ -35,7 +27,8 @@ type ToolContent struct {
 	Text string `json:"text"`
 }
 
-// Helper function to create consistent tool results and eliminate repetitive error handling
+// createToolResult preserves the historical helper used by tests / one-shot
+// mode. New SDK-backed tool handlers go through adaptToolHandler() instead.
 func createToolResult(data string, err error) ToolResult {
 	if err != nil {
 		return ToolResult{
@@ -46,22 +39,5 @@ func createToolResult(data string, err error) ToolResult {
 	return ToolResult{
 		Content: []ToolContent{{Type: "text", Text: data}},
 		IsError: false,
-	}
-}
-
-// sendError creates a standardized error response (legacy compatibility)
-func sendError(id interface{}, code int, message string, data interface{}) MCPResponse {
-	errorObj := map[string]interface{}{
-		"code":    code,
-		"message": message,
-	}
-	if data != nil {
-		errorObj["data"] = data
-	}
-
-	return MCPResponse{
-		JSONRPC: "2.0",
-		ID:      id,
-		Error:   errorObj,
 	}
 }

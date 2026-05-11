@@ -22,6 +22,8 @@ func handleUserManagementTool(args map[string]interface{}) (string, error) {
 		return listUsers(args)
 	case "get_user":
 		return getUser(args)
+	case "get_user_avatar":
+		return handleGetUserAvatar(args)
 	// Account operations
 	case "list_accounts":
 		return listAccounts(args)
@@ -49,14 +51,14 @@ func handleUserManagementTool(args map[string]interface{}) (string, error) {
 func getUserManagementToolInfo() ToolInfo {
 	return ToolInfo{
 		Name:        "slide_user_management",
-		Description: "Manage users, accounts, and clients. Operations: list_users, get_user, list_accounts, get_account, update_account, list_clients, get_client, create_client, update_client, delete_client. Use for user administration, account settings, and client organization management.",
+		Description: "Manage users, accounts, and clients. Operations: list_users, get_user, get_user_avatar (Slide API v1.27.0 - returns the avatar as a data URL), list_accounts, get_account, update_account, list_clients, get_client, create_client, update_client, delete_client. Use for user administration, account settings, and client organization management.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
 				"operation": map[string]interface{}{
 					"type":        "string",
 					"description": "The operation to perform",
-					"enum":        []string{"list_users", "get_user", "list_accounts", "get_account", "update_account", "list_clients", "get_client", "create_client", "update_client", "delete_client"},
+					"enum":        []string{"list_users", "get_user", "get_user_avatar", "list_accounts", "get_account", "update_account", "list_clients", "get_client", "create_client", "update_client", "delete_client"},
 				},
 				// Common parameters for list operations
 				"limit": map[string]interface{}{
@@ -113,6 +115,16 @@ func getUserManagementToolInfo() ToolInfo {
 					"if": map[string]interface{}{
 						"properties": map[string]interface{}{
 							"operation": map[string]interface{}{"const": "get_user"},
+						},
+					},
+					"then": map[string]interface{}{
+						"required": []string{"user_id"},
+					},
+				},
+				{
+					"if": map[string]interface{}{
+						"properties": map[string]interface{}{
+							"operation": map[string]interface{}{"const": "get_user_avatar"},
 						},
 					},
 					"then": map[string]interface{}{

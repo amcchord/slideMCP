@@ -54,6 +54,9 @@ type Device struct {
 	NFR                               bool     `json:"nfr"`
 	ClientID                          *string  `json:"client_id,omitempty"`
 	BootedAt                          *string  `json:"booted_at,omitempty"`
+	// Added in Slide API v1.27.0
+	DeviceWarrantyExpirationDate *string `json:"device_warranty_expiration_date,omitempty"`
+	NetworkUpdatePending         *bool   `json:"network_update_pending,omitempty"`
 }
 
 type AgentPassphrase struct {
@@ -89,6 +92,77 @@ type Agent struct {
 	Passphrases         []AgentPassphrase      `json:"passphrases"`
 	Sealed              bool                   `json:"sealed"`
 	VSSWriterConfigs    []AgentVSSWriterConfig `json:"vss_writer_configs"`
+
+	// Added in Slide API v1.27.0
+	AlertConfigs           []AlertConfig           `json:"alert_configs,omitempty"`
+	BackupPausedIndefinite *bool                   `json:"backup_paused_indefinite,omitempty"`
+	BackupPausedUntil      *string                 `json:"backup_paused_until,omitempty"`
+	BackupSchedule         *BackupSchedule         `json:"backup_schedule,omitempty"`
+	BackupScheduleActive   *bool                   `json:"backup_schedule_active,omitempty"`
+	Comments               *string                 `json:"comments,omitempty"`
+	DefaultRestoreSettings *DefaultRestoreSettings `json:"default_restore_settings,omitempty"`
+	FileIndexEnabled       *bool                   `json:"file_index_enabled,omitempty"`
+	LocalRetentionPolicy   *LocalRetentionPolicy   `json:"local_retention_policy,omitempty"`
+	Timezone               *string                 `json:"timezone,omitempty"`
+	Volumes                []VolumeSetting         `json:"volumes,omitempty"`
+	VolumesIncludeDefault  *bool                   `json:"volumes_include_default,omitempty"`
+}
+
+// AgentService is a Windows service tracked by service verification on an agent.
+type AgentService struct {
+	ServiceID    string `json:"service_id"`
+	Name         string `json:"name"`
+	DisplayName  string `json:"display_name"`
+	Description  string `json:"description"`
+	Startup      string `json:"startup"`
+	State        string `json:"state"`
+	VerifyOnBoot bool   `json:"verify_on_boot"`
+}
+
+// AgentServiceUpdateItem is a single PATCH entry for /v1/agent/{id}/service.
+type AgentServiceUpdateItem struct {
+	ServiceID    string `json:"service_id"`
+	VerifyOnBoot bool   `json:"verify_on_boot"`
+}
+
+// AlertConfig is per-agent alert pause/resume configuration.
+type AlertConfig struct {
+	AlertType             string  `json:"alert_type"`
+	AlertActive           *bool   `json:"alert_active,omitempty"`
+	PausedUntil           *string `json:"paused_until,omitempty"`
+	AlertPausedIndefinite *bool   `json:"alert_paused_indefinite,omitempty"`
+	AlertResume           *bool   `json:"alert_resume,omitempty"`
+	PauseForMinutes       *int    `json:"pause_for_minutes,omitempty"`
+}
+
+// BackupSchedule controls when backups are allowed to run for an agent.
+type BackupSchedule struct {
+	IntervalInMinutes int   `json:"interval_in_minutes"`
+	StartHour         int   `json:"start_hour"`
+	EndHour           int   `json:"end_hour"`
+	Days              []int `json:"days"`
+}
+
+// DefaultRestoreSettings is the agent-level default for VM restores.
+type DefaultRestoreSettings struct {
+	CPUCount     *int    `json:"cpu_count,omitempty"`
+	MemoryMB     *int    `json:"memory_mb,omitempty"`
+	DiskBus      *string `json:"disk_bus,omitempty"`
+	NetworkModel *string `json:"network_model,omitempty"`
+}
+
+// LocalRetentionPolicy controls how snapshots are retained locally on a Slide.
+type LocalRetentionPolicy struct {
+	RetentionPolicyName         string `json:"retention_policy_name"`
+	RetentionPolicyMaxAgeMonths int    `json:"retention_policy_max_age_months"`
+}
+
+// VolumeSetting controls whether a specific volume on the protected system is
+// included in backups.
+type VolumeSetting struct {
+	VolumeID    string   `json:"volume_id"`
+	Include     bool     `json:"include"`
+	MountPoints []string `json:"mount_points,omitempty"`
 }
 
 type Pagination struct {
@@ -141,6 +215,16 @@ type Snapshot struct {
 	VerifyBootStatus        *string    `json:"verify_boot_status,omitempty"`
 	VerifyFsStatus          *string    `json:"verify_fs_status,omitempty"`
 	VerifyBootScreenshotURL *string    `json:"verify_boot_screenshot_url,omitempty"`
+	// Added in Slide API v1.27.0 - status of service verification (success/failed/etc).
+	VerifyServiceStatus *string `json:"verify_service_status,omitempty"`
+}
+
+// ServiceVerificationResult is one entry returned by
+// GET /v1/snapshot/{id}/service-verification.
+type ServiceVerificationResult struct {
+	ServiceID string `json:"service_id"`
+	Name      string `json:"name"`
+	State     string `json:"state"`
 }
 
 type FileRestore struct {
@@ -288,6 +372,36 @@ type Network struct {
 	WGPrefix         string               `json:"wg_prefix"`
 	WGPublicKey      string               `json:"wg_public_key"`
 	ClientID         *string              `json:"client_id,omitempty"`
+	// Added in Slide API v1.27.0 - VLAN tag this software-defined network is bound to on the bridge device.
+	VlanTag *int `json:"vlan_tag,omitempty"`
+}
+
+// DeviceNetwork is the device-level network configuration returned by
+// GET /v1/device/{id}/network.
+type DeviceNetwork struct {
+	NetworkMode          string  `json:"network_mode"`
+	NetworkAddress       *string `json:"network_address,omitempty"`
+	NetworkGateway       *string `json:"network_gateway,omitempty"`
+	DNSServerPrimary     *string `json:"dns_server_primary,omitempty"`
+	DNSServerSecondary   *string `json:"dns_server_secondary,omitempty"`
+	NetworkUpdatePending *bool   `json:"network_update_pending,omitempty"`
+}
+
+// DeviceVLAN is one virtual interface configured on a Slide device.
+type DeviceVLAN struct {
+	VlanID               string  `json:"vlan_id"`
+	Name                 string  `json:"name"`
+	VlanTag              int     `json:"vlan_tag"`
+	NetworkMode          string  `json:"network_mode"`
+	IPAddress            *string `json:"ip_address,omitempty"`
+	Gateway              *string `json:"gateway,omitempty"`
+	NetworkUpdatePending *bool   `json:"network_update_pending,omitempty"`
+}
+
+// Avatar is the structured payload returned by GET /v1/user/{id}/avatar.
+// `Avatar` is a data URL (e.g. data:image/png;base64,...).
+type Avatar struct {
+	Avatar string `json:"avatar"`
 }
 
 type NetworkIPSecConn struct {
@@ -3164,6 +3278,11 @@ func createNetwork(args map[string]interface{}) (string, error) {
 		}
 		payload["wg_prefix"] = wgPrefix
 	}
+	// Slide API v1.27.0: bridge-lan networks can be bound to a specific VLAN
+	// tag on the bridge device.
+	if vlanTag, ok := args["vlan_tag"]; ok {
+		payload["vlan_tag"] = vlanTag
+	}
 
 	body, err := json.Marshal(payload)
 	if err != nil {
@@ -3311,6 +3430,11 @@ func updateNetwork(args map[string]interface{}) (string, error) {
 			}
 		}
 		payload["wg_prefix"] = wgPrefix
+	}
+	// Slide API v1.27.0: bridge-lan networks can be re-bound to a specific
+	// VLAN tag on the bridge device.
+	if vlanTag, ok := args["vlan_tag"]; ok {
+		payload["vlan_tag"] = vlanTag
 	}
 
 	body, err := json.Marshal(payload)

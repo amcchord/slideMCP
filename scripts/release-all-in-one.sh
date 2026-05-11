@@ -307,6 +307,14 @@ build_all_platforms() {
     
     make clean
     make build-all
+    # v3.1.0+: also produce the macOS universal binary (lipo'd amd64 + arm64).
+    # The .mcpb ships only the universal binary on Mac, so this is required
+    # for pack-dxt-signed below.
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        make build-universal-darwin
+    else
+        log_warning "Skipping macOS universal binary (only producible on macOS)"
+    fi
     
     log_success "All platforms built successfully"
 }
@@ -380,34 +388,50 @@ sign_and_notarize_macos() {
     local developer_id
     developer_id=$(echo "$identities" | sed -n 's/.*"\(Developer ID Application: [^"]*\)".*/\1/p')
     
-    # Sign macOS binaries
-    log_info "Signing darwin-amd64 binary..."
-    if ! DEVELOPER_ID="$developer_id" make sign-macos BINARY="$BUILD_DIR/$BINARY_NAME-darwin-amd64"; then
-        log_error "Failed to sign darwin-amd64 binary"
+    # Sign + notarize the macOS UNIVERSAL binary that ships inside the .mcpb.
+    # The standalone per-arch binaries (kept for power users) are signed too
+    # so the per-arch tarballs are also distributable.
+    log_info "Signing + notarizing macOS universal binary..."
+    if ! DEVELOPER_ID="$developer_id" KEYCHAIN_PROFILE="$KEYCHAIN_PROFILE" \
+            make notarize-darwin-universal; then
+        log_error "Failed to sign+notarize universal binary"
         exit 1
     fi
-    
-    log_info "Signing darwin-arm64 binary..."
-    if ! DEVELOPER_ID="$developer_id" make sign-macos BINARY="$BUILD_DIR/$BINARY_NAME-darwin-arm64"; then
-        log_error "Failed to sign darwin-arm64 binary"
-        exit 1
-    fi
-    
-    # Verify signatures
+
+    log_info "Signing per-arch macOS binaries (kept as standalone downloads)..."
+    DEVELOPER_ID="$developer_id" make sign-macos BINARY="$BUILD_DIR/$BINARY_NAME-darwin-amd64"
+    DEVELOPER_ID="$developer_id" make sign-macos BINARY="$BUILD_DIR/$BINARY_NAME-darwin-arm64"
+
     log_info "Verifying signatures..."
+    codesign --verify --verbose=2 "$BUILD_DIR/$BINARY_NAME-darwin-universal"
     codesign --verify --verbose=2 "$BUILD_DIR/$BINARY_NAME-darwin-amd64"
     codesign --verify --verbose=2 "$BUILD_DIR/$BINARY_NAME-darwin-arm64"
-    
-    # Notarize
-    log_info "Notarizing binaries (this may take several minutes)..."
-    if ! KEYCHAIN_PROFILE="$KEYCHAIN_PROFILE" make notarize-macos; then
-        log_error "Failed to notarize macOS binaries"
-        log_info "Check Apple Developer account and app-specific password"
-        exit 1
-    fi
-    
+
     log_success "macOS binaries signed and notarized successfully"
     log_info "Binaries are ready for distribution"
+}
+
+# Function to assemble the .mcpb (Claude Desktop Extension) bundle - the
+# headline release artifact for v3.1.0+. Must run AFTER signing so the
+# universal binary inside the bundle is notarized.
+build_mcpb() {
+    log_info "Building .mcpb bundle..."
+    if [ "$DRY_RUN" = true ]; then
+        log_dry_run "Would run: make pack-dxt (uses already-signed binaries)"
+        return
+    fi
+
+    cd "$PROJECT_DIR"
+    # We use pack-dxt (not pack-dxt-signed) here because we already signed
+    # and notarized notarize-darwin-universal in sign_and_notarize_macos();
+    # pack-dxt-signed would re-run the whole notarize pipeline and double
+    # our wall-clock time.
+    if ! make stage-dxt && cd "$BUILD_DIR/dxt-stage" && zip -qr "../$BINARY_NAME.mcpb" .; then
+        log_error "Failed to assemble .mcpb"
+        exit 1
+    fi
+    cd "$PROJECT_DIR"
+    log_success "Built $BUILD_DIR/$BINARY_NAME.mcpb (drag-drop install for Claude Desktop)"
 }
 
 # Function to create release packages
@@ -421,22 +445,29 @@ create_release_packages() {
         return
     fi
     
-    # Create tar.gz for Unix-like systems
-    for arch in linux-amd64 linux-arm64 darwin-amd64 darwin-arm64; do
+    # Per-platform tarballs (kept for `claude mcp add` / Cursor / CI users)
+    for arch in linux-amd64 linux-arm64 darwin-amd64 darwin-arm64 darwin-universal; do
         if [ -f "$BINARY_NAME-$arch" ]; then
             tar -czf "$BINARY_NAME-$NEW_VERSION-${arch/darwin-/macos-}.tar.gz" "$BINARY_NAME-$arch"
-            # Also create darwin-named packages for compatibility
+            # Also create darwin-named packages for backward compatibility
             if [[ $arch == darwin-* ]]; then
                 tar -czf "$BINARY_NAME-$NEW_VERSION-$arch.tar.gz" "$BINARY_NAME-$arch"
             fi
         fi
     done
-    
-    # Create zip for Windows
+
+    # Windows zip
     if [ -f "$BINARY_NAME-windows-amd64.exe" ]; then
         zip "$BINARY_NAME-$NEW_VERSION-windows-x64.zip" "$BINARY_NAME-windows-amd64.exe"
     fi
-    
+
+    # Versioned copy of the .mcpb so users can pin to a specific version, in
+    # addition to the unversioned $BINARY_NAME.mcpb that lives at the
+    # `releases/latest/download/slide-mcp-server.mcpb` URL.
+    if [ -f "$BINARY_NAME.mcpb" ]; then
+        cp "$BINARY_NAME.mcpb" "$BINARY_NAME-$NEW_VERSION.mcpb"
+    fi
+
     cd "$PROJECT_DIR"
     log_success "Release packages created"
 }
@@ -453,7 +484,7 @@ generate_checksums() {
     fi
     
     rm -f checksums.sha256
-    find . -name "*.tar.gz" -o -name "*.zip" | sort | while read -r file; do
+    find . \( -name "*.tar.gz" -o -name "*.zip" -o -name "*.mcpb" \) | sort | while read -r file; do
         shasum -a 256 "$file" >> checksums.sha256
     done
     
@@ -504,17 +535,30 @@ EOF
 
 ## Installation
 
-Download the appropriate binary for your platform:
+### Claude Desktop (drag and drop)
 
-- **Linux x64**: slide-mcp-server-$NEW_VERSION-macos-x64.tar.gz
-- **Linux ARM64**: slide-mcp-server-$NEW_VERSION-macos-arm64.tar.gz  
-- **macOS x64**: slide-mcp-server-$NEW_VERSION-macos-x64.tar.gz (or darwin-amd64.tar.gz)
-- **macOS ARM64**: slide-mcp-server-$NEW_VERSION-macos-arm64.tar.gz (or darwin-arm64.tar.gz)
+Download **slide-mcp-server.mcpb** and drop it onto Claude Desktop's
+Extensions screen. Claude Desktop will prompt for your Slide API token
+and start the server automatically. The `.mcpb` contains signed binaries
+for macOS (universal), Linux (amd64 + arm64), and Windows (amd64).
+
+### Claude Code
+
+```bash
+claude mcp add slide --env SLIDE_API_KEY=tk_... -- /path/to/slide-mcp-server
+```
+
+### Standalone binaries (Cursor, CI, custom hosts)
+
+- **macOS** (universal Apple Silicon + Intel): slide-mcp-server-$NEW_VERSION-darwin-universal.tar.gz
+- **Linux x64**: slide-mcp-server-$NEW_VERSION-linux-amd64.tar.gz
+- **Linux ARM64**: slide-mcp-server-$NEW_VERSION-linux-arm64.tar.gz
 - **Windows x64**: slide-mcp-server-$NEW_VERSION-windows-x64.zip
 
-## Verification
+(Per-arch macOS tarballs `darwin-amd64.tar.gz` / `darwin-arm64.tar.gz` are
+also published for backward compatibility.)
 
-Verify the integrity of your download using the checksums.sha256 file:
+## Verification
 
 ```bash
 shasum -a 256 -c checksums.sha256
@@ -522,7 +566,8 @@ shasum -a 256 -c checksums.sha256
 
 ## macOS Security
 
-The macOS binaries are signed and notarized by Apple. They should run without security warnings on macOS 10.15+ systems.
+The macOS binaries (universal + per-arch) are signed and notarized by
+Apple. They run without Gatekeeper warnings on macOS 10.15+.
 EOF
     
     log_success "Release notes created"
@@ -645,20 +690,23 @@ create_github_release() {
         return
     fi
     
-    # Final check: ensure macOS binaries are signed
+    # Final check: ensure macOS binaries are signed (universal is what ships
+    # in the .mcpb; per-arch are still kept for the standalone tarballs).
     if [[ "$OSTYPE" == "darwin"* ]]; then
         log_info "Verifying macOS binaries are properly signed..."
-        if ! codesign --verify "$BUILD_DIR/$BINARY_NAME-darwin-amd64" 2>/dev/null; then
-            log_error "darwin-amd64 binary is not properly signed!"
-            log_info "macOS binaries must be signed for user distribution"
+        for bin in "$BINARY_NAME-darwin-universal" "$BINARY_NAME-darwin-amd64" "$BINARY_NAME-darwin-arm64"; do
+            if ! codesign --verify "$BUILD_DIR/$bin" 2>/dev/null; then
+                log_error "$bin is not properly signed!"
+                log_info "macOS binaries must be signed for user distribution"
+                exit 1
+            fi
+        done
+        # The .mcpb itself must also be present.
+        if [ ! -f "$BUILD_DIR/$BINARY_NAME.mcpb" ]; then
+            log_error ".mcpb bundle is missing - did build_mcpb run?"
             exit 1
         fi
-        if ! codesign --verify "$BUILD_DIR/$BINARY_NAME-darwin-arm64" 2>/dev/null; then
-            log_error "darwin-arm64 binary is not properly signed!"
-            log_info "macOS binaries must be signed for user distribution"
-            exit 1
-        fi
-        log_success "macOS binaries verified as signed"
+        log_success "macOS binaries verified as signed; .mcpb present"
     fi
     
     log_info "Creating GitHub release..."
@@ -677,14 +725,20 @@ create_github_release() {
     
     # Upload assets
     local assets=()
+    # The unversioned .mcpb is the headline asset - the README links it via
+    # https://github.com/$GITHUB_REPO/releases/latest/download/slide-mcp-server.mcpb
+    # so the link never has to change per release.
+    if [ -f "$BUILD_DIR/$BINARY_NAME.mcpb" ]; then
+        assets+=("$BUILD_DIR/$BINARY_NAME.mcpb")
+    fi
     while IFS= read -r file; do
         assets+=("$file")
-    done < <(find "$BUILD_DIR" -name "*$NEW_VERSION*.tar.gz" -o -name "*$NEW_VERSION*.zip")
-    
+    done < <(find "$BUILD_DIR" -name "*$NEW_VERSION*.tar.gz" -o -name "*$NEW_VERSION*.zip" -o -name "*$NEW_VERSION*.mcpb")
+
     if [ -f "$BUILD_DIR/checksums.sha256" ]; then
         assets+=("$BUILD_DIR/checksums.sha256")
     fi
-    
+
     if [ ${#assets[@]} -gt 0 ]; then
         gh release upload "$NEW_VERSION" "${assets[@]}"
     fi
@@ -733,6 +787,7 @@ main() {
     commit_version_changes
     build_all_platforms
     sign_and_notarize_macos
+    build_mcpb
     create_release_packages
     generate_checksums
     create_release_notes

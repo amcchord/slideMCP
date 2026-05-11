@@ -8,7 +8,7 @@ import (
 // Server configuration constants
 const (
 	ServerName = "slide-mcp-server"
-	Version    = "2.6.0"
+	Version    = "3.1.0"
 )
 
 // Tools filtering modes
@@ -171,9 +171,12 @@ func isReadOperation(operation string) bool {
 		// Restores tool read operations
 		"list_files", "get_file", "browse_file", "list_images", "get_image", "browse_image",
 		// User management tool read operations
-		"list_users", "get_user", "list_accounts", "get_account", "list_clients", "get_client",
+		"list_users", "get_user", "get_user_avatar", "list_accounts", "get_account", "list_clients", "get_client",
 		// Reports tool read operations
 		"get_runbook_template",
+		// Slide API v1.27.0 read operations
+		"list_services", "get_network", "list_vlans", "get_vlan",
+		"get_service_verification",
 	}
 	for _, op := range readOps {
 		if op == operation {
@@ -197,10 +200,21 @@ func isRestoreManagementOperation(toolName, operation string) bool {
 			operation == "create_port_forward" || operation == "update_port_forward" || operation == "delete_port_forward" ||
 			operation == "create_wg_peer" || operation == "update_wg_peer" || operation == "delete_wg_peer"
 	case "slide_devices":
-		// Removed device power control (poweroff, reboot) from restores mode
-		return operation == "update"
+		// Removed device power control (poweroff, reboot) from restores mode.
+		// Slide API v1.27.0: device network/VLAN edits are part of restore prep.
+		return operation == "update" ||
+			operation == "update_network" ||
+			operation == "create_vlan" || operation == "update_vlan"
 	case "slide_agents":
-		return operation == "create" || operation == "pair" || operation == "update"
+		// Slide API v1.27.0: schedule + retention + restore-defaults + service
+		// verification + alert config edits are valuable while preparing
+		// restores; passphrase/volumes/timezone changes stay full-safe-only.
+		return operation == "create" || operation == "pair" || operation == "update" ||
+			operation == "update_services" ||
+			operation == "set_schedule" || operation == "clear_schedule" ||
+			operation == "pause_backups" || operation == "resume_backups" ||
+			operation == "set_retention" || operation == "set_restore_defaults" ||
+			operation == "update_alert_config"
 	case "slide_backups":
 		return operation == "start"
 	case "slide_user_management":
@@ -220,6 +234,11 @@ func isDangerousOperation(toolName, operation string) bool {
 	}
 	// Block device power control operations in full-safe mode
 	if toolName == "slide_devices" && (operation == "poweroff" || operation == "reboot") {
+		return true
+	}
+	// Slide API v1.27.0: deleting a VLAN can break VPN/port-forward routes that
+	// reference its IPs; require explicit "full" mode for it.
+	if toolName == "slide_devices" && operation == "delete_vlan" {
 		return true
 	}
 	return false

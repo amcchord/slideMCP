@@ -1,19 +1,134 @@
 # Slide MCP Server
 
-An MCP server implementation that integrates with the Slide API, providing comprehensive device and infrastructure management capabilities through a streamlined meta-tools architecture.
+An MCP server implementation that integrates with the Slide API, providing
+comprehensive device and infrastructure management capabilities through a
+streamlined meta-tools architecture.
+
+## What's new in v3.1.0
+
+- **Drag-and-drop install for Claude Desktop**. One signed, notarized
+  `slide-mcp-server.mcpb` works on every platform - the right binary
+  (macOS universal / Linux amd64 + arm64 / Windows amd64) is selected at
+  runtime via the manifest's `platform_overrides`.
+- **Retired the legacy Fyne GUI installer.** The `.mcpb` bundle plus a
+  one-line `claude mcp add` does everything the GUI did, with less to
+  download and no CGO/OpenGL build hell.
+- **Slide API token is owned by Claude Desktop's `user_config` UI**, not
+  written into `claude_desktop_config.json` by us anymore. Power users
+  / CI / Cursor still get `SLIDE_API_KEY` env + `--api-key` flag.
+- See v3.0.0 for the previous big release (SDK migration + Slide API v1.27.0
+  coverage). Full history in [CHANGELOG.md](CHANGELOG.md).
 
 ## 🚀 Go Binary Implementation ⚡
 - **Single binary**: No dependencies, just download and run
-- **Fast startup**: ~50ms startup time with initial context loading
+- **Fast startup**: ~50ms startup time
 - **Low memory usage**: 10-20MB memory footprint
-- **Cross-platform**: Linux, macOS, Windows binaries
-- **Zero Installation Hassle**: Simple download and configure
-- **Streamlined Interface**: 13 meta-tools instead of 52+ individual tools for better LLM interaction
-- **Enhanced Performance**: Initial context loading eliminates first API call delays
+- **Cross-platform**: Linux, macOS (Apple Silicon + Intel), Windows
+- **Streamlined Interface**: 13 meta-tools instead of 70+ individual tools for better LLM interaction
+- **Initial Context Resource**: Cached `slide://context/clients-devices-agents` resource
+  for fast first-turn answers
 
 ---
 
-For quick setup instructions with Claude Desktop, see the installation section below.
+## ⚡ Install
+
+Pick the path for your host. Each is one step.
+
+### 🟢 Claude Desktop - drag and drop (recommended)
+
+1. Download **[slide-mcp-server.mcpb](https://github.com/austinmcchord/slideMCP/releases/latest/download/slide-mcp-server.mcpb)**.
+2. Drag it onto Claude Desktop's **Settings -> Extensions** screen.
+3. Paste your Slide API token when prompted (generate one at
+   [console.slide.tech](https://console.slide.tech/) under
+   **My Settings -> API Tokens**).
+
+That's it. Claude Desktop owns the token storage, picks the right binary
+for your OS, and starts the server. The bundle is signed and notarized,
+so Gatekeeper won't get in the way on macOS.
+
+### 🟦 Claude Code
+
+```bash
+claude mcp add slide --env SLIDE_API_KEY=tk_... -- /path/to/slide-mcp-server
+```
+
+Or, from a clone of this repo:
+
+```bash
+make build
+SLIDE_API_KEY=tk_... make install-claude-code
+```
+
+The wrapper is idempotent - re-running it overwrites the prior `slide`
+registration cleanly.
+
+### 🟪 Cursor / other MCP hosts
+
+Drop the binary somewhere on `$PATH` and add this to `~/.cursor/mcp.json`
+(or your host's equivalent):
+
+```json
+{
+  "mcpServers": {
+    "slide": {
+      "command": "slide-mcp-server",
+      "env": { "SLIDE_API_KEY": "${SLIDE_API_KEY}" }
+    }
+  }
+}
+```
+
+Claude Code, Cursor, and most other modern hosts support `${VAR}`
+expansion so the literal token never has to live in the config file.
+
+### 🛠️ From source / on a new dev box
+
+```bash
+git clone https://github.com/austinmcchord/slideMCP.git && cd slideMCP
+make setup-dev   # idempotently installs go, jq, gh via Homebrew
+make build       # produces build/slide-mcp-server
+make pack-dxt    # produces build/slide-mcp-server.mcpb (unsigned, dev)
+```
+
+### 🔏 Code signing setup (release builds only)
+
+`make pack-dxt-signed` (and the release scripts) need a valid Apple
+Developer ID Application certificate plus a notarytool keychain profile.
+A first-time setup helper handles the whole dance - generates a CSR,
+opens the Apple Developer portal in your browser, imports the resulting
+certificate, stores notarytool credentials, and writes
+`scripts/release-env.sh` (gitignored) so subsequent builds Just Work:
+
+```bash
+./scripts/setup-signing.sh    # interactive, idempotent, ~5 minutes
+make doctor-signing            # read-only check; run before each release
+```
+
+Once setup is done, on every new shell:
+
+```bash
+source scripts/release-env.sh   # exports DEVELOPER_ID, KEYCHAIN_PROFILE, etc.
+make pack-dxt-signed            # signed + notarized .mcpb in build/
+make verify-dxt                 # confirms Gatekeeper accepts the inner binary
+```
+
+The setup script is **not tracked in git** (covered by the existing
+`**/setup-signing.sh` rule) and never writes plaintext secrets outside
+of the local `scripts/release-env.sh` (also gitignored) and your macOS
+keychain.
+
+**Read [`docs/SIGNING.md`](docs/SIGNING.md) before touching anything in
+the signing pipeline.** It documents 10+ macOS-specific quirks we
+already debugged the hard way (DER vs PEM, PKCS#1 vs PKCS#8, why .p12
+imports fail on modern macOS, why `add-trusted-cert -r trustAsRoot`
+breaks chain validation, why `spctl --type execute` always rejects raw
+Mach-O even when notarized, and more). LLMs working on this repo: also
+see [`AGENTS.md`](AGENTS.md).
+
+---
+
+For more setup detail (CLI flags, environment variables, manual JSON snippets),
+see the installation section further down.
 
 ## 🎯 Major Architecture Improvement
 
@@ -231,134 +346,62 @@ Choose the right presentation format based on your needs:
 4. **Professional Output**: Let the tool handle formatting instead of manual formatting
 5. **Consistent Experience**: Use cards for a consistent look and feel across all data displays
 
-## 📦 Installation & Configuration
+## 📦 Detailed installation reference
+
+The "⚡ Install" section near the top of this README covers the
+recommended paths. This section documents the underlying configuration so
+you can hand-roll setups for unusual hosts or CI.
 
 ### Getting an API Key
 
 1. Log in to your [Slide account](https://console.slide.tech/)
-2. Navigate to your account settings
-3. Generate your API key from the API section
+2. Navigate to **My Settings -> API Tokens**
+3. Generate your API token. Treat it like a password - it grants full
+   access to your Slide account.
 
-## 🎯 Quick Setup with Claude Desktop
+### Pre-built downloads
 
-### 🖥️ GUI Installer (Recommended)
+The headline release asset is the `.mcpb` (Claude Desktop Extension):
 
-For the easiest installation experience, use our cross-platform GUI installer with native desktop integration:
+- **slide-mcp-server.mcpb** (one file, every platform):
+  `https://github.com/austinmcchord/slideMCP/releases/latest/download/slide-mcp-server.mcpb`
 
-#### macOS
-1. **Download the installer**: From the [latest release](https://github.com/amcchord/slideMCP/releases/latest)
-   - **Apple Silicon (M1/M2/M3/M4)**: `slide-mcp-installer-v2.3.2-darwin-arm64-signed.tar.gz`
-   - **Intel Mac**: `slide-mcp-installer-v2.3.2-darwin-amd64-signed.tar.gz`
+Standalone binaries (for `claude mcp add` / Cursor / CI):
 
-2. **Extract and run**: 
-   ```bash
-   tar -xzf slide-mcp-installer-v2.3.2-darwin-[arch]-signed.tar.gz
-   open slide-mcp-installer.app
-   ```
-3. **Enter your API key**: Input your Slide API key when prompted
-4. **Install**: Click "Install Slide MCP Server"
-5. **Restart Claude Desktop**: The installer will configure everything automatically
+- **macOS** (universal Apple Silicon + Intel): `slide-mcp-server-vX.Y.Z-darwin-universal.tar.gz`
+- **Linux x64**: `slide-mcp-server-vX.Y.Z-linux-amd64.tar.gz`
+- **Linux ARM64**: `slide-mcp-server-vX.Y.Z-linux-arm64.tar.gz`
+- **Windows x64**: `slide-mcp-server-vX.Y.Z-windows-x64.zip`
 
-#### Windows
-1. **Download the installer**: From the [latest release](https://github.com/amcchord/slideMCP/releases/latest)
-   - **64-bit**: `slide-mcp-installer-v2.3.2-windows-amd64.zip`
+All macOS artifacts are signed with a Developer ID and notarized.
 
-2. **Extract and run**: 
-   - Extract the ZIP file
-   - Run `slide-mcp-installer.exe`
-3. **Enter your API key**: Input your Slide API key when prompted
-4. **Install**: Click "Install Slide MCP Server"
-5. **Restart Claude Desktop**: The installer will configure everything automatically
+### Build from source
 
-The GUI installer provides:
-- ✅ **Smart Detection**: Automatically detects Claude Desktop installation and existing configurations
-- ✅ **Native Integration**: Proper `.app` bundle on macOS with icon support, no terminal windows
-- ✅ **Automatic Download**: Fetches the latest slide-mcp-server binary for your platform
-- ✅ **Intelligent Installation**: Installs to the correct location with proper permissions
-- ✅ **Configuration Management**: Updates Claude Desktop configuration seamlessly
-- ✅ **API Key Management**: Shows current API key status and allows easy updates
-- ✅ **Progress Tracking**: Visual progress bar and status updates during installation  
-- ✅ **Clean Uninstall**: Complete removal of server and configuration when needed
-- ✅ **Cross-Platform**: Available for Windows, macOS (Intel & Apple Silicon), and Linux
-
-### Manual Installation
-
-#### Download Pre-built Binary (v2.3.2)
-
-For **macOS ARM64** (Apple Silicon):
 ```bash
-curl -L -o slide-mcp-server-v2.3.2-macos-arm64.tar.gz https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.3.2-macos-arm64.tar.gz
-tar -xzf slide-mcp-server-v2.3.2-macos-arm64.tar.gz
-chmod +x slide-mcp-server-v2.3.2-macos-arm64
-mv slide-mcp-server-v2.3.2-macos-arm64 slide-mcp-server
-```
-For **macOS x64**:
-```bash
-curl -L -o slide-mcp-server-v2.3.2-macos-x64.tar.gz https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.3.2-macos-x64.tar.gz
-tar -xzf slide-mcp-server-v2.3.2-macos-x64.tar.gz
-chmod +x slide-mcp-server-v2.3.2-macos-x64
-mv slide-mcp-server-v2.3.2-macos-x64 slide-mcp-server
-```
-For **Linux x64**:
-```bash
-curl -L -o slide-mcp-server-v2.3.2-linux-x64.tar.gz https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.3.2-linux-x64.tar.gz
-tar -xzf slide-mcp-server-v2.3.2-linux-x64.tar.gz
-chmod +x slide-mcp-server-v2.3.2-linux-x64
-mv slide-mcp-server-v2.3.2-linux-x64 slide-mcp-server
-```
-For **Linux ARM64**:
-```bash
-curl -L -o slide-mcp-server-v2.3.2-linux-arm64.tar.gz https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.3.2-linux-arm64.tar.gz
-tar -xzf slide-mcp-server-v2.3.2-linux-arm64.tar.gz
-chmod +x slide-mcp-server-v2.3.2-linux-arm64
-mv slide-mcp-server-v2.3.2-linux-arm64 slide-mcp-server
-```
-For **Windows x64**:
-```cmd
-curl -L -o slide-mcp-server-v2.3.2-windows-x64.zip https://github.com/amcchord/slideMCP/releases/latest/download/slide-mcp-server-v2.3.2-windows-x64.zip
-unzip slide-mcp-server-v2.3.2-windows-x64.zip
-mv slide-mcp-server-v2.3.2-windows-x64.exe slide-mcp-server.exe
+git clone https://github.com/austinmcchord/slideMCP.git
+cd slideMCP
+make build      # build/slide-mcp-server (current platform)
+make pack-dxt   # build/slide-mcp-server.mcpb (universal bundle, unsigned)
 ```
 
-#### Build from Source
-```bash
-git clone https://github.com/austinmcchord/slide-mcp-server.git
-cd slide-mcp-server
-make build
-# Binary will be in build/slide-mcp-server
-```
+### Manual Claude Desktop config
 
-#### Claude Desktop Configuration
-Add this to your `claude_desktop_config.json`:
+If you can't use the `.mcpb` (older Claude Desktop, locked-down corp
+machine, etc.), edit `claude_desktop_config.json` directly:
 
 ```json
 {
   "mcpServers": {
     "slide": {
       "command": "/path/to/slide-mcp-server",
-      "env": {
-        "SLIDE_API_KEY": "YOUR_API_KEY_HERE"
-      }
+      "env": { "SLIDE_API_KEY": "YOUR_API_KEY_HERE" }
     }
   }
 }
 ```
 
-If installed system-wide:
-```json
-{
-  "mcpServers": {
-    "slide": {
-      "command": "slide-mcp-server",
-      "env": {
-        "SLIDE_API_KEY": "YOUR_API_KEY_HERE"
-      }
-    }
-  }
-}
-```
+With non-default tool mode and disabled tools:
 
-With custom permission mode and disabled tools:
 ```json
 {
   "mcpServers": {
@@ -367,14 +410,15 @@ With custom permission mode and disabled tools:
       "env": {
         "SLIDE_API_KEY": "YOUR_API_KEY_HERE",
         "SLIDE_TOOLS": "reporting",
-        "SLIDE_DISABLED_TOOLS": "slide_accounts,slide_users"
+        "SLIDE_DISABLED_TOOLS": "slide_presentation"
       }
     }
   }
 }
 ```
 
-Or using CLI arguments:
+Or pass everything as CLI args:
+
 ```json
 {
   "mcpServers": {
@@ -382,7 +426,7 @@ Or using CLI arguments:
       "command": "/path/to/slide-mcp-server",
       "args": [
         "--api-key", "YOUR_API_KEY_HERE",
-        "--tools", "full-safe", 
+        "--tools", "full-safe",
         "--disabled-tools", "slide_agents,slide_backups"
       ]
     }
@@ -390,15 +434,20 @@ Or using CLI arguments:
 }
 ```
 
-#### Test Your Installation
+### Test Your Installation
+
+Use the official MCP Inspector to drive the server interactively:
+
 ```bash
-# Set your API key
-export SLIDE_API_KEY="your-api-key-here"
+export SLIDE_API_KEY=tk_...
+npx @modelcontextprotocol/inspector ./slide-mcp-server
+```
 
-# Test the server
-echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' | ./slide-mcp-server
+Or run the bundled smoke test (covers initialize, tools/list, resources/list, the
+v1.27.0 validation paths, and a sampling of live tool calls):
 
-# Should respond with server info and capabilities
+```bash
+SLIDE_API_KEY=tk_... ./smoke_test.sh
 ```
 
 ## 🔧 CLI Arguments & Configuration

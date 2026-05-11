@@ -1,4 +1,73 @@
-# Slide MCP Server v2.4.0 Modernization
+# Slide MCP Server Modernization
+
+This document tracks the major modernization milestones. See [CHANGELOG.md](../CHANGELOG.md)
+for the per-release detail.
+
+## v3.0.0 (2026-05-10) - Official SDK + Slide API v1.27.0
+
+### Why
+
+The previous releases used a hand-rolled `bufio.Scanner` JSON-RPC loop in
+[`server.go`](../server.go) that we maintained ourselves. As the MCP spec
+evolved and Claude Code/Desktop hosts started shipping richer features
+(resources, request hooks, tool filters, structured tool results), keeping
+the in-house transport in sync was getting expensive.
+
+### What changed
+
+- Adopted [`github.com/mark3labs/mcp-go v0.52.0`](https://pkg.go.dev/github.com/mark3labs/mcp-go).
+  - `mcp.go` shrunk to a tiny shim that keeps the legacy `ToolInfo` /
+    `ToolResult` types so each `tools_*.go` descriptor file is unchanged.
+  - [`registry.go`](../registry.go) translates each `ToolInfo` into an
+    `mcp.Tool` via `mcp.NewToolWithRawSchema`, which preserves our existing
+    `allOf` / `if` / `then` conditional-required schemas verbatim.
+  - [`server.go`](../server.go) now just builds `server.NewMCPServer` with
+    `WithToolFilter`, `WithRecovery`, `WithToolCapabilities`, and
+    `WithResourceCapabilities`, and registers the cached overview at
+    `slide://context/clients-devices-agents` as a real MCP resource.
+- Initial-context handling moves from a non-spec `initialize.result.initialContext`
+  field to a standard `resources/read` on the new resource URI.
+- The `--tool` / `--args` one-shot CLI mode is preserved by calling the
+  in-process tool handler directly (no MCP transport overhead) so existing
+  scripts keep working.
+- `Version` bumped to `3.0.0`. Latest MCP protocol version is advertised
+  by the SDK (`2025-06-18+`).
+
+### Slide API surface
+
+Slide's API grew from v1.18.2 (the version we previously targeted) to
+v1.27.0 with six new endpoints and ~30 new schemas. v3.0.0 adds Go types
+and tool operations for every one of them - see CHANGELOG for the full list.
+
+The schema docs are now backed by [`docs/openapi.json`](openapi.json)
+refreshed from `https://api.slide.tech/openapi.json` at release time.
+
+### Distribution / installation
+
+- One-line Claude Code install via `make install-claude-code`
+  (wraps `claude mcp add`, idempotent).
+- One-line Claude Desktop install via `make install-claude-desktop`
+  (jq-merges into `claude_desktop_config.json` with a one-time backup).
+- `dxt/manifest.json` (MCPB spec 0.3) + `make pack-dxt` produce a Claude
+  Desktop Extension bundle. The manifest exposes `api_key`, `tools_mode`,
+  and `base_url` as user-configurable fields.
+- `scripts/setup-dev.sh` + `make doctor` bootstrap a fresh Mac (Go, jq, gh
+  via Homebrew) idempotently.
+
+### Tests
+
+- `server_test.go` runs the SDK server in-process via
+  `(*server.MCPServer).HandleMessage` and asserts every expected tool +
+  v1.27.0 operation is registered, that the mode-aware filter hides
+  presentation/reports when not enabled, and that the one-shot CLI
+  surfaces tool-disablement errors.
+- `smoke_test.sh` rewritten to drive the binary via the `--tool` mode plus a
+  real stdio handshake; live API auth failures are reported as SKIP rather
+  than FAIL.
+
+---
+
+## v2.4.0 (legacy)
 
 This document details the modernization improvements made to the Slide MCP Server to align with current MCP best practices and optimize for modern LLM consumption.
 
