@@ -387,20 +387,22 @@ sign_and_notarize_macos() {
     identities=$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -1)
     local developer_id
     developer_id=$(echo "$identities" | sed -n 's/.*"\(Developer ID Application: [^"]*\)".*/\1/p')
-    
-    # Sign + notarize the macOS UNIVERSAL binary that ships inside the .mcpb.
-    # The standalone per-arch binaries (kept for power users) are signed too
-    # so the per-arch tarballs are also distributable.
+
+    # Order matters: sign the per-arch binaries FIRST, then notarize the
+    # universal LAST. That guarantees the universal binary is the newest
+    # artifact on disk, so a subsequent `make stage-dxt` won't re-run lipo
+    # (which would silently strip the notarization ticket from a stale
+    # universal). See build_mcpb() below.
+    log_info "Signing per-arch macOS binaries (kept as standalone downloads)..."
+    DEVELOPER_ID="$developer_id" make sign-macos BINARY="$BUILD_DIR/$BINARY_NAME-darwin-amd64"
+    DEVELOPER_ID="$developer_id" make sign-macos BINARY="$BUILD_DIR/$BINARY_NAME-darwin-arm64"
+
     log_info "Signing + notarizing macOS universal binary..."
     if ! DEVELOPER_ID="$developer_id" KEYCHAIN_PROFILE="$KEYCHAIN_PROFILE" \
             make notarize-darwin-universal; then
         log_error "Failed to sign+notarize universal binary"
         exit 1
     fi
-
-    log_info "Signing per-arch macOS binaries (kept as standalone downloads)..."
-    DEVELOPER_ID="$developer_id" make sign-macos BINARY="$BUILD_DIR/$BINARY_NAME-darwin-amd64"
-    DEVELOPER_ID="$developer_id" make sign-macos BINARY="$BUILD_DIR/$BINARY_NAME-darwin-arm64"
 
     log_info "Verifying signatures..."
     codesign --verify --verbose=2 "$BUILD_DIR/$BINARY_NAME-darwin-universal"
@@ -426,8 +428,19 @@ build_mcpb() {
     # and notarized notarize-darwin-universal in sign_and_notarize_macos();
     # pack-dxt-signed would re-run the whole notarize pipeline and double
     # our wall-clock time.
-    if ! make stage-dxt && cd "$BUILD_DIR/dxt-stage" && zip -qr "../$BINARY_NAME.mcpb" .; then
-        log_error "Failed to assemble .mcpb"
+    #
+    # NB: stage-dxt depends on $(BIN_DARWIN_UNIVERSAL); if the per-arch
+    # binaries are newer than the universal, Make would re-run lipo, which
+    # silently strips notarization. sign_and_notarize_macos() above signs
+    # per-arch FIRST and notarizes the universal LAST so the universal is
+    # the newest file on disk and lipo does not re-run here.
+    if ! make stage-dxt; then
+        log_error "Failed to stage .mcpb"
+        exit 1
+    fi
+    rm -f "$BUILD_DIR/$BINARY_NAME.mcpb"
+    if ! ( cd "$BUILD_DIR/dxt-stage" && zip -qr "../$BINARY_NAME.mcpb" . ); then
+        log_error "Failed to zip .mcpb"
         exit 1
     fi
     cd "$PROJECT_DIR"
@@ -531,7 +544,9 @@ EOF
         echo "- Various improvements and bug fixes" >> "$release_notes_file"
     fi
     
-    cat >> "$release_notes_file" << 'EOF'
+    # Heredoc terminator is intentionally UNQUOTED so $NEW_VERSION expands.
+    # No other shell metacharacters in the body need escaping.
+    cat >> "$release_notes_file" << EOF
 
 ## Installation
 
@@ -539,14 +554,14 @@ EOF
 
 Download **slide-mcp-server.mcpb** and drop it onto Claude Desktop's
 Extensions screen. Claude Desktop will prompt for your Slide API token
-and start the server automatically. The `.mcpb` contains signed binaries
+and start the server automatically. The \`.mcpb\` contains signed binaries
 for macOS (universal), Linux (amd64 + arm64), and Windows (amd64).
 
 ### Claude Code
 
-```bash
+\`\`\`bash
 claude mcp add slide --env SLIDE_API_KEY=tk_... -- /path/to/slide-mcp-server
-```
+\`\`\`
 
 ### Standalone binaries (Cursor, CI, custom hosts)
 
@@ -555,19 +570,21 @@ claude mcp add slide --env SLIDE_API_KEY=tk_... -- /path/to/slide-mcp-server
 - **Linux ARM64**: slide-mcp-server-$NEW_VERSION-linux-arm64.tar.gz
 - **Windows x64**: slide-mcp-server-$NEW_VERSION-windows-x64.zip
 
-(Per-arch macOS tarballs `darwin-amd64.tar.gz` / `darwin-arm64.tar.gz` are
+(Per-arch macOS tarballs \`darwin-amd64.tar.gz\` / \`darwin-arm64.tar.gz\` are
 also published for backward compatibility.)
 
 ## Verification
 
-```bash
+\`\`\`bash
 shasum -a 256 -c checksums.sha256
-```
+\`\`\`
 
 ## macOS Security
 
-The macOS binaries (universal + per-arch) are signed and notarized by
-Apple. They run without Gatekeeper warnings on macOS 10.15+.
+The macOS universal binary is signed with the Slide Developer ID and
+notarized by Apple. Gatekeeper accepts it online without warnings on
+macOS 10.15+. Stapled tickets are not produced for raw Mach-O binaries
+(Apple cannot staple them); online verification works.
 EOF
     
     log_success "Release notes created"
