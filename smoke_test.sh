@@ -122,6 +122,7 @@ run_one_shot "slide_help troubleshoot"      "slide_help"      '{"operation":"tro
 run_one_shot "slide_help list_prompts"      "slide_help"      '{"operation":"list_prompts"}'
 run_one_shot "slide_help list_resources"    "slide_help"      '{"operation":"list_resources"}'
 run_one_shot "slide_help what_can_you_do"   "slide_help"      '{"operation":"what_can_you_do"}'
+run_one_shot "slide_help debug"             "slide_help"      '{"operation":"debug"}'
 
 echo
 echo -e "${BLUE}v5 name_hint resolution (live)${NC}"
@@ -183,6 +184,19 @@ else
     echo -e "  --doctor ${RED}FAIL${NC}"
     FAILED=$((FAILED + 1))
     FAILURES+=("--doctor: did not complete cleanly")
+fi
+
+echo
+echo -e "${BLUE}--debug bundle${NC}"
+TOTAL=$((TOTAL + 1))
+DEBUG_OUT=$("$SERVER_BINARY" --debug 2>/dev/null || true)
+if echo "$DEBUG_OUT" | python3 -c 'import sys, json; o=json.load(sys.stdin); assert o["server"]["name"]=="slide-mcp-server"; assert "api_probes" in o; assert "config" in o; print("ok")' 2>/dev/null | grep -q ok; then
+    echo -e "  --debug ${GREEN}PASS${NC}"
+    PASSED=$((PASSED + 1))
+else
+    echo -e "  --debug ${RED}FAIL${NC} (output not a valid debug bundle)"
+    FAILED=$((FAILED + 1))
+    FAILURES+=("--debug: did not produce a valid bundle")
 fi
 
 echo

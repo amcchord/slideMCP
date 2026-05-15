@@ -160,32 +160,33 @@ func runStartupValidation() {
 	if err == nil {
 		summary := accountSummary()
 		if summary != "" {
-			fmt.Fprintf(os.Stderr, "slide-mcp-server: connected to Slide as %s (%d account(s) visible)\n", summary, total)
+			stderrLogger.Printf("slide-mcp-server: connected to Slide as %s (%d account(s) visible)\n", summary, total)
 		} else {
-			fmt.Fprintf(os.Stderr, "slide-mcp-server: connected to Slide successfully (%d account(s) visible)\n", total)
+			stderrLogger.Printf("slide-mcp-server: connected to Slide successfully (%d account(s) visible)\n", total)
 		}
 		return
 	}
 
 	if hint := authErrorHint(err); hint != "" {
-		fmt.Fprintln(os.Stderr, "")
-		fmt.Fprintln(os.Stderr, "slide-mcp-server: WARNING - Slide API token was rejected at startup.")
-		fmt.Fprintln(os.Stderr, hint)
-		fmt.Fprintln(os.Stderr, "The server is still running so slide_help (and any cached responses) remain callable, but every API-backed tool will return an auth error until the token is fixed.")
-		fmt.Fprintln(os.Stderr, "Underlying error:", err)
+		stderrLogger.Println("")
+		stderrLogger.Println("slide-mcp-server: WARNING - Slide API token was rejected at startup.")
+		stderrLogger.Println(hint)
+		stderrLogger.Println("The server is still running so slide_help (and any cached responses) remain callable, but every API-backed tool will return an auth error until the token is fixed.")
+		stderrLogger.Println("Underlying error:", err)
+		stderrLogger.Println("Run `slide_help operation=debug` from a chat (or `slide-mcp-server --debug` from a shell) for full diagnostics.")
 		return
 	}
 
 	if hint := networkErrorHint(err); hint != "" {
-		fmt.Fprintln(os.Stderr, "")
-		fmt.Fprintln(os.Stderr, "slide-mcp-server: WARNING - could not reach Slide API at startup.")
-		fmt.Fprintln(os.Stderr, hint)
-		fmt.Fprintln(os.Stderr, "The server will start anyway; slide_help operation=troubleshoot remains callable. Restart once connectivity is restored.")
+		stderrLogger.Println("")
+		stderrLogger.Println("slide-mcp-server: WARNING - could not reach Slide API at startup.")
+		stderrLogger.Println(hint)
+		stderrLogger.Println("The server will start anyway; slide_help operation=troubleshoot remains callable. Restart once connectivity is restored.")
 		return
 	}
 
-	fmt.Fprintln(os.Stderr, "slide-mcp-server: WARNING - startup probe of /v1/account failed:", err)
-	fmt.Fprintln(os.Stderr, "The server will start anyway; tool calls will surface the underlying error.")
+	stderrLogger.Println("slide-mcp-server: WARNING - startup probe of /v1/account failed:", err)
+	stderrLogger.Println("The server will start anyway; tool calls will surface the underlying error.")
 }
 
 // doctorCheck is one row in the doctor checklist.

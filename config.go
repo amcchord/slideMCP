@@ -9,7 +9,7 @@ import (
 // and the `--version` flag.
 const (
 	ServerName = "slide-mcp-server"
-	Version    = "5.0.1"
+	Version    = "5.0.2"
 )
 
 // Permission tiers. v4.0.0 collapses the old four-tier system
@@ -168,7 +168,7 @@ func isReadOperation(toolName, op string) bool {
 		"triage",
 		// slide_help operations
 		"getting_started", "examples", "glossary", "troubleshoot",
-		"list_prompts", "list_resources", "what_can_you_do":
+		"list_prompts", "list_resources", "what_can_you_do", "debug":
 		return true
 	}
 	return false

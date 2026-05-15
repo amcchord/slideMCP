@@ -149,17 +149,31 @@ features piggyback on `args` so per-operation handlers don't need to
 know about them. When adding a new operation, add a small `next_steps`
 entry to `hints.go` if there's an obvious follow-up.
 
-### 3d. Startup validation + --doctor
+### 3d. Startup validation + --doctor + --debug
 
-[`doctor.go`](doctor.go) ships two entry points:
+[`doctor.go`](doctor.go) + [`debug.go`](debug.go) ship three entry
+points for self-diagnosis:
 
-- `runStartupValidation()` runs before `runStdioServer()`. Fails the
-  process on 401/403 (clear auth failure); logs+continues on network
-  failures so `slide_help operation=troubleshoot` stays callable.
-  Suppressed with `--skip-startup-validation`.
+- `runStartupValidation()` runs in a goroutine alongside
+  `runStdioServer()` (v5.0.1+; previously synchronous and fatal). All
+  failure paths log to stderr via `stderrLogger` (which mirrors into
+  the in-memory capture buffer) and let the server keep running.
+  Never calls `os.Exit`. Suppressed with `--skip-startup-validation`.
 - `runDoctor()` is `slide-mcp-server --doctor`. Idempotent, prints a
   checklist, exits non-zero on failure. Wire any new must-pass checks
   in here.
+- `runDebug()` is `slide-mcp-server --debug`. Same payload as
+  `slide_help operation=debug`. Idempotent, structured JSON to stdout,
+  always exits 0. Safe to paste anywhere - the api_key is masked and no
+  other secrets appear. Wire any new live probes via `endpointProbe`
+  / `gatherDebugInfo` in [`debug.go`](debug.go) rather than spreading
+  diagnostics across multiple files.
+
+The capture buffer is a 200-line ring of stderr output (populated by
+`log.SetOutput(stderrTee{})` plus the `stderrLogger.Print*` helpers).
+When you add new stderr messages, prefer `stderrLogger.Println` over
+`fmt.Fprintln(os.Stderr, ...)` so debug dumps include the same
+context Claude Desktop shows in its extension log panel.
 
 ### 4. SDK migration is done, do not undo it
 

@@ -1,5 +1,80 @@
 # Slide MCP Changes
 
+## 2026-05-15 - v5.0.2 - Add debug surface for diagnosing tool-call failures
+
+### Headline
+
+When a tool call fails in Claude Desktop, the LLM often only sees a
+generic `<error>Tool execution failed</error>` with no useful detail.
+v5.0.2 ships a comprehensive debug command accessible TWO ways:
+
+- **From a chat**: `slide_help operation=debug` returns a structured
+  JSON payload the LLM can paraphrase to the user. The LLM is now
+  instructed (in the slide_help tool description) to call this
+  immediately whenever a tool returns `isError=true` or the LLM
+  observes a generic execution failure.
+- **From a shell**: `slide-mcp-server --debug` prints the same payload
+  as pretty JSON and exits 0. Works even without an API token set.
+
+Both surfaces emit:
+
+- Server info: version, Go version, OS/arch, hostname, pid, executable path.
+- Runtime: uptime, goroutine count, heap/sys memory, CPU count.
+- Config: tools_mode, base_url, disabled_tools, api_key shape
+  (`tk_xxxx...XX (len=48)` - safe to paste; never the full token).
+- Environment: which SLIDE_* env vars are set (api_key masked too).
+- DNS: live resolution of `api.slide.tech` with latency.
+- TLS: live HEAD against base_url with certificate subject / issuer /
+  expiry and connect latency.
+- Live API probes: GET /v1/account, /v1/client, /v1/device, /v1/agent
+  with HTTP status, latency, and a 300-char body excerpt. This is the
+  killer feature - the user can see EXACTLY what the Slide API is
+  returning right now, not a guess.
+- name_resolver cache: per-kind count and age, so resolution misses
+  can be diagnosed.
+- recent_logs: last 200 stderr lines captured in a ring buffer
+  (startup messages, auth warnings, anything log.Printf'd).
+- generated_at timestamp.
+
+### Implementation notes
+
+- New [`debug.go`](debug.go) holds the capture buffer, the stderr tee
+  writer, and `gatherDebugInfo()`. log.SetOutput is wired through the
+  tee from `init()`, so every `log.Printf` call ends up in the buffer
+  in addition to stderr.
+- [`doctor.go`](doctor.go)'s startup validation now writes through
+  `stderrLogger` (also tee'd into the capture buffer) instead of raw
+  `fmt.Fprintln(os.Stderr, ...)` so the recent-logs section of a debug
+  dump includes both the "connected to Slide as ..." success message
+  and the multi-line auth-failure remediation.
+- The api_key field is masked everywhere: only `<first4>...<last2> (len=<n>)`
+  is emitted. No other secrets appear in the payload. Safe to paste
+  into any support thread or GitHub issue.
+- `--debug` is allowed without an API key configured (so users can
+  diagnose "why isn't my key being picked up?"). The startup-validation
+  check that previously blocked missing-key invocations now only
+  applies when neither `--doctor` nor `--debug` is passed.
+- Permission tier respected: `slide_help operation=debug` works in
+  every tier including `read-only`. Cannot be disabled via
+  `--disabled-tools` (same special-case as the rest of slide_help).
+
+### How to use it
+
+If a tool call fails in Claude Desktop, ask Claude:
+
+> "Run slide_help debug and show me the output."
+
+Claude will call `slide_help operation=debug`, get back the full
+structured payload, and either paste it verbatim or summarise the
+broken pieces. Copy the payload into a GitHub issue or support
+thread - it's already masked.
+
+For CI / scripted health checks:
+
+```
+slide-mcp-server --debug | jq '.api_probes.account.status'
+```
+
 ## 2026-05-14 - v5.0.1 - Hotfix: don't kill stdio server on startup token probe
 
 ### Symptom

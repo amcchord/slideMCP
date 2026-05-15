@@ -229,11 +229,13 @@ without a tool call).
 
 ### 💡 Help & onboarding
 
-0. **`slide_help`** — discovery / onboarding / troubleshooting
+0. **`slide_help`** — discovery / onboarding / troubleshooting / debug
    - Operations: `getting_started`, `examples`, `glossary`, `troubleshoot`,
-     `list_prompts`, `list_resources`, `what_can_you_do`
+     `list_prompts`, `list_resources`, `what_can_you_do`, `debug`
    - Always available, never blocked by tools mode, never disable-able.
    - First thing the LLM should call when the user is vague.
+   - `debug` returns a full diagnostic dump (config, DNS, TLS, live
+     API probes, recent logs) — call it whenever a tool fails.
 
 ### 🧭 Overview & inventory
 
@@ -525,6 +527,7 @@ The Slide MCP Server supports several command-line arguments for flexible config
 | `--tools` | Permission mode (`read-only` / `safe` / `full`; legacy aliases `reporting`/`restores`/`full-safe` still work) | `SLIDE_TOOLS` | `safe` |
 | `--disabled-tools` | Comma-separated list of tools to disable (`slide_help` cannot be disabled) | `SLIDE_DISABLED_TOOLS` | None |
 | `--doctor` | Run self-diagnostic checks (token, network, sample reads) and exit | - | - |
+| `--debug` | Dump a full diagnostic bundle (version, runtime, config, env, DNS, TLS, live API probes, recent logs) as JSON and exit. Safe to paste into a support thread; API token is masked. Works without an API key configured. | - | - |
 | `--skip-startup-validation` | Skip the startup probe of `/v1/account` (useful when launching offline) | - | - |
 | `--tool` | Run a single tool then exit (one-shot mode) | - | - |
 | `--args` | JSON arguments for `--tool` | - | - |

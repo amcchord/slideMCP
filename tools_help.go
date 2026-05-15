@@ -46,12 +46,13 @@ func handleHelpTool(args map[string]interface{}) (string, error) {
 		"list_prompts":     handleHelpListPrompts,
 		"list_resources":   handleHelpListResources,
 		"what_can_you_do":  handleHelpWhatCanYouDo,
+		"debug":            handleHelpDebug,
 	}), args)
 }
 
 var helpOperationEnums = []string{
 	"getting_started", "examples", "glossary", "troubleshoot",
-	"list_prompts", "list_resources", "what_can_you_do",
+	"list_prompts", "list_resources", "what_can_you_do", "debug",
 }
 
 func getHelpToolInfo() ToolInfo {
@@ -67,13 +68,18 @@ func getHelpToolInfo() ToolInfo {
 		Description: "Slide MCP - discovery, onboarding, and troubleshooting. " +
 			"REACH FOR THIS whenever the user is vague ('can you help me with backups?', 'what can you do?', " +
 			"'I don't know where to start', 'how do I restore something?'), whenever you need to remind yourself " +
-			"of the canonical first tool call for a question, or whenever the user reports a setup / authentication " +
-			"problem with slide-mcp-server. Read-only and always available, even in read-only permission mode. " +
+			"of the canonical first tool call for a question, whenever the user reports a setup / authentication " +
+			"problem with slide-mcp-server, or whenever ANY tool call fails and you need to understand why. " +
+			"Read-only and always available, even in read-only permission mode. " +
 			"Operations: `getting_started` (one-page primer + active permission tier), `examples` (copy-paste " +
 			"example user questions paired with first tool calls), `glossary` (Slide-specific terminology), " +
 			"`troubleshoot` (token / network / permission diagnostics), `list_prompts` and `list_resources` " +
 			"(what slash-commands and slide:// URIs the server exposes), `what_can_you_do` (terse capability " +
-			"summary tagged by permission tier).",
+			"summary tagged by permission tier), `debug` (FULL diagnostic dump: version, runtime, config, env, " +
+			"DNS, TLS, live probes against /v1/account /v1/client /v1/device /v1/agent with HTTP status + body " +
+			"excerpts, name_resolver cache state, recent stderr logs - paste-safe; api_key is masked). " +
+			"If any tool call returns isError=true or you see a generic 'Tool execution failed', " +
+			"immediately call slide_help operation=debug so the user can see what's actually wrong.",
 		InputSchema: map[string]interface{}{
 			"type":       "object",
 			"properties": props,
@@ -161,6 +167,19 @@ func handleHelpListResources(_ map[string]interface{}) (string, error) {
 		return "", err
 	}
 	return string(b), nil
+}
+
+// handleHelpDebug returns the full diagnostic bundle (same payload as the
+// --debug CLI subcommand) as pretty-printed JSON. Read-only; safe to call
+// from any permission tier. The api_key field is masked; no secrets are
+// emitted, so the LLM can echo the entire response back to the user.
+func handleHelpDebug(_ map[string]interface{}) (string, error) {
+	info := gatherDebugInfo()
+	out, err := json.MarshalIndent(info, "", "  ")
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal debug info: %w", err)
+	}
+	return string(out), nil
 }
 
 func handleHelpWhatCanYouDo(_ map[string]interface{}) (string, error) {

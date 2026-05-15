@@ -22,6 +22,7 @@ func main() {
 		cliDisabledTools = flag.String("disabled-tools", "", "Comma-separated list of tool names to disable (overrides SLIDE_DISABLED_TOOLS environment variable)")
 		showVersion      = flag.Bool("version", false, "Show version information and exit")
 		runDoctorFlag    = flag.Bool("doctor", false, "Run self-diagnostic checks (token, network, sample reads) and exit. Idempotent and CI-friendly.")
+		runDebugFlag     = flag.Bool("debug", false, "Dump a full diagnostic bundle (version, runtime, config, env, DNS, TLS, live API probes, recent logs) as JSON and exit. Safe to paste into a support thread; API token is masked.")
 		skipValidation   = flag.Bool("skip-startup-validation", false, "Skip the startup probe of /v1/account. Useful when launching offline.")
 
 		// One-shot tool execution flags
@@ -67,7 +68,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if config.APIKey == "" && !*runDoctorFlag {
+	if config.APIKey == "" && !*runDoctorFlag && !*runDebugFlag {
 		log.Fatalf(`Error: Slide API token not provided.
 
 Use one of:
@@ -75,7 +76,9 @@ Use one of:
   - Set the SLIDE_API_KEY environment variable
   - Configure the token in Claude Desktop's Slide Backup extension settings
 
-Generate a token at https://console.slide.tech under My Settings -> API Tokens.`)
+Generate a token at https://console.slide.tech under My Settings -> API Tokens.
+
+To diagnose without a token: slide-mcp-server --debug`)
 	}
 
 	APIBaseURL = config.BaseURL
@@ -87,6 +90,11 @@ Generate a token at https://console.slide.tech under My Settings -> API Tokens.`
 
 	if *runDoctorFlag {
 		runDoctor()
+		return
+	}
+
+	if *runDebugFlag {
+		runDebug()
 		return
 	}
 
