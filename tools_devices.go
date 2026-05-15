@@ -2,7 +2,8 @@ package main
 
 // handleDevicesTool handles all device-related operations through a single meta-tool
 func handleDevicesTool(args map[string]interface{}) (string, error) {
-	return HandleToolWithOperations(CreateToolConfig("slide_devices", ToolOperations{
+	deviceResolution := ResolutionSpec{IDKey: "device_id", Kind: "device"}
+	return HandleToolWithOperations(CreateToolConfigWithResolutions("slide_devices", ToolOperations{
 		"list":     listDevices,
 		"get":      getDevice,
 		"update":   updateDevice,
@@ -17,6 +18,18 @@ func handleDevicesTool(args map[string]interface{}) (string, error) {
 		"create_vlan":    handleDeviceCreateVLAN,
 		"update_vlan":    handleDeviceUpdateVLAN,
 		"delete_vlan":    handleDeviceDeleteVLAN,
+	}, map[string]ResolutionSpec{
+		"get":            deviceResolution,
+		"update":         deviceResolution,
+		"poweroff":       deviceResolution,
+		"reboot":         deviceResolution,
+		"get_network":    deviceResolution,
+		"update_network": deviceResolution,
+		"list_vlans":     deviceResolution,
+		"get_vlan":       deviceResolution,
+		"create_vlan":    deviceResolution,
+		"update_vlan":    deviceResolution,
+		"delete_vlan":    deviceResolution,
 	}), args)
 }
 
@@ -30,9 +43,14 @@ var deviceOperationEnums = []string{
 func getDevicesToolInfo() ToolInfo {
 	return ToolInfo{
 		Name: "slide_devices",
-		Description: "Manage physical Slide backup appliances. Operations: list, get, update, poweroff, reboot, " +
+		Description: "Slide MCP - manage physical Slide backup appliances (the Slide boxes). " +
+			"REACH FOR THIS whenever the user mentions a Slide device, Slide box, Slide appliance, " +
+			"'reboot the Slide', 'power off the Slide', 'change Slide network settings', VLAN on a Slide, " +
+			"'is my Slide device online', or device-level network / hardware administration. " +
+			"Operations: list, get, update, poweroff, reboot, " +
 			"plus v1.27.0 additions: get_network / update_network (device-level network config) and " +
 			"list_vlans / get_vlan / create_vlan / update_vlan / delete_vlan (per-device virtual interfaces). " +
+			"Single-device operations accept device_id OR name_hint. " +
 			"Get/list responses now include device_warranty_expiration_date and network_update_pending.",
 		InputSchema: map[string]interface{}{
 			"type": "object",
@@ -67,7 +85,11 @@ func getDevicesToolInfo() ToolInfo {
 				// device parameters
 				"device_id": map[string]interface{}{
 					"type":        "string",
-					"description": "ID of the device - required for device operations and VM creation",
+					"description": "ID of the device - required for device operations and VM creation (alternative: pass `name_hint`)",
+				},
+				"name_hint": map[string]interface{}{
+					"type":        "string",
+					"description": "Alternative to device_id on any single-device operation: a device hostname or display name (case-insensitive substring match).",
 				},
 				"display_name": map[string]interface{}{
 					"type":        "string",
@@ -124,19 +146,39 @@ func getDevicesToolInfo() ToolInfo {
 			},
 			"required": []string{"operation"},
 			"allOf": []map[string]interface{}{
-				{"if": ifOp("get"), "then": req("device_id")},
-				{"if": ifOp("update"), "then": req("device_id")},
-				{"if": ifOp("poweroff"), "then": req("device_id")},
-				{"if": ifOp("reboot"), "then": req("device_id")},
+				{"if": ifOp("get"), "then": reqEither("device_id", "name_hint")},
+				{"if": ifOp("update"), "then": reqEither("device_id", "name_hint")},
+				{"if": ifOp("poweroff"), "then": reqEither("device_id", "name_hint")},
+				{"if": ifOp("reboot"), "then": reqEither("device_id", "name_hint")},
 
 				// v1.27.0
-				{"if": ifOp("get_network"), "then": req("device_id")},
-				{"if": ifOp("update_network"), "then": req("device_id")},
-				{"if": ifOp("list_vlans"), "then": req("device_id")},
-				{"if": ifOp("get_vlan"), "then": req("device_id", "vlan_id")},
-				{"if": ifOp("create_vlan"), "then": req("device_id", "name", "vlan_tag", "network_mode")},
-				{"if": ifOp("update_vlan"), "then": req("device_id", "vlan_id")},
-				{"if": ifOp("delete_vlan"), "then": req("device_id", "vlan_id")},
+				{"if": ifOp("get_network"), "then": reqEither("device_id", "name_hint")},
+				{"if": ifOp("update_network"), "then": reqEither("device_id", "name_hint")},
+				{"if": ifOp("list_vlans"), "then": reqEither("device_id", "name_hint")},
+				{"if": ifOp("get_vlan"), "then": map[string]interface{}{
+					"allOf": []map[string]interface{}{
+						reqEither("device_id", "name_hint"),
+						req("vlan_id"),
+					},
+				}},
+				{"if": ifOp("create_vlan"), "then": map[string]interface{}{
+					"allOf": []map[string]interface{}{
+						reqEither("device_id", "name_hint"),
+						req("name", "vlan_tag", "network_mode"),
+					},
+				}},
+				{"if": ifOp("update_vlan"), "then": map[string]interface{}{
+					"allOf": []map[string]interface{}{
+						reqEither("device_id", "name_hint"),
+						req("vlan_id"),
+					},
+				}},
+				{"if": ifOp("delete_vlan"), "then": map[string]interface{}{
+					"allOf": []map[string]interface{}{
+						reqEither("device_id", "name_hint"),
+						req("vlan_id"),
+					},
+				}},
 			},
 		},
 	}

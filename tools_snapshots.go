@@ -9,12 +9,14 @@ import (
 )
 
 func handleSnapshotsTool(args map[string]interface{}) (string, error) {
-	return HandleToolWithOperations(CreateToolConfig("slide_snapshots", ToolOperations{
+	return HandleToolWithOperations(CreateToolConfigWithResolutions("slide_snapshots", ToolOperations{
 		"list":                     listSnapshots,
 		"list_deleted":             listDeletedSnapshots,
 		"get":                      getSnapshot,
 		"get_service_verification": handleSnapshotGetServiceVerification,
 		"recent_for_agent":         handleSnapshotsRecentForAgent,
+	}, map[string]ResolutionSpec{
+		"recent_for_agent": {IDKey: "agent_id", Kind: "agent"},
 	}), args)
 }
 
@@ -36,7 +38,11 @@ func getSnapshotsToolInfo() ToolInfo {
 		},
 		"agent_id": map[string]interface{}{
 			"type":        "string",
-			"description": "Filter by agent. Required for `recent_for_agent`.",
+			"description": "Filter by agent. Required for `recent_for_agent` (alternative: pass `name_hint`).",
+		},
+		"name_hint": map[string]interface{}{
+			"type":        "string",
+			"description": "Alternative to agent_id for `recent_for_agent`: an agent hostname or display name.",
 		},
 		"snapshot_id": map[string]interface{}{
 			"type":        "string",
@@ -67,9 +73,12 @@ func getSnapshotsToolInfo() ToolInfo {
 
 	return ToolInfo{
 		Name: "slide_snapshots",
-		Description: "Backup snapshots (point-in-time recovery points). " +
+		Description: "Slide MCP - inspect backup snapshots (point-in-time recovery points). " +
+			"REACH FOR THIS whenever the user mentions a snapshot, restore point, recovery point, RPO, " +
+			"'what backups do I have for X', 'last successful backup', 'show me snapshots from yesterday', " +
+			"'when was the last verified boot', or wants to inspect (not restore) historical recovery points. " +
 			"Operations: `list`, `list_deleted`, `get`, `get_service_verification` (Slide API v1.27.0 per-service results), " +
-			"`recent_for_agent` (last N days for a single agent, default 14 - the answer to \"what restore points do I have for X?\"). " +
+			"`recent_for_agent` (last N days for a single agent, default 14 - the answer to \"what restore points do I have for X?\"; accepts agent_id OR name_hint). " +
 			"Get/list responses include verify_service_status.",
 		InputSchema: map[string]interface{}{
 			"type":       "object",
@@ -78,7 +87,7 @@ func getSnapshotsToolInfo() ToolInfo {
 			"allOf": []map[string]interface{}{
 				{"if": ifOp("get"), "then": req("snapshot_id")},
 				{"if": ifOp("get_service_verification"), "then": req("snapshot_id")},
-				{"if": ifOp("recent_for_agent"), "then": req("agent_id")},
+				{"if": ifOp("recent_for_agent"), "then": reqEither("agent_id", "name_hint")},
 			},
 		},
 	}

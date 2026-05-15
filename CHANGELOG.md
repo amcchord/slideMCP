@@ -1,5 +1,175 @@
 # Slide MCP Changes
 
+## 2026-05-14 - v5.0.0 - Novice-first pass: discoverability + fuzzy names + doctor
+
+### Headline
+
+v5.0.0 makes slide-mcp-server reach for itself. The LLM now picks this
+extension automatically whenever the user mentions Slide, BCDR,
+backups, snapshots, restores, recovery VMs, file recovery, disaster
+recovery, alerts, or any MSP workflow - no "use the Slide MCP"
+prompting required. Operators never have to memorise `a_xxxxxxxxxxxx`
+IDs: every tool that wants an `agent_id` / `device_id` / `client_id`
+also accepts `name_hint` and the server fuzzy-resolves it. First-run
+errors carry novice-friendly remediation steps; `slide-mcp-server
+--doctor` self-diagnoses token / network / endpoint problems.
+
+### Headline new surfaces
+
+- **`slide_help`** - new top-level tool with operations
+  `getting_started`, `examples`, `glossary`, `troubleshoot`,
+  `list_prompts`, `list_resources`, `what_can_you_do`. Read-only and
+  always available, even in `read-only` mode; cannot be disabled via
+  `--disabled-tools`. Content lives in [`docs/help/*.md`](docs/help/)
+  and is embedded via `//go:embed` (no network).
+- **`/slide.welcome`** - new slash-command prompt that seeds Claude
+  with a one-message intro listing the trigger vocabulary, active
+  permission tier, and 5 example questions to try.
+- **`slide://welcome`**, **`slide://help/glossary`**,
+  **`slide://help/troubleshoot`** resources serve the same markdown
+  primer / glossary / troubleshooting FAQ at conversation start, no
+  API calls required.
+
+### Discoverability ("when should the LLM reach for me?")
+
+- **Rewritten `serverInstructions()`** ([server.go](server.go)). The
+  first sentence is now the literal "use slide-mcp-server whenever the
+  user mentions ..." trigger-vocabulary list (Slide / BCDR /
+  business continuity / disaster recovery / backup / snapshot / restore
+  / recovery VM / image export / DR network / Slide alert / unresolved
+  alert / audit log / MSP client / Slide agent / protected system /
+  ...). Also adds an inline glossary, an active-permission-tier note,
+  6 worked example user prompts mapped to their canonical first tool
+  call, and an explicit "call slide_help getting_started if you don't
+  know where to start" fallback.
+- **Every tool's `Description` now leads with a
+  "REACH FOR THIS whenever the user mentions ..." sentence** so the
+  trigger vocabulary appears in tool-relevance scoring too. Reworded
+  consistently across `slide_overview`, `slide_files`,
+  `slide_recovery`, `slide_audit`, `slide_clients`, `slide_admin`,
+  `slide_agents`, `slide_devices`, `slide_snapshots`, `slide_backups`,
+  `slide_alerts`, and `list_all_clients_devices_and_agents`.
+- **`TestTriggerVocabularyCoverage`** in
+  [`server_test.go`](server_test.go) is a regression check that asserts
+  every canonical phrase still appears in at least one description or
+  the server instructions. Catches accidental deletions during future
+  refactors.
+
+### Server-side fuzzy name resolution (`name_hint`)
+
+- **New [`name_resolver.go`](name_resolver.go)**. Resolves a free-form
+  `name_hint` (hostname, display name, client name, or any substring,
+  case-insensitive) to the canonical `agent_id` / `device_id` /
+  `client_id` server-side. 15-minute cache, automatic refresh on a
+  miss. Match precedence: exact > prefix > substring, stop at first
+  non-empty tier (deterministic; no Levenshtein for predictability).
+- **0 matches** -> structured `{"name_hint_error":"no_match",...}`
+  response with a suggestion to call `slide_overview inventory`.
+- **1 match** -> the resolved ID is written into args, the operation
+  proceeds normally, and the response carries a top-level `_resolved`
+  block describing what got picked so the LLM can confirm to the user.
+- **2+ matches** -> structured
+  `{"name_hint_error":"ambiguous","candidates":[...]}` response with
+  up to 10 candidates so the LLM can ask the user to pick one.
+- **Wired into** `slide_overview` (for_client / for_device),
+  `slide_files` (search / versions), `slide_backups` (start /
+  status_for_client / status_for_device / recent_for_agent),
+  `slide_snapshots` (recent_for_agent), `slide_clients`
+  (get/update/delete), `slide_devices` (every single-device op), and
+  `slide_agents` (every single-agent op plus create/pair which
+  resolve a device).
+- Schema updates: every affected tool's properties include a
+  `name_hint` field; conditional `allOf` blocks use a new `reqEither`
+  helper so either `*_id` OR `name_hint` satisfies the requirement.
+- Dispatcher-level: [`base_handler.go`](base_handler.go) consumes
+  per-operation `ResolutionSpec` entries from each tool's
+  `CreateToolConfigWithResolutions` call. Individual operation
+  handlers continue to `requireString(args, "agent_id")` unchanged -
+  the resolver populates args before dispatch.
+
+### Response affordances
+
+- **`next_steps`** array appended to every response with 1-3
+  curated follow-up suggestions, e.g. after `slide_files search` the
+  caller gets a hint to call `slide_files versions agent_id=... path=...`
+  next. Suppressed with the new cross-cutting `hints=off` argument.
+- **`_resolved`** block (see name_hint above) carries
+  `{"id","name","kind","detail"}` so the LLM can show the user which
+  entity it auto-resolved when name_hint was used.
+- Both fields are spliced into the JSON envelope by
+  [`format.go`](format.go) via [`hints.go`](hints.go); per-handler
+  code does not change.
+
+### Startup validation + `--doctor`
+
+- **Token validation on startup** ([`doctor.go`](doctor.go)). Before
+  the stdio server comes up, a single `GET /v1/account?limit=1` probe
+  confirms the token is accepted. On 401/403 the server exits with a
+  multi-line, novice-friendly remediation message pointing at
+  console.slide.tech. On network errors it logs a warning and stays
+  alive so `slide_help operation=troubleshoot` remains callable. Skip
+  with `--skip-startup-validation`.
+- **`slide-mcp-server --doctor`** - new self-check subcommand that
+  probes token + connectivity + a sample read against each major
+  endpoint family (`/v1/account`, `/v1/client`, `/v1/device`,
+  `/v1/agent`), prints an `OK / FAIL` checklist, and exits non-zero on
+  any failure. Idempotent; safe to wire into CI.
+
+### Error message polish
+
+- **`APIError.Error()`** ([`api.go`](api.go)) now carries novice-
+  friendly per-status hints:
+  - 401: "your Slide API token was rejected. Generate a fresh one at
+    https://console.slide.tech under My Settings -> API Tokens ..."
+  - 403: "your token doesn't have access to this resource, or your
+    user role lacks the required permission ..."
+  - 404: detects `a_` / `d_` / `c_` / `s_` / `v_` prefixes in the
+    endpoint and explains what kind of ID was 404'd.
+  - 429 / 5xx: pointer at status.slide.tech for incident lookup.
+- **Unknown operation errors** ([`base_handler.go`](base_handler.go))
+  now include a Levenshtein-based did-you-mean (`unknown operation
+  "searh" ... did you mean "search"?`) plus the full list of valid
+  operations for the tool.
+
+### Cross-cutting parameter additions
+
+- New `hints=on|off` on every list/single response shape. Default
+  `on`; `off` suppresses the `next_steps` array described above.
+- New `name_hint=<string>` on every tool that takes an `agent_id`,
+  `device_id`, or `client_id` (see fuzzy resolution section above).
+
+### Manifest + README
+
+- [`dxt/manifest.json`](dxt/manifest.json): punchier `description`,
+  rewritten `long_description` highlighting trigger vocabulary,
+  example questions, and `name_hint`; `user_config.tools_mode` now
+  has an `enum` constraint + friendlier copy.
+- [`README.md`](README.md): new "What to ask first" section near the
+  top with 7 copy-paste example questions, plus a dedicated
+  "name_hint: no IDs to memorise" subsection. `slide_help` listed in
+  the meta-tools table; `--doctor` and `--skip-startup-validation`
+  documented in the CLI argument table.
+
+### Things that did NOT change
+
+- All 11 v4 meta-tools' operation enums are preserved (additive only).
+- Permission tier semantics, signing pipeline, `.mcpb` build/release
+  flow, Slide API endpoint coverage (still v1.27.0).
+- All v4 prompts and resources keep their URIs; v3
+  `slide://context/clients-devices-agents` is still an alias for
+  `slide://overview/inventory`.
+
+### Migration table
+
+| If you were doing this in v4...           | In v5...                                          |
+|--------------------------------------------|---------------------------------------------------|
+| Resolving hostnames via `slide_overview inventory` then matching | Just pass `name_hint=<hostname>` directly         |
+| Parsing the bare response JSON                | Same shape - now with optional `next_steps` and `_resolved` siblings. `hints=off` to suppress |
+| Manually testing the token after install     | `slide-mcp-server --doctor` (or wait for startup validation to fail loudly) |
+| Telling Claude "use the Slide MCP for this"  | Not needed - the trigger vocabulary covers it     |
+
+---
+
 ## 2026-05-11 - v4.0.0 - Ground-up overhaul for Claude Desktop end users
 
 ### Headline

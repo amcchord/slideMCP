@@ -114,6 +114,21 @@ run_one_shot "slide_alerts triage"          "slide_alerts"    '{"operation":"tri
 run_one_shot "slide_files restores"         "slide_files"     '{"operation":"list_restores","limit":3}'
 
 echo
+echo -e "${BLUE}v5 help / discovery surface${NC}"
+run_one_shot "slide_help getting_started"   "slide_help"      '{"operation":"getting_started"}'
+run_one_shot "slide_help examples"          "slide_help"      '{"operation":"examples"}'
+run_one_shot "slide_help glossary"          "slide_help"      '{"operation":"glossary"}'
+run_one_shot "slide_help troubleshoot"      "slide_help"      '{"operation":"troubleshoot"}'
+run_one_shot "slide_help list_prompts"      "slide_help"      '{"operation":"list_prompts"}'
+run_one_shot "slide_help list_resources"    "slide_help"      '{"operation":"list_resources"}'
+run_one_shot "slide_help what_can_you_do"   "slide_help"      '{"operation":"what_can_you_do"}'
+
+echo
+echo -e "${BLUE}v5 name_hint resolution (live)${NC}"
+run_one_shot "slide_overview for_client by name"   "slide_overview" '{"operation":"for_client","name_hint":"a"}'
+run_one_shot "slide_backups recent by name"        "slide_backups"  '{"operation":"recent_for_agent","name_hint":"a","hours":24}'
+
+echo
 echo -e "${BLUE}Validation paths (expected errors)${NC}"
 run_one_shot "slide_agents missing arg"     "slide_agents"   '{"operation":"get"}'                                  "agent_id is required"
 run_one_shot "slide_devices missing arg"    "slide_devices"  '{"operation":"get_network"}'                          "device_id is required"
@@ -122,6 +137,7 @@ run_one_shot "slide_admin avatar missing"   "slide_admin"    '{"operation":"get_
 run_one_shot "slide_files search missing"   "slide_files"    '{"operation":"search"}'                                "agent_id is required"
 run_one_shot "slide_audit get missing"      "slide_audit"    '{"operation":"get"}'                                   "audit_id is required"
 run_one_shot "slide_overview for_client"    "slide_overview" '{"operation":"for_client"}'                            "client_id is required"
+run_one_shot "did-you-mean for typo'd op"   "slide_files"    '{"operation":"searh"}'                                 'did you mean "search"'
 
 echo
 echo -e "${BLUE}MCP stdio handshake${NC}"
@@ -136,10 +152,13 @@ HANDSHAKE_OUT=$(printf '%s\n' \
     | "$SERVER_BINARY" 2>/dev/null || true)
 
 if echo "$HANDSHAKE_OUT" | grep -q 'slide-mcp-server' \
+   && echo "$HANDSHAKE_OUT" | grep -q 'slide_help' \
    && echo "$HANDSHAKE_OUT" | grep -q 'slide_overview' \
    && echo "$HANDSHAKE_OUT" | grep -q 'slide_files' \
    && echo "$HANDSHAKE_OUT" | grep -q 'slide_audit' \
+   && echo "$HANDSHAKE_OUT" | grep -q 'slide://welcome' \
    && echo "$HANDSHAKE_OUT" | grep -q 'slide://overview/inventory' \
+   && echo "$HANDSHAKE_OUT" | grep -q 'slide.welcome' \
    && echo "$HANDSHAKE_OUT" | grep -q 'slide.daily-status' \
    && echo "$HANDSHAKE_OUT" | grep -q 'slide.restore-file'; then
     echo -e "  initialize/tools/list/resources/list/templates/prompts ${GREEN}PASS${NC}"
@@ -148,6 +167,22 @@ else
     echo -e "  ${RED}FAIL${NC} (missing expected fields in handshake)"
     FAILED=$((FAILED + 1))
     FAILURES+=("MCP handshake: missing expected fields")
+fi
+
+echo
+echo -e "${BLUE}--doctor self-check${NC}"
+TOTAL=$((TOTAL + 1))
+DOCTOR_OUT=$("$SERVER_BINARY" --doctor 2>&1 || true)
+if echo "$DOCTOR_OUT" | grep -q 'All checks passed'; then
+    echo -e "  --doctor ${GREEN}PASS${NC}"
+    PASSED=$((PASSED + 1))
+elif echo "$DOCTOR_OUT" | grep -q 'Authentication.*FAIL\|err_unauthorized'; then
+    echo -e "  --doctor ${YELLOW}SKIP${NC} (API auth failed - stale SLIDE_API_KEY)"
+    SKIPPED_AUTH=$((SKIPPED_AUTH + 1))
+else
+    echo -e "  --doctor ${RED}FAIL${NC}"
+    FAILED=$((FAILED + 1))
+    FAILURES+=("--doctor: did not complete cleanly")
 fi
 
 echo

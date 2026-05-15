@@ -81,7 +81,7 @@ func TestToolsListContents(t *testing.T) {
 	expectedTools := []string{
 		"list_all_clients_devices_and_agents",
 		"slide_admin", "slide_agents", "slide_alerts", "slide_audit", "slide_backups",
-		"slide_clients", "slide_devices", "slide_files", "slide_overview",
+		"slide_clients", "slide_devices", "slide_files", "slide_help", "slide_overview",
 		"slide_recovery", "slide_snapshots",
 	}
 	for _, name := range expectedTools {
@@ -92,6 +92,7 @@ func TestToolsListContents(t *testing.T) {
 
 	// Spot-check the new task-oriented operations are reachable.
 	wantOps := map[string][]string{
+		"slide_help":      {"getting_started", "examples", "glossary", "troubleshoot", "what_can_you_do"},
 		"slide_files":     {"search", "versions", "create_restore", "browse", "create_push"},
 		"slide_audit":     {"list", "get", "actions", "resources", "recent"},
 		"slide_overview":  {"inventory", "health", "for_client", "for_device"},
@@ -111,6 +112,7 @@ func TestToolsListContents(t *testing.T) {
 
 	// Annotations: the read-only tools should advertise readOnlyHint=true.
 	readOnly := map[string]bool{
+		"slide_help":                          true,
 		"slide_overview":                      true,
 		"slide_audit":                         true,
 		"list_all_clients_devices_and_agents": true,
@@ -183,6 +185,7 @@ func TestPromptsAdvertised(t *testing.T) {
 	resp := srv.HandleMessage(context.Background(), req)
 	body, _ := json.Marshal(resp)
 	want := []string{
+		"slide.welcome",
 		"slide.daily-status",
 		"slide.triage-alerts",
 		"slide.restore-file",
@@ -213,6 +216,9 @@ func TestResourcesAdvertised(t *testing.T) {
 	}
 	// The full set of static URIs we expect:
 	for _, uri := range []string{
+		resourceURIWelcome,
+		resourceURIHelpGlossary,
+		resourceURIHelpTroubleshoot,
 		resourceURIInventory,
 		resourceURIHealth,
 		resourceURIAlertsOpen,
@@ -327,6 +333,385 @@ func TestOneShotPermissionDenied(t *testing.T) {
 
 	if err := runOneShotTool("slide_does_not_exist", map[string]interface{}{}); err == nil {
 		t.Fatal("expected error when calling an unknown tool, got nil")
+	}
+}
+
+// TestNextStepsHintsInjected confirms slide_files search responses
+// include the next_steps array unless hints=off is passed.
+func TestNextStepsHintsInjected(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/v1/agent/a_test/file-search":
+			w.Header().Set("Content-Type", "application/json")
+			w.Write([]byte(`{"data":[],"pagination":{"total":0}}`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+
+	setupTestEnv(t, ToolsFull)
+	APIBaseURL = srv.URL
+	resetNameCache()
+
+	t.Run("hints on by default", func(t *testing.T) {
+		out, err := handleFilesTool(map[string]interface{}{
+			"operation":   "search",
+			"agent_id":    "a_test",
+			"search_term": "anything",
+		})
+		if err != nil {
+			t.Fatalf("handleFilesTool: %v", err)
+		}
+		if !strings.Contains(out, "next_steps") {
+			t.Errorf("expected next_steps in response, got: %s", out)
+		}
+		if !strings.Contains(out, "slide_files operation=versions") {
+			t.Errorf("expected slide_files versions hint, got: %s", out)
+		}
+	})
+
+	t.Run("hints=off suppresses next_steps", func(t *testing.T) {
+		out, err := handleFilesTool(map[string]interface{}{
+			"operation":   "search",
+			"agent_id":    "a_test",
+			"search_term": "anything",
+			"hints":       "off",
+		})
+		if err != nil {
+			t.Fatalf("handleFilesTool: %v", err)
+		}
+		if strings.Contains(out, "next_steps") {
+			t.Errorf("hints=off should suppress next_steps, got: %s", out)
+		}
+	})
+}
+
+// TestResolvedBlockAppended confirms a single-match name_hint surfaces
+// the _resolved block in the response so the LLM can show the user
+// which entity got picked.
+func TestResolvedBlockAppended(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/v1/agent":
+			w.Header().Set("Content-Type", "application/json")
+			w.Write([]byte(`{"data":[
+				{"agent_id":"a_unique01","device_id":"d_x","display_name":"Unique Server","hostname":"UNIQUE-01","platform":"win"}
+			],"pagination":{}}`))
+		case r.URL.Path == "/v1/agent/a_unique01/file-search":
+			w.Header().Set("Content-Type", "application/json")
+			w.Write([]byte(`{"data":[],"pagination":{}}`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+
+	setupTestEnv(t, ToolsFull)
+	APIBaseURL = srv.URL
+	resetNameCache()
+
+	out, err := handleFilesTool(map[string]interface{}{
+		"operation":   "search",
+		"name_hint":   "unique",
+		"search_term": "anything",
+	})
+	if err != nil {
+		t.Fatalf("handleFilesTool: %v", err)
+	}
+	if !strings.Contains(out, `"_resolved"`) {
+		t.Errorf("expected _resolved block in response, got: %s", out)
+	}
+	if !strings.Contains(out, "a_unique01") {
+		t.Errorf("expected resolved id in response, got: %s", out)
+	}
+}
+
+// TestSlideFilesSearchWithNameHintHTTP confirms the dispatcher resolves
+// name_hint -> agent_id before slide_files search hits the backend.
+func TestSlideFilesSearchWithNameHintHTTP(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/v1/agent":
+			w.Header().Set("Content-Type", "application/json")
+			w.Write([]byte(`{"data":[
+				{"agent_id":"a_resolved01","device_id":"d_x","display_name":"Bob's laptop","hostname":"BOB-LAPTOP","platform":"win"}
+			],"pagination":{}}`))
+		case r.URL.Path == "/v1/agent/a_resolved01/file-search":
+			if got := r.URL.Query().Get("search_term"); got != "budget" {
+				t.Errorf("expected search_term=budget, got %q", got)
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.Write([]byte(`{"data":[{"path":"C:\\budget.xlsx","size":1,"modified_time":"2026-01-01T00:00:00Z"}],"pagination":{"total":1}}`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+
+	setupTestEnv(t, ToolsFull)
+	APIBaseURL = srv.URL
+	resetNameCache()
+
+	out, err := handleFilesTool(map[string]interface{}{
+		"operation":   "search",
+		"name_hint":   "bob",
+		"search_term": "budget",
+	})
+	if err != nil {
+		t.Fatalf("handleFilesTool: %v", err)
+	}
+	if !strings.Contains(out, "budget.xlsx") {
+		t.Errorf("expected budget.xlsx in output, got: %s", out)
+	}
+}
+
+// TestSlideFilesSearchAmbiguousNameHint asserts the dispatcher returns
+// a structured 'ambiguous' payload instead of calling the backend when
+// the name_hint matches multiple agents.
+func TestSlideFilesSearchAmbiguousNameHint(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/agent" {
+			t.Errorf("backend should not be called, got: %s", r.URL.Path)
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"data":[
+			{"agent_id":"a_aaaaaaaaaaaa","device_id":"d_x","display_name":"Bob's laptop","hostname":"BOB-LAPTOP","platform":"win"},
+			{"agent_id":"a_bbbbbbbbbbbb","device_id":"d_x","display_name":"Bob Server","hostname":"BOB-SRV","platform":"win"}
+		],"pagination":{}}`))
+	}))
+	defer srv.Close()
+
+	setupTestEnv(t, ToolsFull)
+	APIBaseURL = srv.URL
+	resetNameCache()
+
+	out, err := handleFilesTool(map[string]interface{}{
+		"operation":   "search",
+		"name_hint":   "bob",
+		"search_term": "budget",
+	})
+	if err != nil {
+		t.Fatalf("handleFilesTool: %v", err)
+	}
+	if !strings.Contains(out, `"name_hint_error": "ambiguous"`) {
+		t.Errorf("expected ambiguous response, got: %s", out)
+	}
+	if !strings.Contains(out, "a_aaaaaaaaaaaa") || !strings.Contains(out, "a_bbbbbbbbbbbb") {
+		t.Errorf("expected both candidate ids, got: %s", out)
+	}
+}
+
+// TestNameResolverHTTP exercises the fuzzy name resolver against a
+// faked Slide agent endpoint. Covers the 0-match, 1-match, ambiguous,
+// and pass-through-ID cases.
+func TestNameResolverHTTP(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.HasPrefix(r.URL.Path, "/v1/agent") {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"data":[
+			{"agent_id":"a_aaaaaaaaaaaa","device_id":"d_x","display_name":"Bob's laptop","hostname":"BOB-LAPTOP","platform":"win"},
+			{"agent_id":"a_bbbbbbbbbbbb","device_id":"d_x","display_name":"Bob Server","hostname":"BOB-SRV","platform":"win"},
+			{"agent_id":"a_cccccccccccc","device_id":"d_x","display_name":"File Server","hostname":"FS-01","platform":"win"}
+		],"pagination":{}}`))
+	}))
+	defer srv.Close()
+
+	setupTestEnv(t, ToolsFull)
+	APIBaseURL = srv.URL
+
+	t.Run("pass-through agent_id", func(t *testing.T) {
+		resetNameCache()
+		args := map[string]interface{}{"agent_id": "a_zzzzzzzzzzzz"}
+		resp, err := resolveNameHint(args, ResolutionSpec{IDKey: "agent_id", Kind: "agent"})
+		if err != nil {
+			t.Fatalf("err: %v", err)
+		}
+		if resp != "" {
+			t.Errorf("expected no hint response when agent_id set, got: %s", resp)
+		}
+		if args["agent_id"] != "a_zzzzzzzzzzzz" {
+			t.Errorf("agent_id mutated: %v", args["agent_id"])
+		}
+	})
+
+	t.Run("single match resolves and writes back", func(t *testing.T) {
+		resetNameCache()
+		args := map[string]interface{}{"name_hint": "File"}
+		resp, err := resolveNameHint(args, ResolutionSpec{IDKey: "agent_id", Kind: "agent"})
+		if err != nil {
+			t.Fatalf("err: %v", err)
+		}
+		if resp != "" {
+			t.Errorf("expected empty hintResp on single match, got: %s", resp)
+		}
+		if args["agent_id"] != "a_cccccccccccc" {
+			t.Errorf("agent_id not resolved correctly: %v", args["agent_id"])
+		}
+	})
+
+	t.Run("ambiguous match returns candidates", func(t *testing.T) {
+		resetNameCache()
+		args := map[string]interface{}{"name_hint": "Bob"}
+		resp, err := resolveNameHint(args, ResolutionSpec{IDKey: "agent_id", Kind: "agent"})
+		if err != nil {
+			t.Fatalf("err: %v", err)
+		}
+		if resp == "" {
+			t.Fatal("expected ambiguous payload, got empty hintResp")
+		}
+		if !strings.Contains(resp, `"name_hint_error": "ambiguous"`) {
+			t.Errorf("expected ambiguous error, got: %s", resp)
+		}
+		if !strings.Contains(resp, "a_aaaaaaaaaaaa") || !strings.Contains(resp, "a_bbbbbbbbbbbb") {
+			t.Errorf("expected both Bob candidates in response, got: %s", resp)
+		}
+		// agent_id should NOT have been written on ambiguous.
+		if _, set := args["agent_id"]; set {
+			t.Errorf("agent_id should not be set on ambiguous match, got: %v", args["agent_id"])
+		}
+	})
+
+	t.Run("no match returns suggestion", func(t *testing.T) {
+		resetNameCache()
+		args := map[string]interface{}{"name_hint": "doesnotexist-xyz"}
+		resp, err := resolveNameHint(args, ResolutionSpec{IDKey: "agent_id", Kind: "agent"})
+		if err != nil {
+			t.Fatalf("err: %v", err)
+		}
+		if !strings.Contains(resp, `"name_hint_error": "no_match"`) {
+			t.Errorf("expected no_match payload, got: %s", resp)
+		}
+	})
+
+	t.Run("looks-like-ID name_hint passes through", func(t *testing.T) {
+		resetNameCache()
+		args := map[string]interface{}{"name_hint": "a_zzzzzzzzzzzz"}
+		resp, err := resolveNameHint(args, ResolutionSpec{IDKey: "agent_id", Kind: "agent"})
+		if err != nil {
+			t.Fatalf("err: %v", err)
+		}
+		if resp != "" {
+			t.Errorf("expected pass-through to set agent_id silently, got hintResp=%s", resp)
+		}
+		if args["agent_id"] != "a_zzzzzzzzzzzz" {
+			t.Errorf("agent_id should have been copied from name_hint, got: %v", args["agent_id"])
+		}
+	})
+
+	t.Run("empty input returns nothing", func(t *testing.T) {
+		resetNameCache()
+		args := map[string]interface{}{}
+		resp, err := resolveNameHint(args, ResolutionSpec{IDKey: "agent_id", Kind: "agent"})
+		if err != nil {
+			t.Fatalf("err: %v", err)
+		}
+		if resp != "" {
+			t.Errorf("expected empty hintResp when neither id nor hint set, got: %s", resp)
+		}
+	})
+}
+
+// TestTriggerVocabularyCoverage is the regression test that guarantees
+// every canonical "use this MCP when..." phrase appears somewhere the LLM
+// will actually see. We concatenate serverInstructions() and every tool's
+// Description, lower-case the lot, and require each trigger phrase to
+// appear at least once. A failing test means an LLM might no longer
+// reach for slide-mcp-server when the user mentions that phrase - which
+// is the headline regression we want to catch.
+func TestTriggerVocabularyCoverage(t *testing.T) {
+	setupTestEnv(t, ToolsSafe)
+
+	var combined strings.Builder
+	combined.WriteString(serverInstructions())
+	combined.WriteString("\n")
+	for _, info := range allToolInfos() {
+		combined.WriteString(info.Description)
+		combined.WriteString("\n")
+	}
+	haystack := strings.ToLower(combined.String())
+
+	required := []string{
+		// Product names
+		"slide",
+		"slide.tech",
+		"slide box",
+		"slide device",
+		"slide appliance",
+		// MSP / BCDR vocabulary
+		"bcdr",
+		"business continuity",
+		"disaster recovery",
+		"failover",
+		"rto",
+		"rpo",
+		// Backup vocabulary
+		"backup",
+		"backups",
+		"did backups run",
+		"backup failed",
+		"backup schedule",
+		"pause backups",
+		"resume backups",
+		"incremental",
+		// Snapshot / restore vocabulary
+		"snapshot",
+		"restore point",
+		"restore",
+		"recover",
+		"previous version",
+		"yesterday's copy",
+		"version history",
+		// Recovery / virtualization
+		"recovery vm",
+		"boot a vm from a snapshot",
+		"image export",
+		"vhd",
+		"vhdx",
+		"vmdk",
+		"qcow2",
+		"raw",
+		"rdp",
+		"dr network",
+		"vpn",
+		"wireguard",
+		"ipsec",
+		// Monitoring / triage
+		"slide alert",
+		"unresolved alert",
+		"triage alerts",
+		"are all my slide boxes",
+		"what changed",
+		"audit log",
+		"compliance",
+		// Asset language
+		"client",
+		"agent",
+		"protected system",
+		"device",
+		// Files-on-protected-systems language
+		"filename",
+		"lost file",
+		"bob's laptop",
+		"push it back to the server",
+		// Help / discoverability
+		"name_hint",
+	}
+
+	missing := []string{}
+	for _, phrase := range required {
+		if !strings.Contains(haystack, strings.ToLower(phrase)) {
+			missing = append(missing, phrase)
+		}
+	}
+	if len(missing) > 0 {
+		t.Errorf("trigger vocabulary phrases missing from combined instructions + tool descriptions (%d missing): %v",
+			len(missing), missing)
 	}
 }
 

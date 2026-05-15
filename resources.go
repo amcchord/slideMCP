@@ -28,6 +28,9 @@ const (
 	resourceURIAlertsOpen      = "slide://alerts/unresolved"
 	resourceURIAuditRecent     = "slide://audit/recent"
 	resourceURIDocsOpenAPI     = "slide://docs/openapi"
+	resourceURIWelcome         = "slide://welcome"
+	resourceURIHelpGlossary    = "slide://help/glossary"
+	resourceURIHelpTroubleshoot = "slide://help/troubleshoot"
 	resourceURITplClient       = "slide://client/{client_id}"
 	resourceURITplDevice       = "slide://device/{device_id}"
 	resourceURITplAgent        = "slide://agent/{agent_id}"
@@ -35,8 +38,20 @@ const (
 	resourceURILegacyContext   = "slide://context/clients-devices-agents"
 )
 
-// registerResources wires every v4 resource onto the SDK server.
+// registerResources wires every v5 resource onto the SDK server.
 func registerResources(s *server.MCPServer) {
+	addStaticResource(s, resourceURIWelcome, "Slide MCP - welcome / first-time primer",
+		"One-page primer for the Slide MCP extension. Trigger vocabulary, example questions, ID prefixes, and a first-pass routing table. Cheap (no API calls); safe to read at conversation start.",
+		handleResourceWelcome)
+
+	addStaticResource(s, resourceURIHelpGlossary, "Slide MCP - glossary",
+		"Slide-specific terminology: client / device / agent / snapshot / restore / VM / alert / audit, plus BCDR jargon (RTO, RPO, failover). Cheap (no API calls).",
+		handleResourceHelpGlossary)
+
+	addStaticResource(s, resourceURIHelpTroubleshoot, "Slide MCP - troubleshooting",
+		"Common setup, authentication, and connectivity problems and how to fix them. Cheap (no API calls).",
+		handleResourceHelpTroubleshoot)
+
 	addStaticResource(s, resourceURIInventory, "Slide overview - full inventory",
 		"Hierarchical view of every client, device, and agent (clients -> devices -> agents).",
 		handleResourceInventory)
@@ -119,6 +134,32 @@ func addTemplate(s *server.MCPServer, tpl, name, desc string, fn func(string) ([
 }
 
 // --- Handlers ---------------------------------------------------------
+
+// handleResourceWelcome returns the welcome.md content (also served by
+// slide_help operation=getting_started). MIME-wise we keep
+// application/json so clients that auto-attach resources don't expect a
+// markdown renderer, but the body is structured as a JSON object with a
+// `markdown` string field for readability.
+func handleResourceWelcome(_ string) ([]byte, error) {
+	return json.Marshal(map[string]interface{}{
+		"format":   "markdown",
+		"markdown": helpWelcomeMD,
+	})
+}
+
+func handleResourceHelpGlossary(_ string) ([]byte, error) {
+	return json.Marshal(map[string]interface{}{
+		"format":   "markdown",
+		"markdown": helpGlossaryMD,
+	})
+}
+
+func handleResourceHelpTroubleshoot(_ string) ([]byte, error) {
+	return json.Marshal(map[string]interface{}{
+		"format":   "markdown",
+		"markdown": helpTroubleshootMD,
+	})
+}
 
 func handleResourceInventory(_ string) ([]byte, error) {
 	body, err := listAllClientsDevicesAndAgents(map[string]interface{}{})

@@ -53,7 +53,11 @@ func getAlertsToolInfo() ToolInfo {
 
 	return ToolInfo{
 		Name: "slide_alerts",
-		Description: "Alert triage. Operations: `list`, `get`, `update` (resolve/unresolve), " +
+		Description: "Slide MCP - Slide alert triage. " +
+			"REACH FOR THIS whenever the user mentions a Slide alert, unresolved alert, 'triage alerts', " +
+			"'what should I look at first', 'critical alerts', storage-low / backup-failed / not-checking-in alerts, " +
+			"or 'is anything broken on the Slide side'. " +
+			"Operations: `list`, `get`, `update` (resolve/unresolve), " +
 			"`triage` (rolls up unresolved alerts by severity hint and returns the worst-first list - the answer to \"what should I look at first?\").",
 		InputSchema: map[string]interface{}{
 			"type":       "object",

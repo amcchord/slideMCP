@@ -12,13 +12,18 @@ import (
 )
 
 func handleBackupsTool(args map[string]interface{}) (string, error) {
-	return HandleToolWithOperations(CreateToolConfig("slide_backups", ToolOperations{
+	return HandleToolWithOperations(CreateToolConfigWithResolutions("slide_backups", ToolOperations{
 		"list":              handleBackupsList,
 		"get":               handleBackupsGet,
 		"start":             handleBackupsStart,
 		"status_for_client": handleBackupsStatusForClient,
 		"status_for_device": handleBackupsStatusForDevice,
 		"recent_for_agent":  handleBackupsRecentForAgent,
+	}, map[string]ResolutionSpec{
+		"start":             {IDKey: "agent_id", Kind: "agent"},
+		"status_for_client": {IDKey: "client_id", Kind: "client"},
+		"status_for_device": {IDKey: "device_id", Kind: "device"},
+		"recent_for_agent":  {IDKey: "agent_id", Kind: "agent"},
 	}), args)
 }
 
@@ -33,15 +38,19 @@ func getBackupsToolInfo() ToolInfo {
 		},
 		"agent_id": map[string]interface{}{
 			"type":        "string",
-			"description": "Agent ID. Required for `start` and `recent_for_agent`. Optional filter for `list`.",
+			"description": "Agent ID. Required for `start` and `recent_for_agent` (alternative: `name_hint`). Optional filter for `list`.",
 		},
 		"device_id": map[string]interface{}{
 			"type":        "string",
-			"description": "Device ID. Required for `status_for_device`. Optional filter for `list`.",
+			"description": "Device ID. Required for `status_for_device` (alternative: `name_hint`). Optional filter for `list`.",
 		},
 		"client_id": map[string]interface{}{
 			"type":        "string",
-			"description": "Client ID. Required for `status_for_client`.",
+			"description": "Client ID. Required for `status_for_client` (alternative: `name_hint`).",
+		},
+		"name_hint": map[string]interface{}{
+			"type":        "string",
+			"description": "Alternative to *_id: a hostname / display name / client name (case-insensitive substring). For `start` and `recent_for_agent` resolves to an agent; for `status_for_device` to a device; for `status_for_client` to a client.",
 		},
 		"snapshot_id": map[string]interface{}{
 			"type":        "string",
@@ -71,11 +80,15 @@ func getBackupsToolInfo() ToolInfo {
 
 	return ToolInfo{
 		Name: "slide_backups",
-		Description: "Backup-run inspection and on-demand backup launch. " +
+		Description: "Slide MCP - inspect and launch backup runs. " +
+			"REACH FOR THIS whenever the user mentions a backup, 'did backups run', 'did backups run last night', " +
+			"'backup failed', 'kick off a backup', 'start a backup', 'incremental backup', 'why did the backup fail', " +
+			"or any per-run backup question. (For backup-SCHEDULE changes use slide_agents set_schedule.) " +
 			"Operations: `list` (paginated history with filters), `get` (single backup detail), `start` (kick off a new backup), " +
 			"`status_for_client` (last-N-hours summary for every agent under a client), " +
 			"`status_for_device` (last-N-hours summary for every agent on a device), " +
 			"`recent_for_agent` (last-N-hours runs for one agent). " +
+			"All three status_for_*/recent_for_agent ops accept name_hint as an alternative to the *_id. " +
 			"The `status_for_*` ops answer \"did backups run last night for X?\" in one call.",
 		InputSchema: map[string]interface{}{
 			"type":       "object",
@@ -83,10 +96,10 @@ func getBackupsToolInfo() ToolInfo {
 			"required":   []string{"operation"},
 			"allOf": []map[string]interface{}{
 				{"if": ifOp("get"), "then": req("backup_id")},
-				{"if": ifOp("start"), "then": req("agent_id")},
-				{"if": ifOp("status_for_client"), "then": req("client_id")},
-				{"if": ifOp("status_for_device"), "then": req("device_id")},
-				{"if": ifOp("recent_for_agent"), "then": req("agent_id")},
+				{"if": ifOp("start"), "then": reqEither("agent_id", "name_hint")},
+				{"if": ifOp("status_for_client"), "then": reqEither("client_id", "name_hint")},
+				{"if": ifOp("status_for_device"), "then": reqEither("device_id", "name_hint")},
+				{"if": ifOp("recent_for_agent"), "then": reqEither("agent_id", "name_hint")},
 			},
 		},
 	}

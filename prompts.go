@@ -22,13 +22,53 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 )
 
-// registerPrompts attaches every v4 MCP Prompt to the server.
+// registerPrompts attaches every MCP Prompt to the server.
 func registerPrompts(s *server.MCPServer) {
+	s.AddPrompt(promptWelcome(), handlePromptWelcome)
 	s.AddPrompt(promptDailyStatus(), handlePromptDailyStatus)
 	s.AddPrompt(promptTriageAlerts(), handlePromptTriageAlerts)
 	s.AddPrompt(promptRestoreFile(), handlePromptRestoreFile)
 	s.AddPrompt(promptBootRecoveryVM(), handlePromptBootRecoveryVM)
 	s.AddPrompt(promptDRRunbook(), handlePromptDRRunbook)
+}
+
+// --- welcome ----------------------------------------------------------
+
+func promptWelcome() mcp.Prompt {
+	return mcp.NewPrompt("slide.welcome",
+		mcp.WithPromptDescription("One-message intro for first-time users of the Slide MCP extension. Lists what the server can do, the trigger vocabulary that should route to Slide, and 5 example questions to try. No arguments."),
+	)
+}
+
+func handlePromptWelcome(_ context.Context, _ mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
+	mode := ""
+	if config != nil {
+		mode = config.ToolsMode
+	}
+	body := `You are connected to slide-mcp-server, the MCP extension for the Slide BCDR / backup platform. ` +
+		`Greet the operator with a concise, friendly intro that covers:
+
+1. ONE-LINE PURPOSE. "Slide is the BCDR / backup platform that protects servers and endpoints; this extension lets you ask Claude about your Slide environment, run restores, boot recovery VMs, and triage alerts."
+
+2. WHEN TO REACH FOR ME. Say something like: "If you mention Slide, BCDR, backups, snapshots, restores, recovery VMs, file recovery, disaster recovery, audit logs, or unresolved alerts, I will use this extension automatically."
+
+3. PERMISSION TIER. The server is currently running in the ` + "`" + mode + "`" + ` tier. Briefly explain what that allows.
+
+4. FIVE EXAMPLE QUESTIONS the operator can try right now. Pick from this list and pre-fill them as bulleted suggestions:
+   - "Are all my Slide boxes healthy?"
+   - "Did backups run last night for <client name>?"
+   - "Find <filename> on <person>'s laptop."
+   - "What unresolved alerts do I have? Sort worst first."
+   - "What changed in the last 24 hours?"
+
+5. FALLBACK. "If you're not sure where to start, just say 'show me what you can do' and I'll call slide_help getting_started."
+
+Do not call any tools yet. The next user message will say what they actually want.`
+
+	return mcp.NewGetPromptResult(
+		"Welcome to the Slide MCP extension",
+		[]mcp.PromptMessage{mcp.NewPromptMessage(mcp.RoleUser, mcp.NewTextContent(body))},
+	), nil
 }
 
 // --- daily-status ------------------------------------------------------

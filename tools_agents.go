@@ -2,7 +2,9 @@ package main
 
 // handleAgentsTool handles all agent-related operations through a single meta-tool
 func handleAgentsTool(args map[string]interface{}) (string, error) {
-	return HandleToolWithOperations(CreateToolConfig("slide_agents", ToolOperations{
+	agentRes := ResolutionSpec{IDKey: "agent_id", Kind: "agent"}
+	deviceRes := ResolutionSpec{IDKey: "device_id", Kind: "device"}
+	return HandleToolWithOperations(CreateToolConfigWithResolutions("slide_agents", ToolOperations{
 		// Core CRUD (kept stable from v2.x)
 		"list":              listAgents,
 		"get":               getAgent,
@@ -26,6 +28,28 @@ func handleAgentsTool(args map[string]interface{}) (string, error) {
 		"set_timezone":           handleAgentSetTimezone,
 		"set_comments":           handleAgentSetComments,
 		"update_alert_config":    handleAgentUpdateAlertConfig,
+	}, map[string]ResolutionSpec{
+		// Operations that take agent_id resolve an agent.
+		"get":                    agentRes,
+		"update":                 agentRes,
+		"add_passphrase":         agentRes,
+		"delete_passphrase":      agentRes,
+		"list_services":          agentRes,
+		"update_services":        agentRes,
+		"set_schedule":           agentRes,
+		"clear_schedule":         agentRes,
+		"pause_backups":          agentRes,
+		"resume_backups":         agentRes,
+		"set_retention":          agentRes,
+		"set_restore_defaults":   agentRes,
+		"set_volumes":            agentRes,
+		"set_file_index_enabled": agentRes,
+		"set_timezone":           agentRes,
+		"set_comments":           agentRes,
+		"update_alert_config":    agentRes,
+		// create / pair take device_id (the agent doesn't exist yet).
+		"create": deviceRes,
+		"pair":   deviceRes,
 	}), args)
 }
 
@@ -47,10 +71,15 @@ var agentOperationEnums = []string{
 func getAgentsToolInfo() ToolInfo {
 	return ToolInfo{
 		Name: "slide_agents",
-		Description: "Manage backup agents installed on protected systems. Operations: list, get, create, pair, update, add_passphrase, delete_passphrase, " +
+		Description: "Slide MCP - manage backup agents installed on protected systems (servers, endpoints, laptops). " +
+			"REACH FOR THIS whenever the user mentions a Slide agent, 'the agent on <server>', 'pause backups on X', " +
+			"'resume backups', 'backup schedule', 'retention policy', 'pair a new agent', 'Bob's laptop', " +
+			"'protected system' settings, agent-level alert configuration, VSS writers, or Windows service verification. " +
+			"Operations: list, get, create, pair, update, add_passphrase, delete_passphrase, " +
 			"plus v1.27.0 additions: list_services, update_services (Windows service verification), " +
 			"set_schedule / clear_schedule, pause_backups / resume_backups, set_retention, set_restore_defaults, " +
-			"set_volumes, set_file_index_enabled, set_timezone, set_comments, update_alert_config (per-agent alert pause/resume).",
+			"set_volumes, set_file_index_enabled, set_timezone, set_comments, update_alert_config (per-agent alert pause/resume). " +
+			"Single-agent operations accept agent_id OR name_hint (resolves a hostname or display name to the agent_id server-side).",
 		InputSchema: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
@@ -70,11 +99,15 @@ func getAgentsToolInfo() ToolInfo {
 				},
 				"device_id": map[string]interface{}{
 					"type":        "string",
-					"description": "Filter by device ID - used with 'list' operation, or required for 'create' and 'pair' operations",
+					"description": "Filter by device ID - used with 'list' operation, or required for 'create' and 'pair' operations (alternative for create/pair: pass `name_hint`)",
 				},
 				"client_id": map[string]interface{}{
 					"type":        "string",
 					"description": "Filter by client ID - used with 'list' operation",
+				},
+				"name_hint": map[string]interface{}{
+					"type":        "string",
+					"description": "Alternative to agent_id (or device_id for create/pair): a hostname or display name (case-insensitive substring match). Resolves to an agent for single-agent operations, to a device for `create` and `pair`.",
 				},
 				"sort_asc": map[string]interface{}{
 					"type":        "boolean",
@@ -88,7 +121,7 @@ func getAgentsToolInfo() ToolInfo {
 				// get / update / pair / passphrase / etc.
 				"agent_id": map[string]interface{}{
 					"type":        "string",
-					"description": "ID of the agent - required for 'get', 'update', and every v1.27.0 operation that targets a single agent",
+					"description": "ID of the agent - required for 'get', 'update', and every v1.27.0 operation that targets a single agent (alternative: pass `name_hint`)",
 				},
 				"display_name": map[string]interface{}{
 					"type":        "string",
@@ -268,27 +301,82 @@ func getAgentsToolInfo() ToolInfo {
 			},
 			"required": []string{"operation"},
 			"allOf": []map[string]interface{}{
-				{"if": ifOp("get"), "then": req("agent_id")},
-				{"if": ifOp("create"), "then": req("display_name", "device_id")},
-				{"if": ifOp("pair"), "then": req("pair_code", "device_id")},
-				{"if": ifOp("update"), "then": req("agent_id")},
-				{"if": ifOp("add_passphrase"), "then": req("agent_id", "passphrase_name", "passphrase")},
-				{"if": ifOp("delete_passphrase"), "then": req("agent_id", "agent_passphrase_id", "passphrase")},
+				{"if": ifOp("get"), "then": reqEither("agent_id", "name_hint")},
+				{"if": ifOp("create"), "then": map[string]interface{}{
+					"allOf": []map[string]interface{}{
+						req("display_name"),
+						reqEither("device_id", "name_hint"),
+					},
+				}},
+				{"if": ifOp("pair"), "then": map[string]interface{}{
+					"allOf": []map[string]interface{}{
+						req("pair_code"),
+						reqEither("device_id", "name_hint"),
+					},
+				}},
+				{"if": ifOp("update"), "then": reqEither("agent_id", "name_hint")},
+				{"if": ifOp("add_passphrase"), "then": map[string]interface{}{
+					"allOf": []map[string]interface{}{
+						reqEither("agent_id", "name_hint"),
+						req("passphrase_name", "passphrase"),
+					},
+				}},
+				{"if": ifOp("delete_passphrase"), "then": map[string]interface{}{
+					"allOf": []map[string]interface{}{
+						reqEither("agent_id", "name_hint"),
+						req("agent_passphrase_id", "passphrase"),
+					},
+				}},
 
 				// v1.27.0
-				{"if": ifOp("list_services"), "then": req("agent_id")},
-				{"if": ifOp("update_services"), "then": req("agent_id", "services")},
-				{"if": ifOp("set_schedule"), "then": req("agent_id", "interval_in_minutes", "start_hour", "end_hour", "days")},
-				{"if": ifOp("clear_schedule"), "then": req("agent_id")},
-				{"if": ifOp("pause_backups"), "then": req("agent_id")},
-				{"if": ifOp("resume_backups"), "then": req("agent_id")},
-				{"if": ifOp("set_retention"), "then": req("agent_id", "retention_policy_name", "retention_policy_max_age_months")},
-				{"if": ifOp("set_restore_defaults"), "then": req("agent_id")},
-				{"if": ifOp("set_volumes"), "then": req("agent_id")},
-				{"if": ifOp("set_file_index_enabled"), "then": req("agent_id", "file_index_enabled")},
-				{"if": ifOp("set_timezone"), "then": req("agent_id", "timezone")},
-				{"if": ifOp("set_comments"), "then": req("agent_id", "comments")},
-				{"if": ifOp("update_alert_config"), "then": req("agent_id", "alert_type")},
+				{"if": ifOp("list_services"), "then": reqEither("agent_id", "name_hint")},
+				{"if": ifOp("update_services"), "then": map[string]interface{}{
+					"allOf": []map[string]interface{}{
+						reqEither("agent_id", "name_hint"),
+						req("services"),
+					},
+				}},
+				{"if": ifOp("set_schedule"), "then": map[string]interface{}{
+					"allOf": []map[string]interface{}{
+						reqEither("agent_id", "name_hint"),
+						req("interval_in_minutes", "start_hour", "end_hour", "days"),
+					},
+				}},
+				{"if": ifOp("clear_schedule"), "then": reqEither("agent_id", "name_hint")},
+				{"if": ifOp("pause_backups"), "then": reqEither("agent_id", "name_hint")},
+				{"if": ifOp("resume_backups"), "then": reqEither("agent_id", "name_hint")},
+				{"if": ifOp("set_retention"), "then": map[string]interface{}{
+					"allOf": []map[string]interface{}{
+						reqEither("agent_id", "name_hint"),
+						req("retention_policy_name", "retention_policy_max_age_months"),
+					},
+				}},
+				{"if": ifOp("set_restore_defaults"), "then": reqEither("agent_id", "name_hint")},
+				{"if": ifOp("set_volumes"), "then": reqEither("agent_id", "name_hint")},
+				{"if": ifOp("set_file_index_enabled"), "then": map[string]interface{}{
+					"allOf": []map[string]interface{}{
+						reqEither("agent_id", "name_hint"),
+						req("file_index_enabled"),
+					},
+				}},
+				{"if": ifOp("set_timezone"), "then": map[string]interface{}{
+					"allOf": []map[string]interface{}{
+						reqEither("agent_id", "name_hint"),
+						req("timezone"),
+					},
+				}},
+				{"if": ifOp("set_comments"), "then": map[string]interface{}{
+					"allOf": []map[string]interface{}{
+						reqEither("agent_id", "name_hint"),
+						req("comments"),
+					},
+				}},
+				{"if": ifOp("update_alert_config"), "then": map[string]interface{}{
+					"allOf": []map[string]interface{}{
+						reqEither("agent_id", "name_hint"),
+						req("alert_type"),
+					},
+				}},
 			},
 		},
 	}
@@ -305,4 +393,15 @@ func ifOp(op string) map[string]interface{} {
 
 func req(fields ...string) map[string]interface{} {
 	return map[string]interface{}{"required": fields}
+}
+
+// reqEither expresses "this operation needs at least one of the listed
+// fields" via JSON Schema `anyOf`. Used to allow either `*_id` OR
+// `name_hint` to satisfy a parameter requirement.
+func reqEither(fields ...string) map[string]interface{} {
+	options := make([]map[string]interface{}, 0, len(fields))
+	for _, f := range fields {
+		options = append(options, map[string]interface{}{"required": []string{f}})
+	}
+	return map[string]interface{}{"anyOf": options}
 }

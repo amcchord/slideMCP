@@ -631,20 +631,53 @@ type APIError struct {
 func (e *APIError) Error() string {
 	hint := ""
 	switch e.StatusCode {
-	case 401, 403:
-		hint = " (check that SLIDE_API_KEY is valid and has access to this resource)"
+	case 401:
+		hint = " (your Slide API token was rejected. Generate a fresh one at https://console.slide.tech under My Settings -> API Tokens, then update Claude Desktop's Slide Backup extension settings or restart with --api-key <new>. Run `slide-mcp-server --doctor` to verify.)"
+	case 403:
+		hint = " (the Slide API rejected this request as forbidden. Either your token doesn't have access to this resource, or your user role lacks the required permission. Check user role in https://console.slide.tech.)"
 	case 404:
-		hint = " (the referenced ID does not exist or has been deleted)"
+		hint = e.idPrefixHint() + " (the referenced ID does not exist, has been deleted, or is not visible to the current token)"
 	case 429:
-		hint = " (rate limited; the server retried per Retry-After but still failed)"
+		hint = " (rate limited; the server retried per Retry-After but still failed. Try again in a few seconds.)"
 	case 500, 502, 503, 504:
-		hint = " (Slide API server-side error; consider retrying)"
+		hint = " (Slide API server-side error; check https://status.slide.tech for an active incident, otherwise retry.)"
 	}
 	body := e.Body
 	if len(body) > 300 {
 		body = body[:300] + "..."
 	}
 	return fmt.Sprintf("Slide API %s %s -> %d%s: %s", e.Method, e.Endpoint, e.StatusCode, hint, body)
+}
+
+// idPrefixHint returns a short note about which tool a 404 endpoint
+// usually maps to, based on the trailing ID prefix in the endpoint. Cheap
+// to compute, surprisingly helpful for novices ("you passed an `a_` ID
+// to a device endpoint").
+func (e *APIError) idPrefixHint() string {
+	parts := strings.Split(strings.Trim(e.Endpoint, "/"), "/")
+	if len(parts) == 0 {
+		return ""
+	}
+	last := parts[len(parts)-1]
+	if i := strings.Index(last, "?"); i >= 0 {
+		last = last[:i]
+	}
+	if len(last) < 3 || last[1] != '_' {
+		return ""
+	}
+	switch last[:2] {
+	case "a_":
+		return " (an `a_` prefix is an agent_id - this 404 means the agent does not exist or is not visible to your token)"
+	case "d_":
+		return " (a `d_` prefix is a device_id - this 404 means the device does not exist or is not visible to your token)"
+	case "c_":
+		return " (a `c_` prefix is a client_id - this 404 means the client does not exist or is not visible to your token)"
+	case "s_":
+		return " (an `s_` prefix is a snapshot_id - this 404 means the snapshot does not exist, has been deleted, or is not visible to your token)"
+	case "v_":
+		return " (a `v_` prefix is a virtual-machine id - this 404 means the VM was deleted or never existed)"
+	}
+	return ""
 }
 
 // performSingleAPIRequest performs a single API request without retry logic.

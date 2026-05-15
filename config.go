@@ -9,7 +9,7 @@ import (
 // and the `--version` flag.
 const (
 	ServerName = "slide-mcp-server"
-	Version    = "4.0.0"
+	Version    = "5.0.0"
 )
 
 // Permission tiers. v4.0.0 collapses the old four-tier system
@@ -90,7 +90,13 @@ func (c *ServerConfig) IsToolDisabled(toolName string) bool {
 
 // IsToolAllowed checks if a tool is allowed at the tool level. Per-operation
 // gating happens inside HandleToolWithOperations via IsOperationAllowed.
+//
+// slide_help is special-cased to be allowed in every mode and never
+// disable-able: it's the LLM's escape hatch when a user is stuck.
 func (c *ServerConfig) IsToolAllowed(toolName string) bool {
+	if toolName == "slide_help" {
+		return true
+	}
 	if c.IsToolDisabled(toolName) {
 		return false
 	}
@@ -121,7 +127,8 @@ func (c *ServerConfig) IsOperationAllowed(toolName, operation string) bool {
 // isReadOnlyTool returns true for tools whose entire surface is reads.
 func isReadOnlyTool(toolName string) bool {
 	switch toolName {
-	case "slide_overview", "slide_audit", "list_all_clients_devices_and_agents":
+	case "slide_help",
+		"slide_overview", "slide_audit", "list_all_clients_devices_and_agents":
 		return true
 	}
 	// Mixed-purpose tools are still allowed in read-only mode at the tool
@@ -138,6 +145,11 @@ func isReadOnlyTool(toolName string) bool {
 //
 //nolint:gocyclo
 func isReadOperation(toolName, op string) bool {
+	// slide_help is read-only end-to-end: every operation serves baked-in
+	// content or non-mutating capability metadata.
+	if toolName == "slide_help" {
+		return true
+	}
 	switch op {
 	case "list", "get", "browse", "search", "versions",
 		"recent", "actions", "resources",
@@ -153,7 +165,10 @@ func isReadOperation(toolName, op string) bool {
 		"list_vms", "get_vm", "get_rdp_bookmark",
 		"list_images", "get_image", "browse_image",
 		"list_deleted",
-		"triage":
+		"triage",
+		// slide_help operations
+		"getting_started", "examples", "glossary", "troubleshoot",
+		"list_prompts", "list_resources", "what_can_you_do":
 		return true
 	}
 	return false

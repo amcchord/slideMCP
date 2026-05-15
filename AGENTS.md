@@ -64,33 +64,102 @@ SIGNING.md section 3.6. Do not "fix" it.
 
 ### 3. Tool architecture: task-oriented meta-tools, not one-tool-per-endpoint
 
-The server exposes 11 task-oriented meta-tools designed around real MSP
-workflows (not raw API endpoints). Each takes an `operation` parameter
-that selects the action.
+The server exposes 11 task-oriented meta-tools + 1 discovery tool
+(`slide_help`) designed around real MSP workflows (not raw API
+endpoints). Each takes an `operation` parameter that selects the
+action.
 
-The v4.0.0 surface:
+The v5.0.0 surface:
 
+- **`slide_help`** (v5) - discovery, onboarding, glossary,
+ troubleshooting. Read-only, always available, never blocked by tools
+ mode, never disable-able. Intended as the LLM's first call when the
+ user is vague. Content lives in `docs/help/*.md` and is embedded via
+ `//go:embed` (no network).
 - **`slide_overview`** - inventory + health + per-client/per-device summaries
 - **`slide_files`** - file search + restore + push (the headline v4 capability)
 - **`slide_recovery`** - boot VMs, export images, manage DR networks
 - **`slide_audit`** - account audit log queries
 - **`slide_clients`** / **`slide_admin`** - client + user/account management
 - **`slide_devices`** / **`slide_agents`** / **`slide_snapshots`** /
-  **`slide_backups`** / **`slide_alerts`** - lower-level CRUD with v4
-  task-oriented additions (`triage`, `status_for_client`, `recent_for_agent`)
+ **`slide_backups`** / **`slide_alerts`** - lower-level CRUD with v4
+ task-oriented additions (`triage`, `status_for_client`, `recent_for_agent`)
 
 Plus `list_all_clients_devices_and_agents` as a backward-compat shim.
 
 Do not add new top-level tools when you can add a new operation to an
-existing meta-tool. See [registry.go](registry.go) and the
-`tools_*.go` files for the pattern. Conditional `allOf` / `if` /
-`then` / `required` blocks in each tool's schema enforce per-operation
-parameter requirements.
+existing meta-tool. `slide_help` is the one deliberate exception
+(discovery is a different shape than the MSP-workflow surface). See
+[registry.go](registry.go) and the `tools_*.go` files for the
+pattern. Conditional `allOf` / `if` / `then` / `required` blocks in
+each tool's schema enforce per-operation parameter requirements.
 
 The server also ships **MCP Prompts** (in [`prompts.go`](prompts.go))
 and URI-templated **Resources** (in [`resources.go`](resources.go)) -
 prefer adding a Prompt or Resource over a tool when the workflow is
 template-driven or read-only context that should be cheap to load.
+
+### 3a. Trigger vocabulary - the discoverability contract
+
+**The first sentence of [`serverInstructions()`](server.go) is the
+single most important piece of LLM-facing prose in this repository.**
+It is the literal "use slide-mcp-server when the user mentions ..."
+list, and every tool's `Description` field repeats a 2-3 phrase subset
+of the same vocabulary so tool-relevance scoring lights up on the
+first relevant utterance.
+
+The canonical list (Slide / BCDR / backup / snapshot / restore /
+recovery / alert / agent / protected system / file recovery / DR /
+RPO / RTO / image export / DR network / audit log / etc.) is enforced
+by [`TestTriggerVocabularyCoverage`](server_test.go) - if you remove or
+reword tool descriptions, run `go test` to make sure the regression
+check still passes. Add new phrases to that test AND to a description
+in lockstep.
+
+### 3b. name_hint - server-side fuzzy resolution
+
+Operators don't memorise `a_xxxxxxxxxxxx` IDs. v5 added `name_hint` as
+a sibling parameter to every `*_id` on user-facing operations. The
+resolver ([`name_resolver.go`](name_resolver.go)) runs at the
+dispatcher layer ([`base_handler.go`](base_handler.go)) BEFORE the
+operation handler executes, so individual handlers continue to call
+`requireString(args, "agent_id")` unchanged.
+
+When you add a new operation that takes a `*_id`, also:
+
+1. Add `name_hint` to that operation's `allOf` via `reqEither(idKey,
+   "name_hint")` instead of `req(idKey)` so the schema accepts either.
+2. Add a `ResolutionSpec` for the operation in the tool's
+   `CreateToolConfigWithResolutions` call.
+3. Make sure the tool's `Description` mentions that `name_hint` works
+   for that op.
+
+Matching is deterministic: exact (case-insens) > prefix > substring,
+stop at the first non-empty tier, cache TTL 15 minutes. Ambiguous and
+zero-match cases return structured JSON payloads (NOT errors) so the
+LLM can paraphrase candidates back to the user.
+
+### 3c. next_steps and _resolved response affordances
+
+[`hints.go`](hints.go) curates a small `nextStepsFor(tool, op, args)`
+table of follow-up suggestions; [`format.go`](format.go) appends
+`next_steps` to every response unless `hints=off`. Same path appends
+`_resolved` whenever `name_hint` produced a single match. Both
+features piggyback on `args` so per-operation handlers don't need to
+know about them. When adding a new operation, add a small `next_steps`
+entry to `hints.go` if there's an obvious follow-up.
+
+### 3d. Startup validation + --doctor
+
+[`doctor.go`](doctor.go) ships two entry points:
+
+- `runStartupValidation()` runs before `runStdioServer()`. Fails the
+  process on 401/403 (clear auth failure); logs+continues on network
+  failures so `slide_help operation=troubleshoot` stays callable.
+  Suppressed with `--skip-startup-validation`.
+- `runDoctor()` is `slide-mcp-server --doctor`. Idempotent, prints a
+  checklist, exits non-zero on failure. Wire any new must-pass checks
+  in here.
 
 ### 4. SDK migration is done, do not undo it
 
@@ -158,6 +227,11 @@ failing).
 |---|---|
 | [`main.go`](main.go), [`server.go`](server.go), [`registry.go`](registry.go), [`mcp.go`](mcp.go), [`base_handler.go`](base_handler.go) | SDK wiring, tool registration, request dispatch |
 | [`tools_*.go`](.) | Per-tool descriptors + operation handlers |
+| [`tools_help.go`](tools_help.go) | v5 `slide_help` discovery tool (embeds docs/help/*.md) |
+| [`name_resolver.go`](name_resolver.go) | v5 fuzzy name_hint -> *_id resolver, with cache |
+| [`hints.go`](hints.go) | v5 `next_steps` + `_resolved` response affordances |
+| [`doctor.go`](doctor.go) | v5 startup validation + `--doctor` self-diagnostic |
+| [`docs/help/*.md`](docs/help/) | v5 markdown content for slide_help + slide:// resources |
 | [`api.go`](api.go), [`api_v127.go`](api_v127.go) | HTTP client wrappers for the Slide API |
 | [`config.go`](config.go) | Server config + permission tier logic |
 | [`server_test.go`](server_test.go) | In-process tests via SDK's `HandleMessage` |

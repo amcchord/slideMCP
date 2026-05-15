@@ -21,6 +21,8 @@ func main() {
 		cliTools         = flag.String("tools", "", "Tools mode: read-only, safe, full (overrides SLIDE_TOOLS environment variable). Legacy aliases reporting/restores/full-safe still work.")
 		cliDisabledTools = flag.String("disabled-tools", "", "Comma-separated list of tool names to disable (overrides SLIDE_DISABLED_TOOLS environment variable)")
 		showVersion      = flag.Bool("version", false, "Show version information and exit")
+		runDoctorFlag    = flag.Bool("doctor", false, "Run self-diagnostic checks (token, network, sample reads) and exit. Idempotent and CI-friendly.")
+		skipValidation   = flag.Bool("skip-startup-validation", false, "Skip the startup probe of /v1/account. Useful when launching offline.")
 
 		// One-shot tool execution flags
 		cliOneShotTool = flag.String("tool", "", "Run a single tool then exit (e.g. --tool slide_overview)")
@@ -65,8 +67,15 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if config.APIKey == "" {
-		log.Fatalf("Error: API key not provided. Use --api-key flag or set SLIDE_API_KEY environment variable.")
+	if config.APIKey == "" && !*runDoctorFlag {
+		log.Fatalf(`Error: Slide API token not provided.
+
+Use one of:
+  - Pass --api-key <token>
+  - Set the SLIDE_API_KEY environment variable
+  - Configure the token in Claude Desktop's Slide Backup extension settings
+
+Generate a token at https://console.slide.tech under My Settings -> API Tokens.`)
 	}
 
 	APIBaseURL = config.BaseURL
@@ -74,6 +83,11 @@ func main() {
 
 	if len(config.DisabledTools) > 0 {
 		log.Printf("Disabled tools: %v", config.DisabledTools)
+	}
+
+	if *runDoctorFlag {
+		runDoctor()
+		return
 	}
 
 	if *cliOneShotTool != "" {
@@ -90,6 +104,10 @@ func main() {
 	}
 
 	log.Printf("Slide MCP Server v%s starting (mode=%s)...", Version, config.ToolsMode)
+
+	if !*skipValidation {
+		runStartupValidation()
+	}
 
 	if err := runStdioServer(); err != nil {
 		log.Fatalf("Server error: %v", err)

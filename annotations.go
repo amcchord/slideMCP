@@ -19,6 +19,18 @@ import "github.com/mark3labs/mcp-go/mcp"
 func annotationsForTool(name string) mcp.ToolAnnotation {
 	openWorld := true
 	switch name {
+	case "slide_help":
+		// Pure read, fully local content (markdown baked into the binary)
+		// for most operations. Never touches external state, so openWorld=false.
+		ro := true
+		idempotent := true
+		notOpenWorld := false
+		return mcp.ToolAnnotation{
+			Title:          humanTitle(name),
+			ReadOnlyHint:   &ro,
+			IdempotentHint: &idempotent,
+			OpenWorldHint:  &notOpenWorld,
+		}
 	case "slide_overview", "slide_audit", "list_all_clients_devices_and_agents":
 		// Pure read tools.
 		ro := true
@@ -98,6 +110,8 @@ func annotationsForTool(name string) mcp.ToolAnnotation {
 // humanTitle returns a friendly display title for a tool name.
 func humanTitle(name string) string {
 	switch name {
+	case "slide_help":
+		return "Slide Help"
 	case "slide_overview":
 		return "Slide Overview"
 	case "slide_files":

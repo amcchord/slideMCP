@@ -5,12 +5,16 @@ package main
 // are touched far more often than users/accounts.
 
 func handleClientsTool(args map[string]interface{}) (string, error) {
-	return HandleToolWithOperations(CreateToolConfig("slide_clients", ToolOperations{
+	return HandleToolWithOperations(CreateToolConfigWithResolutions("slide_clients", ToolOperations{
 		"list":   listClients,
 		"get":    getClient,
 		"create": createClient,
 		"update": updateClient,
 		"delete": deleteClient,
+	}, map[string]ResolutionSpec{
+		"get":    {IDKey: "client_id", Kind: "client"},
+		"update": {IDKey: "client_id", Kind: "client"},
+		"delete": {IDKey: "client_id", Kind: "client"},
 	}), args)
 }
 
@@ -25,7 +29,11 @@ func getClientsToolInfo() ToolInfo {
 		},
 		"client_id": map[string]interface{}{
 			"type":        "string",
-			"description": "Client ID. Required for `get`, `update`, `delete`.",
+			"description": "Client ID. Required for `get`, `update`, `delete` (alternative: `name_hint`).",
+		},
+		"name_hint": map[string]interface{}{
+			"type":        "string",
+			"description": "Alternative to client_id on `get` / `update` / `delete`: a client name (case-insensitive substring match).",
 		},
 		"name": map[string]interface{}{
 			"type":        "string",
@@ -44,17 +52,20 @@ func getClientsToolInfo() ToolInfo {
 
 	return ToolInfo{
 		Name: "slide_clients",
-		Description: "Manage clients (organisational units, typically end-customers in an MSP scenario). " +
-			"Operations: `list`, `get`, `create`, `update`, `delete`. Use `slide_overview for_client` for a richer client + devices + agents view.",
+		Description: "Slide MCP - manage MSP clients (organisational units). " +
+			"REACH FOR THIS whenever the user mentions an MSP client by name, 'add a new client', 'list my clients', " +
+			"'who are my customers in Slide', or wants to update a client's details. " +
+			"Operations: `list`, `get`, `create`, `update`, `delete`. Accepts client_id OR name_hint on single-client operations. " +
+			"Use `slide_overview for_client` for a richer client + devices + agents view.",
 		InputSchema: map[string]interface{}{
 			"type":       "object",
 			"properties": props,
 			"required":   []string{"operation"},
 			"allOf": []map[string]interface{}{
-				{"if": ifOp("get"), "then": req("client_id")},
+				{"if": ifOp("get"), "then": reqEither("client_id", "name_hint")},
 				{"if": ifOp("create"), "then": req("name")},
-				{"if": ifOp("update"), "then": req("client_id")},
-				{"if": ifOp("delete"), "then": req("client_id")},
+				{"if": ifOp("update"), "then": reqEither("client_id", "name_hint")},
+				{"if": ifOp("delete"), "then": reqEither("client_id", "name_hint")},
 			},
 		},
 	}

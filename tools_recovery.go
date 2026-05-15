@@ -111,7 +111,11 @@ func getRecoveryToolInfo() ToolInfo {
 
 	return ToolInfo{
 		Name: "slide_recovery",
-		Description: "Recover from a snapshot. Three families: " +
+		Description: "Slide MCP - actually recover something from a Slide backup. " +
+			"REACH FOR THIS whenever the user mentions disaster recovery, DR, BCDR, RTO, failover, " +
+			"'boot a VM from a snapshot', 'recovery VM', 'spin up a recovered server', 'image export' (VHD/VHDX/VMDK/QCOW2/RAW), " +
+			"RDP into a recovered server, DR network, VPN/WireGuard/IPSec to a recovered VM, or 'I need to fail over to a Slide snapshot'. " +
+			"Three families: " +
 			"VMs (`list_vms`, `get_vm`, `boot_vm` <- creates a running VM from a snapshot, `update_vm` to start/stop/pause, `delete_vm`, `get_rdp_bookmark`), " +
 			"image exports (`list_images`, `get_image`, `export_image` <- VHD/VHDX/VMDK/QCOW2/RAW for external virtualization, `delete_image`, `browse_image`), " +
 			"and DR networks for booted VMs (`list_networks`/`get_network`/`create_network`/`update_network`/`delete_network` plus `create_ipsec`/`create_port_forward`/`create_wg_peer` and matching update/delete). " +

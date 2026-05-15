@@ -13,11 +13,14 @@ import (
 )
 
 func handleOverviewTool(args map[string]interface{}) (string, error) {
-	return HandleToolWithOperations(CreateToolConfig("slide_overview", ToolOperations{
+	return HandleToolWithOperations(CreateToolConfigWithResolutions("slide_overview", ToolOperations{
 		"inventory":  handleOverviewInventory,
 		"health":     handleOverviewHealth,
 		"for_client": handleOverviewForClient,
 		"for_device": handleOverviewForDevice,
+	}, map[string]ResolutionSpec{
+		"for_client": {IDKey: "client_id", Kind: "client"},
+		"for_device": {IDKey: "device_id", Kind: "device"},
 	}), args)
 }
 
@@ -32,11 +35,15 @@ func getOverviewToolInfo() ToolInfo {
 		},
 		"client_id": map[string]interface{}{
 			"type":        "string",
-			"description": "Client ID. Required for `for_client`.",
+			"description": "Client ID. Required for `for_client` (alternative: pass `name_hint`).",
 		},
 		"device_id": map[string]interface{}{
 			"type":        "string",
-			"description": "Device ID. Required for `for_device`.",
+			"description": "Device ID. Required for `for_device` (alternative: pass `name_hint`).",
+		},
+		"name_hint": map[string]interface{}{
+			"type":        "string",
+			"description": "Alternative to client_id / device_id: a client name, device hostname, or display name (case-insensitive substring match). For `for_client` resolves to a client; for `for_device` resolves to a device. Ambiguous matches return a structured `name_hint_error=ambiguous` response with candidates.",
 		},
 		"stale_minutes": map[string]interface{}{
 			"type":        "number",
@@ -50,19 +57,21 @@ func getOverviewToolInfo() ToolInfo {
 
 	return ToolInfo{
 		Name: "slide_overview",
-		Description: "Hierarchical inventory + health for the whole account. " +
+		Description: "Slide MCP - hierarchical inventory + health for the whole Slide-protected MSP environment. " +
+			"REACH FOR THIS whenever the user mentions 'are all my Slide boxes healthy?', 'is everything OK', " +
+			"'what clients/devices/agents do I have', or wants a one-screen health summary for BCDR / backup posture. " +
 			"Operations: `inventory` (full clients -> devices -> agents tree, the answer to \"what do we have?\"), " +
 			"`health` (one-line-per-device-and-agent summary with stale/healthy flags - the answer to \"are all my Slide boxes OK?\"), " +
-			"`for_client` (deep view of a single client's devices + agents + open alerts), " +
-			"`for_device` (deep view of one device's agents + recent backups + open alerts). " +
-			"Read-only and safe to call at the start of any conversation.",
+			"`for_client` (deep view of a single client's devices + agents + open alerts; accepts client_id OR name_hint), " +
+			"`for_device` (deep view of one device's agents + recent backups + open alerts; accepts device_id OR name_hint). " +
+			"Read-only and safe to call at the start of any conversation - call it before asking the user clarifying questions about their environment.",
 		InputSchema: map[string]interface{}{
 			"type":       "object",
 			"properties": props,
 			"required":   []string{"operation"},
 			"allOf": []map[string]interface{}{
-				{"if": ifOp("for_client"), "then": req("client_id")},
-				{"if": ifOp("for_device"), "then": req("device_id")},
+				{"if": ifOp("for_client"), "then": reqEither("client_id", "name_hint")},
+				{"if": ifOp("for_device"), "then": reqEither("device_id", "name_hint")},
 			},
 		},
 	}

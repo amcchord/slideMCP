@@ -156,7 +156,11 @@ func formatList[T any](
 		"pagination": pagination,
 		"count":      len(items),
 	}
-	return formatJSON(envelope, format)
+	body, err := formatJSON(envelope, format)
+	if err != nil {
+		return "", err
+	}
+	return augmentJSONResponse(body, args), nil
 }
 
 // formatSingle renders a single struct response in the requested format.
@@ -164,14 +168,21 @@ func formatSingle(v interface{}, args map[string]interface{}, defaultFormat stri
 	format := extractFormat(args, defaultFormat)
 	fields := extractFields(args)
 
+	var body string
+	var err error
 	if fields == nil {
-		return formatJSON(v, format)
+		body, err = formatJSON(v, format)
+	} else {
+		var m map[string]interface{}
+		m, err = projectStruct(v, fields)
+		if err == nil {
+			body, err = formatJSON(m, format)
+		}
 	}
-	m, err := projectStruct(v, fields)
 	if err != nil {
 		return "", err
 	}
-	return formatJSON(m, format)
+	return augmentJSONResponse(body, args), nil
 }
 
 // commonListProperties returns the JSON-Schema fragment shared by every
@@ -203,10 +214,15 @@ func commonListProperties() map[string]interface{} {
 			"type":        "string",
 			"description": "Comma-separated field projection, e.g. `id,hostname,last_seen`. Applies to each entry in lists or to the response object itself.",
 		},
+		"hints": map[string]interface{}{
+			"type":        "string",
+			"description": "Set to `off` to suppress the `next_steps` array the server appends to most responses. Default is on - the hints are short and cheap.",
+			"enum":        []string{"on", "off"},
+		},
 	}
 }
 
-// commonSinglePropertiesNoList returns just the format/fields fragment for
+// commonSinglePropertiesNoList returns just the format/fields/hints fragment for
 // non-list operations.
 func commonSinglePropertiesNoList() map[string]interface{} {
 	return map[string]interface{}{
@@ -218,6 +234,11 @@ func commonSinglePropertiesNoList() map[string]interface{} {
 		"fields": map[string]interface{}{
 			"type":        "string",
 			"description": "Comma-separated field projection, e.g. `id,hostname,last_seen`.",
+		},
+		"hints": map[string]interface{}{
+			"type":        "string",
+			"description": "Set to `off` to suppress the `next_steps` array the server appends to most responses.",
+			"enum":        []string{"on", "off"},
 		},
 	}
 }

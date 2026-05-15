@@ -69,7 +69,9 @@ func getAuditToolInfo() ToolInfo {
 
 	return ToolInfo{
 		Name: "slide_audit",
-		Description: "Query the account audit log (Slide API v1.27.0). " +
+		Description: "Slide MCP - query the Slide account audit log. " +
+			"REACH FOR THIS whenever the user mentions 'audit log', 'what changed', 'who did X', 'last night's changes', " +
+			"'compliance report', 'who deleted/created Y', or any change-tracking / forensic question about Slide. " +
 			"Operations: `list` (paginated query with optional action/resource/time filters), `get` (single audit entry by ID), " +
 			"`actions` (list valid action names for the `audit_action_name` filter), `resources` (list valid resource type names " +
 			"for the `audit_resource_type_name` filter), `recent` (convenience: last N hours, default 24). " +

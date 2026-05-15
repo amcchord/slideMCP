@@ -47,7 +47,10 @@ func getAdminToolInfo() ToolInfo {
 
 	return ToolInfo{
 		Name: "slide_admin",
-		Description: "Account + user administration. Operations: `list_users`, `get_user`, `get_user_avatar` (returns a data: URL), " +
+		Description: "Slide MCP - Slide account + user administration. " +
+			"REACH FOR THIS whenever the user mentions 'Slide users', 'who has access to Slide', 'add a user', " +
+			"'change alert email recipients', 'Slide account settings', or any account-level admin task. " +
+			"Operations: `list_users`, `get_user`, `get_user_avatar` (returns a data: URL), " +
 			"`list_accounts`, `get_account`, `update_account` (currently just `alert_emails`). " +
 			"Note: client management moved to `slide_clients`.",
 		InputSchema: map[string]interface{}{

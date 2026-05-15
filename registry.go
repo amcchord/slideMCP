@@ -22,7 +22,11 @@ type ToolHandler func(map[string]interface{}) (string, error)
 // reach for naturally, plus the bare list_all shim that older Desktop
 // installs may still call.
 var toolRegistry = map[string]ToolHandler{
-	// New v4 task-oriented tools
+	// v5 discovery / onboarding tool. Always available, regardless of
+	// tools mode, so a novice can self-rescue.
+	"slide_help": handleHelpTool,
+
+	// v4 task-oriented tools
 	"slide_overview": handleOverviewTool,
 	"slide_files":    handleFilesTool,
 	"slide_recovery": handleRecoveryTool,
@@ -47,6 +51,7 @@ var toolRegistry = map[string]ToolHandler{
 // later (in the SDK tool filter) so the descriptors here are unconditional.
 func allToolInfos() []ToolInfo {
 	return []ToolInfo{
+		getHelpToolInfo(),
 		getOverviewToolInfo(),
 		getFilesToolInfo(),
 		getRecoveryToolInfo(),
@@ -59,8 +64,11 @@ func allToolInfos() []ToolInfo {
 		getBackupsToolInfo(),
 		getAlertsToolInfo(),
 		{
-			Name:        "list_all_clients_devices_and_agents",
-			Description: "Backward-compat alias for `slide_overview operation=inventory`. New conversations should call `slide_overview` directly.",
+			Name: "list_all_clients_devices_and_agents",
+			Description: "Slide MCP - backward-compat alias. " +
+				"REACH FOR THIS whenever the user mentions Slide inventory, 'list my Slide clients/devices/agents', " +
+				"or the v3 question 'what's in my Slide account'. New conversations should prefer `slide_overview operation=inventory` " +
+				"(which this is just a thin alias for).",
 			InputSchema: map[string]interface{}{
 				"type":       "object",
 				"properties": map[string]interface{}{},

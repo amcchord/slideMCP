@@ -5,6 +5,53 @@ around the questions an MSP technician actually asks Claude Desktop -
 "are all my Slide boxes healthy?", "did backups run last night for ACME?",
 "find Q4-budget.xlsx on Bob's laptop and restore Tuesday's version".
 
+## What to ask first
+
+If you've just installed the extension, try one of these prompts. Claude
+will reach for `slide-mcp-server` automatically - you don't have to spell
+out "use the Slide MCP".
+
+- "Are all my Slide boxes healthy?"
+- "Did backups run last night for ACME?"
+- "Find Q4-budget.xlsx on Bob's laptop."
+- "What unresolved alerts do I have? Sort worst first."
+- "Boot a recovery VM for DC-01."
+- "What changed in the last 24 hours?"
+- "I don't know where to start - what can you do?"
+
+You never need to know `a_xxxxxxxxxxxx` / `d_xxxxxxxxxxxx` IDs. Say
+"Bob's laptop" or "the file server" - the server fuzzy-matches against
+hostnames and display names and asks you to disambiguate when more than
+one entity matches.
+
+When in doubt: `/slide.welcome` (slash-command in Claude Desktop) or
+just ask "what can you do?".
+
+## What's new in v5.0.0
+
+- **Novice-first overhaul**. The LLM now reaches for slide-mcp-server
+  whenever the user mentions Slide, BCDR, backups, restores, snapshots,
+  recovery VMs, file recovery, disaster recovery, audit logs, or
+  unresolved alerts - without the user having to spell it out.
+- **`slide_help`** - new always-available tool with `getting_started`,
+  `examples`, `glossary`, `troubleshoot`, `what_can_you_do` operations.
+- **`/slide.welcome`** slash-command prompt + `slide://welcome`,
+  `slide://help/glossary`, `slide://help/troubleshoot` resources.
+- **Server-side fuzzy name resolution**. Every tool that takes an
+  `agent_id` / `device_id` / `client_id` also accepts `name_hint`. Pass
+  a hostname, display name, or substring; the server resolves it.
+  Ambiguous matches return a structured list of candidates.
+- **Startup token validation** with clear, multi-line remediation
+  guidance for invalid tokens or firewall issues.
+- **`slide-mcp-server --doctor`** subcommand for self-diagnosis
+  (token, network, sample reads). Idempotent and CI-friendly.
+- **`next_steps`** array appended to every response with curated
+  follow-up tool-call suggestions. Suppress with `hints=off`.
+- **Friendlier errors**: 401/403/404 carry novice-friendly remediation
+  hints, and unknown operations get did-you-mean suggestions.
+
+Full migration table and per-file detail in [CHANGELOG.md](CHANGELOG.md).
+
 ## What's new in v4.0.0
 
 - **Headline new capability: `slide_files`**. Search filenames across every
@@ -178,7 +225,15 @@ without a tool call).
 }
 ```
 
-## Available Meta-Tools (v4.0.0)
+## Available Meta-Tools (v5.0.0)
+
+### 💡 Help & onboarding
+
+0. **`slide_help`** — discovery / onboarding / troubleshooting
+   - Operations: `getting_started`, `examples`, `glossary`, `troubleshoot`,
+     `list_prompts`, `list_resources`, `what_can_you_do`
+   - Always available, never blocked by tools mode, never disable-able.
+   - First thing the LLM should call when the user is vague.
 
 ### 🧭 Overview & inventory
 
@@ -248,6 +303,7 @@ without a tool call).
 
 Claude Desktop surfaces these in its slash-command UI:
 
+- **`/slide.welcome`** — one-message intro for first-time users
 - **`/slide.daily-status [client?] [hours?]`** — daily ops summary
 - **`/slide.triage-alerts`** — prioritised unresolved-alert review
 - **`/slide.restore-file [filename?] [agent?]`** — guided file recovery
@@ -259,6 +315,9 @@ Claude Desktop surfaces these in its slash-command UI:
 
 Claude can read these without burning a tool call:
 
+- `slide://welcome` — one-page primer + example questions (no API calls)
+- `slide://help/glossary` — Slide-specific terminology (no API calls)
+- `slide://help/troubleshoot` — common setup / auth / network problems
 - `slide://overview/inventory` — clients → devices → agents tree
 - `slide://overview/health` — one-line-per-device-and-agent summary
 - `slide://alerts/unresolved` — open alerts, prioritised
@@ -281,7 +340,26 @@ Every list/get operation accepts these cross-cutting parameters:
   payload, indented — equivalent to v3 behaviour).
 - `fields` — comma-separated JSON projection, e.g.
   `fields=id,hostname,last_seen` drops everything else.
+- `hints` — set to `off` to suppress the `next_steps` array v5 appends
+  to most responses. Default is on; the hints are short and cheap.
 - All list responses include `pagination.next_offset` and `count`.
+
+## name_hint: no IDs to memorise
+
+Every tool that needs an `agent_id`, `device_id`, or `client_id` also
+accepts `name_hint`. Pass a hostname, display name, client name, or any
+substring (`name_hint=bob`, `name_hint=ACME`, `name_hint=DC-01`) and
+the server fuzzy-resolves it server-side.
+
+- **0 matches** → the response is a `{"name_hint_error":"no_match",...}`
+  payload with a suggestion to call `slide_overview operation=inventory`.
+- **1 match** → the resolved entity appears in the response under
+  `_resolved` so the assistant can confirm to the user which one it
+  picked, then the operation proceeds normally.
+- **2+ matches** → the response is a
+  `{"name_hint_error":"ambiguous","candidates":[...]}` payload with up
+  to 10 candidates. The assistant should ask the user to pick one,
+  then re-call with the explicit `*_id`.
 
 ## Key Features
 
@@ -445,7 +523,9 @@ The Slide MCP Server supports several command-line arguments for flexible config
 | `--api-key` | Slide API key for authentication | `SLIDE_API_KEY` | Required |
 | `--base-url` | Base URL for Slide API endpoint | `SLIDE_BASE_URL` | `https://api.slide.tech` |
 | `--tools` | Permission mode (`read-only` / `safe` / `full`; legacy aliases `reporting`/`restores`/`full-safe` still work) | `SLIDE_TOOLS` | `safe` |
-| `--disabled-tools` | Comma-separated list of tools to disable | `SLIDE_DISABLED_TOOLS` | None |
+| `--disabled-tools` | Comma-separated list of tools to disable (`slide_help` cannot be disabled) | `SLIDE_DISABLED_TOOLS` | None |
+| `--doctor` | Run self-diagnostic checks (token, network, sample reads) and exit | - | - |
+| `--skip-startup-validation` | Skip the startup probe of `/v1/account` (useful when launching offline) | - | - |
 | `--tool` | Run a single tool then exit (one-shot mode) | - | - |
 | `--args` | JSON arguments for `--tool` | - | - |
 | `--version` | Show version information and exit | - | - |

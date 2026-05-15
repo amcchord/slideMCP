@@ -11,7 +11,7 @@ import (
 )
 
 func handleFilesTool(args map[string]interface{}) (string, error) {
-	return HandleToolWithOperations(CreateToolConfig("slide_files", ToolOperations{
+	return HandleToolWithOperations(CreateToolConfigWithResolutions("slide_files", ToolOperations{
 		"search":          handleFilesSearch,
 		"versions":        handleFilesVersions,
 		"list_restores":   listFileRestores,
@@ -23,6 +23,9 @@ func handleFilesTool(args map[string]interface{}) (string, error) {
 		"create_push":     createFileRestorePush,
 		"update_push":     updateFileRestorePush,
 		"get_push_status": handleFilesGetPushStatus,
+	}, map[string]ResolutionSpec{
+		"search":   {IDKey: "agent_id", Kind: "agent"},
+		"versions": {IDKey: "agent_id", Kind: "agent"},
 	}), args)
 }
 
@@ -42,7 +45,11 @@ func getFilesToolInfo() ToolInfo {
 		},
 		"agent_id": map[string]interface{}{
 			"type":        "string",
-			"description": "ID of the agent to search. Required for `search` and `versions`.",
+			"description": "ID of the agent to search. Required for `search` and `versions` (alternative: pass `name_hint`).",
+		},
+		"name_hint": map[string]interface{}{
+			"type":        "string",
+			"description": "Alternative to agent_id for `search` and `versions`: an agent hostname or display name (case-insensitive substring match). Use this when the user says 'Bob's laptop' or 'the file server'.",
 		},
 		"search_term": map[string]interface{}{
 			"type":        "string",
@@ -102,18 +109,33 @@ func getFilesToolInfo() ToolInfo {
 
 	return ToolInfo{
 		Name: "slide_files",
-		Description: "Search agent file indexes and run file-level restores. " +
+		Description: "Slide MCP - find and restore files from Slide backups. " +
+			"REACH FOR THIS whenever the user mentions a filename, a lost file, 'recover X', 'restore X', " +
+			"'previous version', 'yesterday's copy', 'find Q4-budget on Bob's laptop', 'push it back to the server', " +
+			"or any file-level recovery from a Slide-protected system. The headline 'I lost a file, can you get it back?' tool. " +
 			"Operations: `search` (find a file across an agent's snapshots), `versions` (list snapshots that contain a path), " +
 			"`list_restores`/`get_restore`/`create_restore`/`delete_restore` (manage restore sessions), `browse` (walk a restore), " +
 			"`list_pushes`/`create_push`/`update_push`/`get_push_status` (push a file back to the protected system). " +
+			"Identifying the agent: pass `agent_id` OR `name_hint` (e.g. name_hint='bob' resolves Bob's laptop). " +
+			"Example: {operation:'search', name_hint:'bob', search_term:'Q4-budget'} returns every snapshot containing 'Q4-budget' for Bob's laptop. " +
 			"Typical recovery flow: `search` -> pick a path -> `versions` -> pick a snapshot -> `create_restore` -> `browse` -> `create_push`.",
 		InputSchema: map[string]interface{}{
 			"type":       "object",
 			"properties": props,
 			"required":   []string{"operation"},
 			"allOf": []map[string]interface{}{
-				{"if": ifOp("search"), "then": req("agent_id", "search_term")},
-				{"if": ifOp("versions"), "then": req("agent_id", "path")},
+				{"if": ifOp("search"), "then": map[string]interface{}{
+					"allOf": []map[string]interface{}{
+						reqEither("agent_id", "name_hint"),
+						req("search_term"),
+					},
+				}},
+				{"if": ifOp("versions"), "then": map[string]interface{}{
+					"allOf": []map[string]interface{}{
+						reqEither("agent_id", "name_hint"),
+						req("path"),
+					},
+				}},
 				{"if": ifOp("get_restore"), "then": req("file_restore_id")},
 				{"if": ifOp("create_restore"), "then": req("snapshot_id", "device_id")},
 				{"if": ifOp("delete_restore"), "then": req("file_restore_id")},
