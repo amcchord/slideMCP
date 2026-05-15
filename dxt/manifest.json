@@ -67,9 +67,8 @@
     "tools_mode": {
       "type": "string",
       "title": "Tool permissions",
-      "description": "read-only = only list/get/search/browse. safe (default) = everything except deletes and device poweroff/reboot (restores, backup launch, agent/device settings all work). full = unrestricted, including deletes and device power-cycle. Legacy aliases reporting/restores/full-safe still accepted.",
+      "description": "One of: read-only, safe, full. read-only = only list/get/search/browse. safe (default) = everything except deletes and device poweroff/reboot (restores, backup launch, agent/device settings all work). full = unrestricted, including deletes and device power-cycle. Legacy aliases reporting/restores/full-safe still accepted.",
       "default": "safe",
-      "enum": ["read-only", "safe", "full"],
       "required": false
     }
   },
