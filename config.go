@@ -9,7 +9,7 @@ import (
 // and the `--version` flag.
 const (
 	ServerName = "slide-mcp-server"
-	Version    = "5.0.2"
+	Version    = "5.0.3"
 )
 
 // Permission tiers. v4.0.0 collapses the old four-tier system

@@ -1,5 +1,55 @@
 # Slide MCP Changes
 
+## 2026-05-15 - v5.0.3 - Hotfix: include structuredContent in tool responses
+
+### Symptom
+
+Every API-backed tool returned a generic `<error>Tool execution failed</error>`
+to the LLM, while the underlying MCP traffic logged by Claude Desktop
+(at `~/Library/Logs/Claude/mcp-server-Slide Backup.log`) showed the
+server returning clean JSON-RPC results. Only `slide_help` operations
+worked correctly. The contrast made the bug nearly invisible without a
+transport-level capture.
+
+### Root cause
+
+Every tool except `slide_help` declares an `outputSchema` via
+[`output_schemas.go`](output_schemas.go). The MCP 2025-11-25 spec the
+client negotiates makes `structuredContent` MANDATORY in the response
+when a tool advertises `outputSchema`. We were using
+`mcp.NewToolResultText(text)` which sets `content` only and omits
+`structuredContent`, so Claude.ai's tool-execution layer rejected each
+response as a schema violation and surfaced "Tool execution failed" to
+the LLM. `slide_help` was unaffected because it has no `outputSchema`
+declared, so the client didn't validate it.
+
+### Fix
+
+`adaptToolHandler` in [`registry.go`](registry.go) now parses every
+successful text response into a JSON value and returns BOTH `content`
+(unchanged text) and `structuredContent` (parsed value) on every tool
+call. Schema-aware clients see structuredContent; legacy clients see
+the same text content as before. Backwards-compatible.
+
+If the response text isn't valid JSON (which should never happen for
+our handlers, but guards against future regressions), the dispatcher
+falls back to text-only - identical to pre-v5.0.3 behaviour.
+
+### How to confirm
+
+After upgrade, the JSON-RPC result for any tool call carries a top-level
+`structuredContent` field matching the same JSON that's in the `text`
+content. From a shell:
+
+```
+slide-mcp-server --tool slide_devices --args '{"operation":"list"}' | jq .
+```
+
+In Claude Desktop, tools like `slide_devices list`, `slide_overview
+health`, `slide_overview inventory`, and
+`list_all_clients_devices_and_agents` now return real data instead of
+"Tool execution failed".
+
 ## 2026-05-15 - v5.0.2 - Add debug surface for diagnosing tool-call failures
 
 ### Headline

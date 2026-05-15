@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"sort"
@@ -501,6 +502,83 @@ func TestSlideFilesSearchAmbiguousNameHint(t *testing.T) {
 	}
 	if !strings.Contains(out, "a_aaaaaaaaaaaa") || !strings.Contains(out, "a_bbbbbbbbbbbb") {
 		t.Errorf("expected both candidate ids, got: %s", out)
+	}
+}
+
+// TestToolResponseIncludesStructuredContent guarantees every tool with
+// an outputSchema returns both `content` (text) and `structuredContent`
+// in its CallToolResult. Without structuredContent, MCP 2025-11-25
+// clients reject the response as a schema violation and surface a
+// generic "Tool execution failed" to the LLM.
+//
+// This was the root cause of every "Tool execution failed" report we
+// saw in v5.0.0 - v5.0.2; do not remove this test without first
+// verifying the fix in registry.adaptToolHandler is still in place.
+func TestToolResponseIncludesStructuredContent(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/v1/device":
+			w.Write([]byte(`{"data":[{"device_id":"d_test","hostname":"dev01","display_name":""}],"pagination":{"total":1}}`))
+		case "/v1/client":
+			w.Write([]byte(`{"data":[{"client_id":"c_test","name":"Test"}],"pagination":{"total":1}}`))
+		case "/v1/agent":
+			w.Write([]byte(`{"data":[],"pagination":{}}`))
+		case "/v1/agent/a_test/file-search":
+			w.Write([]byte(`{"data":[],"pagination":{}}`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+
+	setupTestEnv(t, ToolsFull)
+	APIBaseURL = srv.URL
+	resetNameCache()
+
+	cases := []struct {
+		toolName string
+		args     map[string]interface{}
+	}{
+		{"slide_overview", map[string]interface{}{"operation": "health"}},
+		{"slide_overview", map[string]interface{}{"operation": "inventory"}},
+		{"slide_devices", map[string]interface{}{"operation": "list"}},
+		{"list_all_clients_devices_and_agents", map[string]interface{}{}},
+	}
+
+	mcpSrv, err := buildMCPServer()
+	if err != nil {
+		t.Fatalf("buildMCPServer: %v", err)
+	}
+
+	for _, c := range cases {
+		t.Run(c.toolName+"/"+fmt.Sprint(c.args["operation"]), func(t *testing.T) {
+			argsJSON, _ := json.Marshal(c.args)
+			req := []byte(fmt.Sprintf(
+				`{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":%q,"arguments":%s}}`,
+				c.toolName, argsJSON))
+			resp := mcpSrv.HandleMessage(context.Background(), req)
+			body, _ := json.Marshal(resp)
+			var parsed struct {
+				Result struct {
+					Content           []map[string]interface{} `json:"content"`
+					StructuredContent interface{}              `json:"structuredContent"`
+					IsError           bool                     `json:"isError"`
+				} `json:"result"`
+			}
+			if err := json.Unmarshal(body, &parsed); err != nil {
+				t.Fatalf("unmarshal response: %v", err)
+			}
+			if parsed.Result.IsError {
+				t.Fatalf("expected success, got isError=true; body=%s", string(body))
+			}
+			if len(parsed.Result.Content) == 0 {
+				t.Errorf("expected non-empty content array")
+			}
+			if parsed.Result.StructuredContent == nil {
+				t.Errorf("CRITICAL: %s missing structuredContent - Claude.ai will reject this as a schema violation. body=%s", c.toolName, string(body))
+			}
+		})
 	}
 }
 

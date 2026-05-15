@@ -101,6 +101,20 @@ func toolInfoToSDKTool(info ToolInfo) (mcp.Tool, error) {
 
 // adaptToolHandler wraps an in-process ToolHandler so it satisfies the SDK's
 // ToolHandlerFunc shape. Permission checks mirror handleToolCall().
+//
+// When the tool declares an outputSchema (via outputSchemaForTool), the
+// MCP 2025-11-25 spec requires the response to include `structuredContent`
+// matching that schema in addition to the text content. Without it,
+// Claude.ai's tool-execution layer rejects the response as a schema
+// violation and surfaces a generic "Tool execution failed" to the LLM,
+// even though the raw JSON-RPC response left the server cleanly.
+//
+// Every handler in this codebase already produces a JSON string, so we
+// parse it back into a map at the dispatcher boundary and hand BOTH the
+// original text (as fallback content) and the parsed map (as
+// structuredContent) to the SDK. If the parse fails (which should never
+// happen for our handlers), we fall back to text-only - still valid per
+// spec, just won't satisfy outputSchema clients.
 func adaptToolHandler(name string, handler ToolHandler) server.ToolHandlerFunc {
 	return func(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		if config.IsToolDisabled(name) {
@@ -117,8 +131,24 @@ func adaptToolHandler(name string, handler ToolHandler) server.ToolHandlerFunc {
 		if err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
 		}
-		return mcp.NewToolResultText(text), nil
+		return toolResultWithStructured(text), nil
 	}
+}
+
+// toolResultWithStructured returns a CallToolResult populated with BOTH
+// the original text content AND the parsed JSON as structuredContent.
+// On parse failure (text isn't valid JSON), returns text-only.
+func toolResultWithStructured(text string) *mcp.CallToolResult {
+	var structured interface{}
+	if err := json.Unmarshal([]byte(text), &structured); err == nil {
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				mcp.TextContent{Type: "text", Text: text},
+			},
+			StructuredContent: structured,
+		}
+	}
+	return mcp.NewToolResultText(text)
 }
 
 // registerTools wires every tool descriptor + handler onto the SDK server.
