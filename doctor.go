@@ -30,6 +30,8 @@ import (
 
 // probeAccount calls /v1/account with the current token and returns
 // either (account_count, nil) on 200 or an APIError on non-2xx.
+// The count comes from the response data length, not pagination.total,
+// because the Slide API omits pagination.total for single-item responses.
 func probeAccount() (int, error) {
 	body, err := makeAPIRequest("GET", "/v1/account?limit=1", nil)
 	if err != nil {
@@ -39,7 +41,31 @@ func probeAccount() (int, error) {
 	if err := json.Unmarshal(body, &p); err != nil {
 		return 0, fmt.Errorf("parse account response: %w", err)
 	}
-	return p.Pagination.Total, nil
+	if p.Pagination.Total > 0 {
+		return p.Pagination.Total, nil
+	}
+	return len(p.Data), nil
+}
+
+// accountSummary returns a short "as <name>" string for the startup log
+// from the same /v1/account probe. Empty string if no account is visible.
+func accountSummary() string {
+	body, err := makeAPIRequest("GET", "/v1/account?limit=1", nil)
+	if err != nil {
+		return ""
+	}
+	var p PaginatedResponse[Account]
+	if err := json.Unmarshal(body, &p); err != nil {
+		return ""
+	}
+	if len(p.Data) == 0 {
+		return ""
+	}
+	a := p.Data[0]
+	if a.AccountName != "" {
+		return a.AccountName
+	}
+	return a.AccountID
 }
 
 // probeCount runs `GET <endpoint>?limit=1` and returns the total count
@@ -119,22 +145,35 @@ You can verify connectivity with:
 }
 
 // runStartupValidation is the lightweight, single-probe check that runs
-// before runStdioServer(). It NEVER crashes the process on a network
-// failure (we still want slide_help operation=troubleshoot to be
-// callable) but DOES exit on a clear 401/403 because that's a config
-// problem the operator must fix before doing anything useful.
+// alongside runStdioServer(). It NEVER crashes the process on ANY
+// failure - including 401/403 - because that would kill the MCP
+// transport from Claude Desktop's perspective, which manifests as
+// "Failed to call tool" with no useful diagnostic for the operator.
+//
+// Instead we log a clear remediation message to stderr (which surfaces
+// in Claude Desktop's extension log panel) and let the server come up.
+// Each subsequent tool call surfaces the same friendly auth error via
+// the per-status APIError hints, and slide_help operation=troubleshoot
+// remains callable so the LLM can guide the user to a fix.
 func runStartupValidation() {
 	total, err := probeAccount()
 	if err == nil {
-		fmt.Fprintf(os.Stderr, "slide-mcp-server: connected to Slide successfully (%d account(s) visible)\n", total)
+		summary := accountSummary()
+		if summary != "" {
+			fmt.Fprintf(os.Stderr, "slide-mcp-server: connected to Slide as %s (%d account(s) visible)\n", summary, total)
+		} else {
+			fmt.Fprintf(os.Stderr, "slide-mcp-server: connected to Slide successfully (%d account(s) visible)\n", total)
+		}
 		return
 	}
 
 	if hint := authErrorHint(err); hint != "" {
 		fmt.Fprintln(os.Stderr, "")
+		fmt.Fprintln(os.Stderr, "slide-mcp-server: WARNING - Slide API token was rejected at startup.")
 		fmt.Fprintln(os.Stderr, hint)
+		fmt.Fprintln(os.Stderr, "The server is still running so slide_help (and any cached responses) remain callable, but every API-backed tool will return an auth error until the token is fixed.")
 		fmt.Fprintln(os.Stderr, "Underlying error:", err)
-		os.Exit(2)
+		return
 	}
 
 	if hint := networkErrorHint(err); hint != "" {

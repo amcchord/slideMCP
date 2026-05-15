@@ -1,5 +1,48 @@
 # Slide MCP Changes
 
+## 2026-05-14 - v5.0.1 - Hotfix: don't kill stdio server on startup token probe
+
+### Symptom
+
+Every tool call from Claude Desktop returned "Failed to call tool"
+when the user-config-stored API token didn't validate immediately at
+startup. The v5.0.0 startup validation called `os.Exit(2)` on a 401
+from `/v1/account`, which killed the MCP stdio transport before
+Claude Desktop could send `initialize` - so the host saw cached tool
+metadata, tried to call tools, and got transport errors with no
+useful diagnostic.
+
+### Fix
+
+- `runStartupValidation` no longer calls `os.Exit` on any path. Auth
+  failures, network failures, and unknown errors all log a clear
+  remediation message to stderr (which Claude Desktop surfaces in its
+  extension log panel) and let the server keep running. Each
+  subsequent tool call returns the same friendly per-status `APIError`
+  hint, and `slide_help operation=troubleshoot` stays callable so the
+  LLM can guide the user to a fix.
+- The startup probe now runs in a background goroutine so it never
+  blocks the MCP `initialize` handshake on a network round-trip to
+  Slide. The stdio server comes up immediately.
+- Fixed misleading "0 account(s) visible" log when `/v1/account`
+  responds without a `pagination.total` field (it usually does);
+  the success log now reads `connected to Slide as <account_name>`.
+- `.mcpb` manifest copy refresh: the API-token field title now shows
+  a literal `tk_xxxxxxxxxxxx_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx` example
+  so users see what shape to paste; the tool-permissions field title
+  spells out the three valid values. Native dropdown / placeholder
+  support is blocked on
+  [modelcontextprotocol/mcpb#165](https://github.com/modelcontextprotocol/mcpb/issues/165)
+  which is not yet merged.
+
+### What's unchanged
+
+- Same v5.0.0 tool surface, same signing pipeline, same `.mcpb` shape.
+- API key handling is unchanged; the same token that worked in
+  `slide-mcp-server --doctor` from the CLI now also works from the
+  Claude Desktop extension. Tokens that DON'T work just surface the
+  error visibly instead of crashing the server.
+
 ## 2026-05-14 - v5.0.0 - Novice-first pass: discoverability + fuzzy names + doctor
 
 ### Headline

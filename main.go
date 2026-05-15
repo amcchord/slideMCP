@@ -105,8 +105,13 @@ Generate a token at https://console.slide.tech under My Settings -> API Tokens.`
 
 	log.Printf("Slide MCP Server v%s starting (mode=%s)...", Version, config.ToolsMode)
 
+	// Validate the API token in the background so we never block the MCP
+	// initialize handshake on a network round-trip to Slide. The goroutine
+	// only logs to stderr - it can NEVER kill the process. If the token
+	// is bad, each tool call surfaces the same friendly auth error via
+	// APIError, and the warning lands in Claude Desktop's extension log.
 	if !*skipValidation {
-		runStartupValidation()
+		go runStartupValidation()
 	}
 
 	if err := runStdioServer(); err != nil {
