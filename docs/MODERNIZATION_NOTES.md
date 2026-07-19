@@ -3,6 +3,27 @@
 This document tracks the major modernization milestones. See [CHANGELOG.md](../CHANGELOG.md)
 for the per-release detail.
 
+## v5.1.0 (2026-07-18) - Reliability and multi-host release contracts
+
+v5.1.0 focuses on operational certainty rather than adding more API surface.
+The HTTP client now has bounded deadlines and response sizes, only retries
+idempotent reads, and exposes deterministic failure injection points. Complete
+inventory and health are fully paginated and avoid the previous N+1 request
+shape.
+
+The test harness now covers registry/schema/permission contracts, Anthropic and
+OpenAI MCP protocol profiles, production-binary stdio framing, distribution
+metadata, API edge cases, and live read-only demo calls. CI repeats race tests,
+cross-builds, ShellCheck, full package assembly, and official MCPB validation.
+
+Distribution is handled by one fail-closed release pipeline. The MCPB selects
+both Linux architectures correctly, the stable download URL points at the real
+repository, and historical installer asset names are published as aliases so
+retired installers can install the latest release. macOS aliases all carry the
+same Developer ID signed and Apple-notarized universal binary.
+
+---
+
 ## v3.0.0 (2026-05-10) - Official SDK + Slide API v1.27.0
 
 ### Why
@@ -402,4 +423,3 @@ The v2.4.0 modernization significantly improves the Slide MCP Server's compatibi
 - [MCP Protocol Specification](https://modelcontextprotocol.io/)
 - [Slide API Documentation](https://docs.slide.tech/)
 - [Project Repository](https://github.com/amcchord/slideMCP)
-

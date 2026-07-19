@@ -22,4 +22,4 @@ echo "App-specific password: [HIDDEN]"
 # 1. Copy this file: cp scripts/release-env.template scripts/release-env.sh
 # 2. Edit release-env.sh with your actual credentials
 # 3. Source it: source scripts/release-env.sh
-# 4. Run the release: ./scripts/automated-release.sh 
+# 4. Run the release: ./scripts/release-all-in-one.sh vX.Y.Z

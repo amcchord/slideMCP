@@ -6,7 +6,7 @@
 # amd64) and is selected at runtime via the manifest's platform_overrides.
 
 BINARY_NAME = slide-mcp-server
-VERSION     = v5.0.3
+VERSION     = v5.1.0
 BUILD_DIR   = build
 DXT_STAGE   = $(BUILD_DIR)/dxt-stage
 MCPB_FILE   = $(BUILD_DIR)/$(BINARY_NAME).mcpb
@@ -153,6 +153,7 @@ notarize-darwin-universal: sign-darwin-universal
 #   server/slide-mcp-server-darwin-universal
 #   server/slide-mcp-server-linux-amd64
 #   server/slide-mcp-server-linux-arm64
+#   server/slide-mcp-server-linux (architecture-selecting launcher)
 #   server/slide-mcp-server-windows-amd64.exe
 .PHONY: stage-dxt
 stage-dxt: $(BIN_DARWIN_UNIVERSAL) $(BIN_LINUX_AMD64) $(BIN_LINUX_ARM64) $(BIN_WINDOWS_AMD64)
@@ -163,6 +164,8 @@ stage-dxt: $(BIN_DARWIN_UNIVERSAL) $(BIN_LINUX_AMD64) $(BIN_LINUX_ARM64) $(BIN_W
 	cp $(BIN_LINUX_AMD64)     $(DXT_STAGE)/server/$(BINARY_NAME)-linux-amd64
 	cp $(BIN_LINUX_ARM64)     $(DXT_STAGE)/server/$(BINARY_NAME)-linux-arm64
 	cp $(BIN_WINDOWS_AMD64)   $(DXT_STAGE)/server/$(BINARY_NAME)-windows-amd64.exe
+	cp dxt/launchers/$(BINARY_NAME)-linux $(DXT_STAGE)/server/$(BINARY_NAME)-linux
+	chmod +x $(DXT_STAGE)/server/$(BINARY_NAME)-linux
 	@if [ -f dxt/icon.png ]; then cp dxt/icon.png $(DXT_STAGE)/icon.png; fi
 	@if [ -d dxt/icons ]; then cp -R dxt/icons $(DXT_STAGE)/icons; fi
 
@@ -188,6 +191,8 @@ pack-dxt-signed: notarize-darwin-universal $(BIN_LINUX_AMD64) $(BIN_LINUX_ARM64)
 	cp $(BIN_LINUX_AMD64)     $(DXT_STAGE)/server/$(BINARY_NAME)-linux-amd64
 	cp $(BIN_LINUX_ARM64)     $(DXT_STAGE)/server/$(BINARY_NAME)-linux-arm64
 	cp $(BIN_WINDOWS_AMD64)   $(DXT_STAGE)/server/$(BINARY_NAME)-windows-amd64.exe
+	cp dxt/launchers/$(BINARY_NAME)-linux $(DXT_STAGE)/server/$(BINARY_NAME)-linux
+	chmod +x $(DXT_STAGE)/server/$(BINARY_NAME)-linux
 	@if [ -f dxt/icon.png ]; then cp dxt/icon.png $(DXT_STAGE)/icon.png; fi
 	@if [ -d dxt/icons ]; then cp -R dxt/icons $(DXT_STAGE)/icons; fi
 	@rm -f $(MCPB_FILE)
@@ -234,7 +239,11 @@ doctor-signing:
 
 .PHONY: test
 test:
-	go test -v ./...
+	go test -race -shuffle=on ./...
+
+.PHONY: test-short
+test-short:
+	go test -short ./...
 
 .PHONY: clean
 clean:
@@ -260,6 +269,10 @@ install-claude-code: build
 install-claude-desktop: build
 	./scripts/install-claude-desktop.sh $(BUILD_DIR)/$(BINARY_NAME)
 
+.PHONY: install-codex
+install-codex: build
+	./scripts/install-codex.sh $(BUILD_DIR)/$(BINARY_NAME)
+
 # -----------------------------------------------------------------------------
 # Release packaging
 # -----------------------------------------------------------------------------
@@ -268,23 +281,21 @@ install-claude-desktop: build
 # release asset; these are kept for `claude mcp add` users and CI.
 .PHONY: release
 release: build-all $(BIN_DARWIN_UNIVERSAL) pack-dxt
-	cd $(BUILD_DIR) && \
-	tar -czf $(BINARY_NAME)-$(VERSION)-linux-amd64.tar.gz $(BINARY_NAME)-linux-amd64 && \
-	tar -czf $(BINARY_NAME)-$(VERSION)-linux-arm64.tar.gz $(BINARY_NAME)-linux-arm64 && \
-	tar -czf $(BINARY_NAME)-$(VERSION)-darwin-universal.tar.gz $(BINARY_NAME)-darwin-universal && \
-	zip     $(BINARY_NAME)-$(VERSION)-windows-amd64.zip $(BINARY_NAME)-windows-amd64.exe
+	./scripts/package-release.sh $(VERSION)
+	./scripts/verify-release.sh $(VERSION)
 	@echo "Release artifacts in $(BUILD_DIR)/:"
-	@ls -lh $(BUILD_DIR)/*.tar.gz $(BUILD_DIR)/*.zip $(MCPB_FILE) 2>/dev/null
+	@xargs ls -lh < $(BUILD_DIR)/release-assets.txt
 
 .PHONY: release-signed
 release-signed: build-all pack-dxt-signed
-	cd $(BUILD_DIR) && \
-	tar -czf $(BINARY_NAME)-$(VERSION)-linux-amd64.tar.gz $(BINARY_NAME)-linux-amd64 && \
-	tar -czf $(BINARY_NAME)-$(VERSION)-linux-arm64.tar.gz $(BINARY_NAME)-linux-arm64 && \
-	tar -czf $(BINARY_NAME)-$(VERSION)-darwin-universal.tar.gz $(BINARY_NAME)-darwin-universal && \
-	zip     $(BINARY_NAME)-$(VERSION)-windows-amd64.zip $(BINARY_NAME)-windows-amd64.exe
+	./scripts/package-release.sh $(VERSION)
+	REQUIRE_NOTARIZED=true ./scripts/verify-release.sh $(VERSION)
 	@echo "Signed release artifacts in $(BUILD_DIR)/:"
-	@ls -lh $(BUILD_DIR)/*.tar.gz $(BUILD_DIR)/*.zip $(MCPB_FILE) 2>/dev/null
+	@xargs ls -lh < $(BUILD_DIR)/release-assets.txt
+
+.PHONY: verify-release
+verify-release:
+	./scripts/verify-release.sh $(VERSION)
 
 # -----------------------------------------------------------------------------
 # Help
@@ -315,10 +326,12 @@ help:
 	@echo "  install                       Copy binary to /usr/local/bin"
 	@echo "  install-claude-code           claude mcp add slide ..."
 	@echo "  install-claude-desktop        Merge into claude_desktop_config.json"
+	@echo "  install-codex                 codex mcp add slide ..."
 	@echo ""
 	@echo "Release:"
-	@echo "  release                Build all artifacts + unsigned .mcpb"
-	@echo "  release-signed         Build all artifacts + signed .mcpb"
+	@echo "  release                Build and verify all assets + unsigned .mcpb"
+	@echo "  release-signed         Build and verify all assets + signed .mcpb"
+	@echo "  verify-release         Check checksums, aliases, archives, MCPB"
 	@echo ""
 	@echo "Dev:"
 	@echo "  setup-dev / doctor     Bootstrap a fresh dev box, sanity check"

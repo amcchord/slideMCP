@@ -39,10 +39,11 @@ Both targets produce `build/slide-mcp-server.mcpb`. The bundle contains:
 - `server/slide-mcp-server-darwin-universal` (lipo'd Apple Silicon + Intel)
 - `server/slide-mcp-server-linux-amd64`
 - `server/slide-mcp-server-linux-arm64`
+- `server/slide-mcp-server-linux` (selects the correct Linux architecture)
 - `server/slide-mcp-server-windows-amd64.exe`
 
-The right binary for the host's OS is selected at runtime via the
-manifest's `mcp_config.platform_overrides`.
+The manifest selects by OS; the Linux launcher then selects amd64 or arm64.
+macOS uses one universal Mach-O containing both Intel and Apple Silicon slices.
 
 ## Installing locally
 
@@ -51,9 +52,9 @@ manifest's `mcp_config.platform_overrides`.
 3. Drag `build/slide-mcp-server.mcpb` onto the Extensions window.
 4. Paste your Slide API token when prompted.
 
-To pick up code changes after iterating, `make pack-dxt` again, remove
-the existing extension from Claude Desktop's UI, and drag the new
-bundle in.
+To pick up code changes after iterating, rebuild, remove the existing private
+extension from Claude Desktop's UI, and drag the new bundle in. Private
+sideloaded MCPBs do not auto-update; official-directory extensions do.
 
 ## Verifying the bundle
 
@@ -69,16 +70,16 @@ Runs `scripts/verify-dxt.sh`, which:
    exists in the bundle.
 4. Runs the binary appropriate for the current host with `--version` and
    asserts the version string matches the manifest.
-5. On macOS, also runs `codesign --verify` and `spctl --assess` (the
-   spctl check is informational - signed+notarized release builds will
-   pass; dev builds via `pack-dxt` will not).
+5. On macOS, runs `codesign --verify` and the correct online raw-Mach-O
+   notarization requirement. `spctl --type execute` is intentionally not used:
+   it assesses app bundles and misleadingly rejects raw executables.
 
 ## User config exposed in Claude Desktop's UI
 
 | Field        | Required | Notes                                                                       |
 |--------------|----------|-----------------------------------------------------------------------------|
 | `api_key`    | yes      | Sensitive. Generated at console.slide.tech > My Settings > API Tokens.      |
-| `tools_mode` | no       | One of `reporting`, `restores`, `full-safe` (default), `full`.              |
+| `tools_mode` | no       | One of `read-only`, `safe` (default), or `full`; legacy names still work.   |
 
 `SLIDE_BASE_URL` is intentionally not exposed in the UI; power users
 who need to point at a staging API can set the env var directly via

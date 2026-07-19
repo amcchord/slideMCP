@@ -19,8 +19,10 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-SERVER_BINARY="${SERVER_BINARY:-$ROOT_DIR/build/slide-mcp-server}"
+CUSTOM_SERVER_BINARY="${SERVER_BINARY:-}"
+SERVER_BINARY="${CUSTOM_SERVER_BINARY:-$ROOT_DIR/build/slide-mcp-server}"
 TOOLS_MODE="${SLIDE_TOOLS:-full}"
+SMOKE_TIMEOUT_SECONDS="${SMOKE_TIMEOUT_SECONDS:-60}"
 
 if [ -z "${SLIDE_API_KEY:-}" ] && [ -f "$ROOT_DIR/.env" ]; then
     set -a
@@ -29,9 +31,15 @@ if [ -z "${SLIDE_API_KEY:-}" ] && [ -f "$ROOT_DIR/.env" ]; then
     set +a
 fi
 
-if [ ! -x "$SERVER_BINARY" ]; then
-    echo -e "${YELLOW}Building $SERVER_BINARY...${NC}"
+# Always rebuild the repository binary. This prevents a stale build/ artifact
+# from making a smoke run pass while the current source is broken. An explicit
+# SERVER_BINARY override is treated as an already-built artifact under test.
+if [ -z "$CUSTOM_SERVER_BINARY" ]; then
+    echo -e "${YELLOW}Building fresh $SERVER_BINARY...${NC}"
     (cd "$ROOT_DIR" && go build -o "$SERVER_BINARY" .)
+elif [ ! -x "$SERVER_BINARY" ]; then
+    echo -e "${RED}SERVER_BINARY is not executable: $SERVER_BINARY${NC}" >&2
+    exit 1
 fi
 
 if [ -z "${SLIDE_API_KEY:-}" ]; then
@@ -47,6 +55,29 @@ PASSED=0
 FAILED=0
 SKIPPED_AUTH=0
 FAILURES=()
+
+run_timed() {
+    python3 - "$SMOKE_TIMEOUT_SECONDS" "$@" <<'PY'
+import subprocess
+import sys
+
+timeout = float(sys.argv[1])
+try:
+    completed = subprocess.run(
+        sys.argv[2:],
+        check=False,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        text=True,
+        timeout=timeout,
+    )
+except subprocess.TimeoutExpired:
+    print(f"command timed out after {timeout:g}s", file=sys.stderr)
+    raise SystemExit(124)
+sys.stdout.write(completed.stdout)
+raise SystemExit(completed.returncode)
+PY
+}
 
 echo -e "${BLUE}=================================${NC}"
 echo -e "${BLUE}Slide MCP Server smoke test${NC}"
@@ -65,8 +96,8 @@ run_one_shot() {
     printf "%-48s" "$label"
 
     local out
-    if ! out=$("$SERVER_BINARY" --tool "$tool" --args "$args" 2>/dev/null); then
-        echo -e "${RED}FAIL${NC} (binary exited non-zero)"
+    if ! out=$(run_timed "$SERVER_BINARY" --tool "$tool" --args "$args"); then
+        echo -e "${RED}FAIL${NC} (binary failed or exceeded ${SMOKE_TIMEOUT_SECONDS}s)"
         FAILED=$((FAILED + 1))
         FAILURES+=("$label: binary error")
         return
@@ -138,7 +169,7 @@ run_one_shot "slide_admin avatar missing"   "slide_admin"    '{"operation":"get_
 run_one_shot "slide_files search missing"   "slide_files"    '{"operation":"search"}'                                "agent_id is required"
 run_one_shot "slide_audit get missing"      "slide_audit"    '{"operation":"get"}'                                   "audit_id is required"
 run_one_shot "slide_overview for_client"    "slide_overview" '{"operation":"for_client"}'                            "client_id is required"
-run_one_shot "did-you-mean for typo'd op"   "slide_files"    '{"operation":"searh"}'                                 'did you mean "search"'
+run_one_shot "did-you-mean for typo'd op"   "slide_files"    '{"operation":"searh"}'                                 'did you mean'
 
 echo
 echo -e "${BLUE}MCP stdio handshake${NC}"

@@ -85,7 +85,19 @@ func annotationsForTool(name string) mcp.ToolAnnotation {
 			DestructiveHint: &destructive,
 			OpenWorldHint:   &openWorld,
 		}
-	case "slide_agents", "slide_backups":
+	case "slide_agents":
+		// Includes delete_passphrase. Because annotations are tool-level and
+		// this is an operation-oriented meta-tool, advertise the conservative
+		// destructive hint even though most agent operations are reversible.
+		ro := false
+		destructive := true
+		return mcp.ToolAnnotation{
+			Title:           humanTitle(name),
+			ReadOnlyHint:    &ro,
+			DestructiveHint: &destructive,
+			OpenWorldHint:   &openWorld,
+		}
+	case "slide_backups":
 		// Settings updates + backup-start. Reversible-ish.
 		ro := false
 		destructive := false

@@ -17,6 +17,8 @@ func buildMCPServer() (*server.MCPServer, error) {
 		server.WithToolCapabilities(true),
 		server.WithResourceCapabilities(true, false),
 		server.WithPromptCapabilities(true),
+		server.WithInputSchemaValidation(),
+		server.WithOutputSchemaValidation(),
 		server.WithRecovery(),
 		server.WithInstructions(serverInstructions()),
 		server.WithToolFilter(toolFilterForMode()),

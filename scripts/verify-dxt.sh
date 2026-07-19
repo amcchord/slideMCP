@@ -74,31 +74,53 @@ echo "    name=$(jq -r '.name' "$MANIFEST")"
 echo "    version=$(jq -r '.version' "$MANIFEST")"
 echo "    server.type=$(jq -r '.server.type' "$MANIFEST")"
 
-echo "==> Checking referenced binaries exist in the bundle"
-COMMANDS=$(jq -r '
+echo "==> Checking bundle-relative references exist"
+ENTRY_POINT="$(jq -r '.server.entry_point' "$MANIFEST")"
+if [ ! -f "$WORK/$ENTRY_POINT" ]; then
+    echo "FAIL: manifest entry_point $ENTRY_POINT is not in the bundle" >&2
+    exit 1
+fi
+echo "    ok: $ENTRY_POINT"
+
+# Search the full manifest rather than command fields alone: a launcher may be
+# passed as an argument to a host executable such as /bin/sh.
+BUNDLE_PATHS="$(jq -r '
+    .. | strings
+    | select(startswith("${__dirname}/"))
+    | sub("^\\$\\{__dirname\\}/"; "")
+' "$MANIFEST" | sort -u)"
+
+while IFS= read -r path; do
+    [ -z "$path" ] && continue
+    if [ ! -f "$WORK/$path" ]; then
+        echo "FAIL: manifest references $path but it is not in the bundle" >&2
+        exit 1
+    fi
+    echo "    ok: $path"
+done <<EOF
+$BUNDLE_PATHS
+EOF
+
+echo "==> Checking host commands are explicit"
+jq -r '
     [
         .server.mcp_config.command,
         (.server.mcp_config.platform_overrides // {} | to_entries[] | .value.command)
     ]
-    | map(select(. != null))
-    | .[]
-' "$MANIFEST" | sed 's|${__dirname}/||')
-
-if [ -z "$COMMANDS" ]; then
-    echo "FAIL: manifest declares no command paths" >&2
-    exit 1
-fi
-
-while IFS= read -r cmd; do
-    [ -z "$cmd" ] && continue
-    if [ ! -f "$WORK/$cmd" ]; then
-        echo "FAIL: manifest references $cmd but it is not in the bundle" >&2
-        exit 1
-    fi
-    echo "    ok: $cmd"
-done <<EOF
-$COMMANDS
-EOF
+    | map(select(. != null and (startswith("${__dirname}/") | not)))
+    | unique[]
+' "$MANIFEST" | while IFS= read -r command; do
+    case "$command" in
+        /*) echo "    host command: $command" ;;
+        *)
+            if [ ! -f "$WORK/$command" ]; then
+                echo "FAIL: relative command $command is not in the bundle" >&2
+                exit 1
+            fi
+            echo "    ok: $command"
+            ;;
+    esac
+done
 
 echo "==> Verifying the host binary actually runs"
 HOST_OS="$(uname -s)"
@@ -144,7 +166,7 @@ if [ "$HOST_OS" = "Darwin" ]; then
 
     # Show the signing chain so it's obvious whether this is Developer ID
     # (release-grade) or ad-hoc.
-    AUTH=$(codesign -dvv "$UNIV" 2>&1 | grep -E "^Authority=" | head -1 | sed 's/^Authority=//')
+    AUTH=$(codesign -dvv "$UNIV" 2>&1 | grep -E "^Authority=" | head -1 | sed 's/^Authority=//' || true)
     if [ -n "$AUTH" ]; then
         echo "    chain:        $AUTH"
     fi

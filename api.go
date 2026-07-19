@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -17,7 +18,7 @@ import (
 var (
 	APIBaseURL = "https://api.slide.tech" // Default base URL, can be overridden via CLI or env var
 	httpClient = &http.Client{
-		Timeout: 30 * time.Second,
+		Timeout: 20 * time.Second,
 	}
 	apiKey string
 
@@ -31,6 +32,18 @@ var (
 	}
 	clientCacheExpiry = 5 * time.Minute // Cache clients for 5 minutes
 )
+
+const (
+	apiOperationTimeout  = 45 * time.Second
+	maxRetryAfter        = 5 * time.Second
+	maxAPIResponseBytes  = 16 << 20 // 16 MiB prevents a bad upstream from exhausting memory.
+	maxPaginatedEntities = 5000
+)
+
+// retrySleep is a variable so tests can exercise retry policy without waiting.
+// Production uses a context-aware timer so the operation deadline remains a
+// hard upper bound even when Slide sends a large Retry-After value.
+var retrySleep = sleepWithContext
 
 // Data structures
 type Device struct {
@@ -592,30 +605,64 @@ func enrichWithClientName(data interface{}) interface{} {
 //   - Structured APIError with status + endpoint + truncated body so the
 //     LLM can reason about the failure instead of getting a wall of HTML.
 func makeAPIRequest(method, endpoint string, body []byte) ([]byte, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), apiOperationTimeout)
+	defer cancel()
+	return makeAPIRequestContext(ctx, method, endpoint, body)
+}
+
+func makeAPIRequestContext(ctx context.Context, method, endpoint string, body []byte) ([]byte, error) {
 	const maxRetries = 3
+	retryable := isIdempotentHTTPMethod(method)
 
 	for attempt := 0; attempt <= maxRetries; attempt++ {
-		responseBody, statusCode, retryAfter, err := performSingleAPIRequest(method, endpoint, body)
+		responseBody, statusCode, retryAfter, err := performSingleAPIRequestContext(ctx, method, endpoint, body)
 		if err == nil {
 			return responseBody, nil
 		}
 
 		switch {
-		case statusCode == 429 && attempt < maxRetries:
+		case retryable && statusCode == 429 && attempt < maxRetries:
 			wait := retryAfter
 			if wait <= 0 {
 				wait = time.Duration(1<<attempt) * time.Second
 			}
-			time.Sleep(wait)
+			if wait > maxRetryAfter {
+				wait = maxRetryAfter
+			}
+			if sleepErr := retrySleep(ctx, wait); sleepErr != nil {
+				return nil, fmt.Errorf("Slide API %s %s retry canceled: %w", method, endpoint, sleepErr)
+			}
 			continue
-		case (statusCode == 502 || statusCode == 503 || statusCode == 504) && attempt < 1:
-			time.Sleep(500 * time.Millisecond)
+		case retryable && (statusCode == 0 || statusCode == 502 || statusCode == 503 || statusCode == 504) && attempt < 1:
+			if sleepErr := retrySleep(ctx, 500*time.Millisecond); sleepErr != nil {
+				return nil, fmt.Errorf("Slide API %s %s retry canceled: %w", method, endpoint, sleepErr)
+			}
 			continue
 		}
 
 		return nil, err
 	}
 	return nil, fmt.Errorf("unexpected error in retry logic")
+}
+
+func isIdempotentHTTPMethod(method string) bool {
+	switch strings.ToUpper(method) {
+	case http.MethodGet, http.MethodHead, http.MethodOptions:
+		return true
+	default:
+		return false
+	}
+}
+
+func sleepWithContext(ctx context.Context, d time.Duration) error {
+	timer := time.NewTimer(d)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-timer.C:
+		return nil
+	}
 }
 
 // APIError is the typed error returned by performSingleAPIRequest.
@@ -642,11 +689,18 @@ func (e *APIError) Error() string {
 	case 500, 502, 503, 504:
 		hint = " (Slide API server-side error; check https://status.slide.tech for an active incident, otherwise retry.)"
 	}
-	body := e.Body
+	body := redactSensitive(e.Body)
 	if len(body) > 300 {
 		body = body[:300] + "..."
 	}
 	return fmt.Sprintf("Slide API %s %s -> %d%s: %s", e.Method, e.Endpoint, e.StatusCode, hint, body)
+}
+
+func redactSensitive(value string) string {
+	if apiKey != "" {
+		value = strings.ReplaceAll(value, apiKey, "[REDACTED]")
+	}
+	return value
 }
 
 // idPrefixHint returns a short note about which tool a 404 endpoint
@@ -684,15 +738,19 @@ func (e *APIError) idPrefixHint() string {
 // Returns (body, statusCode, retryAfter, err). retryAfter is parsed from the
 // Retry-After header when present so the caller can honor it precisely.
 func performSingleAPIRequest(method, endpoint string, body []byte) ([]byte, int, time.Duration, error) {
+	return performSingleAPIRequestContext(context.Background(), method, endpoint, body)
+}
+
+func performSingleAPIRequestContext(ctx context.Context, method, endpoint string, body []byte) ([]byte, int, time.Duration, error) {
 	url := APIBaseURL + endpoint
 
 	var req *http.Request
 	var err error
 
 	if body != nil {
-		req, err = http.NewRequest(method, url, bytes.NewReader(body))
+		req, err = http.NewRequestWithContext(ctx, method, url, bytes.NewReader(body))
 	} else {
-		req, err = http.NewRequest(method, url, nil)
+		req, err = http.NewRequestWithContext(ctx, method, url, nil)
 	}
 
 	if err != nil {
@@ -710,14 +768,17 @@ func performSingleAPIRequest(method, endpoint string, body []byte) ([]byte, int,
 	}
 	defer resp.Body.Close()
 
-	responseBody, err := io.ReadAll(resp.Body)
+	responseBody, err := io.ReadAll(io.LimitReader(resp.Body, maxAPIResponseBytes+1))
 	if err != nil {
 		return nil, resp.StatusCode, 0, fmt.Errorf("failed to read response: %w", err)
+	}
+	if len(responseBody) > maxAPIResponseBytes {
+		return nil, resp.StatusCode, 0, fmt.Errorf("Slide API %s %s response exceeded %d bytes", method, endpoint, maxAPIResponseBytes)
 	}
 
 	retryAfter := parseRetryAfter(resp.Header.Get("Retry-After"))
 
-	if resp.StatusCode >= 400 {
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
 		return nil, resp.StatusCode, retryAfter, &APIError{
 			Method:     method,
 			Endpoint:   endpoint,

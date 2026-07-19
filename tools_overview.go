@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -102,26 +103,32 @@ func handleOverviewHealth(args map[string]interface{}) (string, error) {
 		staleMinutes = 30
 	}
 
-	devicesData, err := makeAPIRequest("GET", "/v1/device?limit=50", nil)
-	if err != nil {
-		return "", fmt.Errorf("failed to list devices: %w", err)
+	var (
+		devices   []Device
+		agents    []Agent
+		deviceErr error
+		agentErr  error
+		wg        sync.WaitGroup
+	)
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		devices, deviceErr = fetchAllPaginated[Device]("/v1/device")
+	}()
+	go func() {
+		defer wg.Done()
+		agents, agentErr = fetchAllPaginated[Agent]("/v1/agent")
+	}()
+	wg.Wait()
+	if deviceErr != nil {
+		return "", fmt.Errorf("failed to list devices: %w", deviceErr)
 	}
-	var devices PaginatedResponse[Device]
-	if err := json.Unmarshal(devicesData, &devices); err != nil {
-		return "", fmt.Errorf("parse devices: %w", err)
-	}
-
-	agentsData, err := makeAPIRequest("GET", "/v1/agent?limit=50", nil)
-	if err != nil {
-		return "", fmt.Errorf("failed to list agents: %w", err)
-	}
-	var agents PaginatedResponse[Agent]
-	if err := json.Unmarshal(agentsData, &agents); err != nil {
-		return "", fmt.Errorf("parse agents: %w", err)
+	if agentErr != nil {
+		return "", fmt.Errorf("failed to list agents: %w", agentErr)
 	}
 
 	now := time.Now().UTC()
-	entries := make([]healthEntry, 0, len(devices.Data)+len(agents.Data))
+	entries := make([]healthEntry, 0, len(devices)+len(agents))
 
 	healthy, stale, unknown := 0, 0, 0
 	classify := func(lastSeen string) (string, int) {
@@ -142,7 +149,7 @@ func handleOverviewHealth(args map[string]interface{}) (string, error) {
 		return "healthy", mins
 	}
 
-	for _, d := range devices.Data {
+	for _, d := range devices {
 		status, mins := classify(d.LastSeenAt)
 		switch status {
 		case "healthy":
@@ -173,7 +180,7 @@ func handleOverviewHealth(args map[string]interface{}) (string, error) {
 		})
 	}
 
-	for _, a := range agents.Data {
+	for _, a := range agents {
 		status, mins := classify(a.LastSeenAt)
 		switch status {
 		case "healthy":

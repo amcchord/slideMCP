@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"net"
+	"net/url"
 	"strings"
 )
 
@@ -9,7 +11,7 @@ import (
 // and the `--version` flag.
 const (
 	ServerName = "slide-mcp-server"
-	Version    = "5.0.3"
+	Version    = "5.1.0"
 )
 
 // Permission tiers. v4.0.0 collapses the old four-tier system
@@ -76,6 +78,36 @@ func (c *ServerConfig) ValidateToolsMode() error {
 		return nil
 	}
 	return fmt.Errorf("invalid tools mode '%s'. Valid options: read-only, safe, full (legacy aliases reporting/restores/full-safe also accepted)", c.ToolsMode)
+}
+
+// ValidateBaseURL prevents malformed URLs and accidental clear-text API-key
+// transmission. Plain HTTP remains available only for loopback test/dev
+// servers; real Slide environments must use HTTPS.
+func (c *ServerConfig) ValidateBaseURL() error {
+	c.BaseURL = strings.TrimRight(strings.TrimSpace(c.BaseURL), "/")
+	u, err := url.Parse(c.BaseURL)
+	if err != nil || u.Scheme == "" || u.Host == "" {
+		return fmt.Errorf("invalid Slide API base URL %q", c.BaseURL)
+	}
+	if u.User != nil || u.RawQuery != "" || u.Fragment != "" {
+		return fmt.Errorf("Slide API base URL must not contain credentials, query parameters, or a fragment")
+	}
+	host := u.Hostname()
+	loopback := strings.EqualFold(host, "localhost")
+	if ip := net.ParseIP(host); ip != nil && ip.IsLoopback() {
+		loopback = true
+	}
+	if u.Scheme != "https" && !(u.Scheme == "http" && loopback) {
+		return fmt.Errorf("Slide API base URL must use HTTPS (HTTP is allowed only for localhost tests)")
+	}
+	return nil
+}
+
+func (c *ServerConfig) Validate() error {
+	if err := c.ValidateToolsMode(); err != nil {
+		return err
+	}
+	return c.ValidateBaseURL()
 }
 
 // IsToolDisabled checks if a tool is explicitly disabled.
@@ -184,7 +216,7 @@ func isDestructiveOperation(toolName, op string) bool {
 			return true
 		}
 	case "slide_agents":
-		if op == "delete" {
+		if op == "delete" || op == "delete_passphrase" {
 			return true
 		}
 	case "slide_clients":

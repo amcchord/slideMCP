@@ -1,5 +1,75 @@
 # Slide MCP Changes
 
+## 2026-07-18 - v5.1.0 - Reliability, cross-host contracts, and safe distribution
+
+### Headline
+
+v5.1.0 turns the existing feature-rich server into a release we can verify as a
+system. It adds failure-injection tests around the Slide HTTP client, protocol
+profiles for Anthropic and OpenAI hosts, a real production-binary stdio test,
+distribution contracts, cross-platform CI, and a single fail-closed release
+pipeline. There are no intentional tool or configuration breaking changes.
+
+### API reliability and performance
+
+- Every API operation has a 45-second hard deadline; individual HTTP requests
+  also use a 20-second client timeout and response bodies are capped at 16 MiB.
+- Rate limits use capped `Retry-After` backoff. Transient network/502/503/504
+  retries apply only to idempotent GET/HEAD/OPTIONS requests, preventing a
+  timed-out create/update call from being submitted twice.
+- API error bodies redact the configured token before reaching logs or an LLM.
+- Custom base URLs are normalized and must use HTTPS, except for loopback HTTP
+  used by the deterministic test harness.
+- Account inventory no longer performs an N+1 request tree. Clients, devices,
+  and agents are fetched concurrently in three fully paginated streams, then
+  joined deterministically without dropping unassigned devices, missing-client
+  devices, or orphan agents. Health checks now paginate the complete account.
+
+### MCP and permission contracts
+
+- Upgraded `github.com/mark3labs/mcp-go` from v0.52.0 to v0.56.0.
+- Enabled server-side input and output JSON Schema validation.
+- Added compatibility profiles for Claude Desktop's established 2025-06-18
+  MCP path and OpenAI Codex/current MCP 2025-11-25 behavior.
+- Added a black-box test that builds the production executable, drives raw
+  JSONL over stdio, verifies stdout stays protocol-clean, and requires clean
+  shutdown when the host closes stdin.
+- Added registry/schema/annotation/permission contracts for every operation.
+  The new contract found and fixed `slide_agents/delete_passphrase`, which was
+  incorrectly available in `safe` mode and advertised as non-destructive.
+
+### Packaging and upgrades
+
+- Corrected repository and stable-download links from the nonexistent
+  `austinmcchord/slideMCP` path to `amcchord/slideMCP`.
+- MCPB manifest remains on the current stable 0.3 spec and now declares the
+  fixed tool catalog while marking MCP Prompts as runtime-generated.
+- Added an architecture-selecting Linux launcher so one MCPB correctly runs on
+  both amd64 and arm64 despite MCPB platform overrides selecting by OS.
+- Restored the exact `macos-x64`, `macos-arm64`, `linux-x64`, `linux-arm64`, and
+  `windows-x64` release names used by the retired installer. All macOS aliases
+  contain the same signed and notarized universal executable.
+- The stable unversioned `slide-mcp-server.mcpb` asset is preserved. Private
+  sideloaded MCPBs still require reinstall because Claude only auto-updates
+  official-directory extensions; the manifest is ready for directory review.
+
+### Test and release harness
+
+- Added deterministic tests for retry safety, rate-limit caps, cancellation,
+  oversized responses, token redaction, pagination loops, inventory joining,
+  base-URL policy, tool contracts, and bundle/version consistency.
+- The live smoke test now always builds fresh, applies per-command timeouts,
+  and covers tools, help, name resolution, handshake, Prompts, Resources,
+  `--doctor`, and the secret-masked debug bundle.
+- Added GitHub Actions jobs for race tests, `go vet`, cross-compilation,
+  ShellCheck, full release-package verification, and Anthropic's official MCPB
+  manifest validator.
+- Replaced several stale v3-era signing/release scripts with one production
+  pipeline. It requires a clean committed `main`, verifies all version
+  declarations, signs/notarizes, validates checksums and legacy aliases, and
+  refuses to tag or publish unless the embedded Mac executable satisfies
+  Apple's notarization requirement.
+
 ## 2026-05-15 - v5.0.3 - Hotfix: include structuredContent in tool responses
 
 ### Symptom
@@ -786,4 +856,4 @@ v1.27.0 (`backup_schedule`, `local_retention_policy`, `default_restore_settings`
 ### Purpose
 The slide_docs tool allows LLMs to reference official Slide documentation from docs.slide.tech when answering questions about Slide backup and recovery features. This provides contextual help, best practices, troubleshooting guidance, and API reference information directly within the MCP agent.
 
-## 2025-01-09 - Meta Tool Performance Improvements 
+## 2025-01-09 - Meta Tool Performance Improvements

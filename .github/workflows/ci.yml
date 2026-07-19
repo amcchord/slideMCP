@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Go tests and contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - run: go test -race -shuffle=on ./...
+      - run: go vet ./...
+
+  cross-build:
+    name: Cross-platform build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - run: make build-all
+      - name: Check binary formats
+        run: |
+          file build/slide-mcp-server-linux-amd64 | grep -q 'x86-64'
+          file build/slide-mcp-server-linux-arm64 | grep -q 'ARM aarch64'
+          file build/slide-mcp-server-darwin-amd64 | grep -q 'Mach-O 64-bit x86_64'
+          file build/slide-mcp-server-darwin-arm64 | grep -q 'Mach-O 64-bit arm64'
+          file build/slide-mcp-server-windows-amd64.exe | grep -q 'PE32+'
+
+  shell:
+    name: Shell scripts
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: ShellCheck active scripts
+        run: |
+          shellcheck \
+            smoke_test.sh \
+            dxt/launchers/slide-mcp-server-linux \
+            scripts/install-claude-code.sh \
+            scripts/install-claude-desktop.sh \
+            scripts/install-codex.sh \
+            scripts/package-release.sh \
+            scripts/release-all-in-one.sh \
+            scripts/setup-dev.sh \
+            scripts/setup-signing.sh \
+            scripts/verify-dxt.sh \
+            scripts/verify-release.sh
+
+  mcpb:
+    name: MCPB bundle and manifest
+    runs-on: macos-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: make release
+      - run: npx --yes @anthropic-ai/mcpb@latest validate build/dxt-stage

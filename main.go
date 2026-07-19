@@ -64,7 +64,7 @@ func main() {
 		config.APIKey = os.Getenv("SLIDE_API_KEY")
 	}
 
-	if err := config.ValidateToolsMode(); err != nil {
+	if err := config.Validate(); err != nil {
 		log.Fatal(err)
 	}
 
